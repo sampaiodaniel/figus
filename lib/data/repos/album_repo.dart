@@ -78,15 +78,20 @@ class AlbumRepo {
 
     final views = stickerRows.map(toView).where(matchesFilter).where(matchesSearch).toList();
 
-    // Specials split into two groups: "FWC" (FWC00 + FWC1-8 intro) at the
-    // top and "FWC9+" (legends, FWC9..) at the bottom. Page 0 is the intro
-    // block in the seed, page 100 the legends block.
+    // Specials by pageNumber range:
+    //   0        → FWC intro (FWC00–FWC8)
+    //   100–199  → FWC9+ legends
+    //   200+     → CC (Coca-Cola)
     final introSpecials = views
         .where((v) => v.nationCode == null && v.pageNumber == 0)
         .toList()
       ..sort((a, b) => a.positionInPage.compareTo(b.positionInPage));
     final legendSpecials = views
-        .where((v) => v.nationCode == null && v.pageNumber >= 100)
+        .where((v) => v.nationCode == null && v.pageNumber >= 100 && v.pageNumber < 200)
+        .toList()
+      ..sort((a, b) => a.positionInPage.compareTo(b.positionInPage));
+    final ccSpecials = views
+        .where((v) => v.nationCode == null && v.pageNumber >= 200)
         .toList()
       ..sort((a, b) => a.positionInPage.compareTo(b.positionInPage));
 
@@ -136,6 +141,18 @@ class AlbumRepo {
         ownedCount: owned,
         totalCount: legendSpecials.length,
         stickers: legendSpecials,
+      ));
+    }
+
+    if (ccSpecials.isNotEmpty) {
+      final owned = ccSpecials.where((v) => v.status != StickerOwnership.missing).length;
+      sections.add(AlbumSection(
+        key: 'CC',
+        title: 'CC — Coca-Cola',
+        flag: '🥤',
+        ownedCount: owned,
+        totalCount: ccSpecials.length,
+        stickers: ccSpecials,
       ));
     }
 

@@ -131,7 +131,7 @@ class _FlagThumb extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: iso == null
           ? Text(
-              code == 'FWC' ? '🏆' : (code == 'FWC9+' ? '⭐' : code),
+              code == 'FWC' ? '🏆' : (code == 'FWC9+' ? '⭐' : (code == 'CC' ? '🥤' : code)),
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
             )
           : CountryFlag.fromCountryCode(iso, shape: const RoundedRectangle(6), width: 36, height: 26),

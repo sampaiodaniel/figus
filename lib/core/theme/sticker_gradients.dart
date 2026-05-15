@@ -57,6 +57,8 @@ class StickerGradients {
     'FWC': [Color(0xFF1F66FF), Color(0xFF7A5BFF)],
     // Legends (FWC9+) — gold
     'FWC9+': [Color(0xFFB8860B), Color(0xFF8B6914)],
+    // Coca-Cola — red
+    'CC': [Color(0xFFCC0000), Color(0xFF990000)],
   };
 
   /// Returns a gradient using the nation's actual kit colors.

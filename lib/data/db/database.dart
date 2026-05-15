@@ -12,7 +12,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -40,18 +40,43 @@ class AppDatabase extends _$AppDatabase {
                 updates: {nations},
               );
             }
-            // Populate player names from official checklist data.
             for (final entry in WC2026Seed.playerNames.entries) {
               final code = entry.key;
               final names = entry.value;
               for (var i = 0; i < names.length; i++) {
-                // Sticker positions 2..12 hold the 11 player names.
                 final stickerNum = '$code${i + 2}';
                 await customUpdate(
                   'UPDATE stickers SET player_name = ? WHERE number = ?',
                   variables: [Variable.withString(names[i]), Variable.withString(stickerNum)],
                   updates: {stickers},
                 );
+              }
+            }
+          }
+          if (from < 5) {
+            // Insert CC (Coca-Cola) stickers for users who already have the album seeded.
+            final albumRow = await (select(albums)
+                  ..where((a) => a.code.equals(WC2026Seed.albumCode)))
+                .getSingleOrNull();
+            if (albumRow != null) {
+              final ccStickers = WC2026Seed.stickers.where((s) => s.number.startsWith('CC'));
+              for (final s in ccStickers) {
+                final exists = await (select(stickers)
+                      ..where((st) => st.number.equals(s.number)))
+                    .getSingleOrNull();
+                if (exists == null) {
+                  await into(stickers).insert(StickersCompanion.insert(
+                    albumId: albumRow.id,
+                    nationId: const Value(null),
+                    number: s.number,
+                    type: s.type,
+                    isFoil: Value(s.isFoil),
+                    pageNumber: s.pageNumber,
+                    positionInPage: s.positionInPage,
+                    label: s.label,
+                    playerName: const Value(null),
+                  ));
+                }
               }
             }
           }

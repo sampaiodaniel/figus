@@ -3,9 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:country_flags/country_flags.dart';
-
-import '../../core/country_codes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/providers.dart';
 import '../../data/repos/album_repo.dart';
@@ -108,9 +105,8 @@ class _AlbumPageState extends ConsumerState<AlbumPage> {
     return ListView.builder(
       key: const PageStorageKey('nations-list'),
       controller: _scrollCtrl,
-      itemCount: data.length + 1, // +1 → "CC" placeholder
+      itemCount: data.length,
       itemBuilder: (_, i) {
-        if (i == data.length) return const _CcPlaceholder();
         final s = data[i];
         return NationPanel(
           section: s,
@@ -310,28 +306,3 @@ class _FilterChips extends StatelessWidget {
   }
 }
 
-class _CcPlaceholder extends StatelessWidget {
-  const _CcPlaceholder();
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: ListTile(
-        leading: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: AppTheme.slotSoft,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(Icons.local_drink_rounded, color: AppTheme.inkSoft),
-        ),
-        title: const Text('CC · Coca-Cola',
-            style: TextStyle(fontWeight: FontWeight.w700)),
-        subtitle: const Text('Coleção extra (em breve)',
-            style: TextStyle(fontSize: 12, color: AppTheme.inkSoft)),
-        trailing: const Icon(Icons.lock_outline_rounded, color: AppTheme.inkSoft),
-      ),
-    );
-  }
-}

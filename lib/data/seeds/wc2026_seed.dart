@@ -374,6 +374,31 @@ class WC2026Seed {
       ));
     }
 
+    // Coca-Cola section (CC) — 9 stickers at the end of the album.
+    // Labels will be updated once the official CC checklist is published.
+    const ccLabels = [
+      'Coca-Cola × FIFA WC 2026',
+      'Celebração',
+      'Torcedores',
+      'Momentos',
+      'Estádios',
+      'Gols históricos',
+      'Heróis da Copa',
+      'Troféu',
+      'Próxima Copa',
+    ];
+    for (var i = 0; i < ccLabels.length; i++) {
+      list.add(SeedSticker(
+        number: 'CC${i + 1}',
+        nationCode: null,
+        type: 'intro',
+        isFoil: false,
+        pageNumber: 200, // after FWC9+ (100) — always last section
+        positionInPage: i,
+        label: ccLabels[i],
+      ));
+    }
+
     // 48 nations × 20 stickers
     for (final nation in nations) {
       final pageNum = nation.orderInAlbum + 2;
