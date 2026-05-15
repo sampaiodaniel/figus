@@ -28,6 +28,9 @@ class Stickers extends Table {
   IntColumn get pageNumber => integer()();
   IntColumn get positionInPage => integer()();
   TextColumn get label => text()();
+  // Player name (or label) shown under the sticker number, like in the
+  // physical album. User-editable; nullable until populated.
+  TextColumn get playerName => text().nullable()();
 }
 
 class Profiles extends Table {
@@ -37,6 +40,9 @@ class Profiles extends Table {
   IntColumn get avatarColor => integer().withDefault(const Constant(0xFF1F66FF))();
   BoolColumn get isActive => boolean().withDefault(const Constant(false))();
   BoolColumn get isShared => boolean().withDefault(const Constant(false))();
+  // Comma-separated list of nation codes the user favorites — used to bias
+  // trade suggestions.
+  TextColumn get favoriteNations => text().withDefault(const Constant(''))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
@@ -46,10 +52,6 @@ class Collections extends Table {
   IntColumn get stickerId => integer().references(Stickers, #id)();
   TextColumn get status => text().withDefault(const Constant('missing'))(); // missing|owned|duplicate
   IntColumn get duplicateCount => integer().withDefault(const Constant(0))();
-  // Optional user-provided image bytes (PNG/JPG). Personal use only — the
-  // user supplies the file from their device; the app never embeds copyrighted
-  // assets by default.
-  BlobColumn get customImage => blob().nullable()();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
   @override

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../data/providers.dart';
@@ -23,40 +24,47 @@ class TradesPage extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppTheme.seed, Color(0xFF7A5BFF)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+            InkWell(
+              onTap: () => context.push('/compare'),
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppTheme.seed, Color(0xFF7A5BFF)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.bluetooth_audio_rounded, color: Colors.white, size: 28),
-                      SizedBox(width: 10),
-                      Text(
-                        'Troca por aproximação',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.compare_arrows_rounded, color: Colors.white, size: 28),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Comparar com amigo',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Em breve: encoste o celular num amigo e troque na hora '
-                    '— sem QR, sem internet. Diferencial nº 1 do Figus.',
-                    style: TextStyle(color: Colors.white, height: 1.4),
-                  ),
-                ],
+                        Icon(Icons.chevron_right_rounded, color: Colors.white),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Cole o inventário do amigo e veja trocas sugeridas: 1×1 do '
+                      'mesmo tipo primeiro, depois 1 brilhante por 2 normais.',
+                      style: TextStyle(color: Colors.white, height: 1.4),
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 24),

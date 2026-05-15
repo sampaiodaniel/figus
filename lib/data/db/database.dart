@@ -12,7 +12,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -20,8 +20,9 @@ class AppDatabase extends _$AppDatabase {
           await m.createAll();
         },
         onUpgrade: (m, from, to) async {
-          if (from < 2) {
-            await m.addColumn(collections, collections.customImage);
+          if (from < 3) {
+            await m.addColumn(stickers, stickers.playerName);
+            await m.addColumn(profiles, profiles.favoriteNations);
           }
         },
       );

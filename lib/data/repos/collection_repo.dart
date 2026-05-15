@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:drift/drift.dart';
 
 import '../db/database.dart';
@@ -41,7 +39,6 @@ class CollectionRepo {
     }
   }
 
-  /// Cycles: missing → owned → duplicate(+1)
   Future<void> tapSticker(int stickerId) async {
     final pid = await _activeProfileId();
     final e = await _entry(pid, stickerId);
@@ -50,41 +47,10 @@ class CollectionRepo {
     } else if (e.status == 'owned') {
       await _upsert(pid, stickerId, 'duplicate', 1);
     } else {
-      // already duplicate → +1
       await _upsert(pid, stickerId, 'duplicate', e.duplicateCount + 1);
     }
   }
 
-  Future<void> setCustomImage(int stickerId, Uint8List bytes) async {
-    final pid = await _activeProfileId();
-    final existing = await _entry(pid, stickerId);
-    if (existing == null) {
-      await db.into(db.collections).insert(CollectionsCompanion.insert(
-            profileId: pid,
-            stickerId: stickerId,
-            customImage: Value(bytes),
-          ));
-    } else {
-      await (db.update(db.collections)..where((c) => c.id.equals(existing.id))).write(
-        CollectionsCompanion(
-          customImage: Value(bytes),
-          updatedAt: Value(DateTime.now()),
-        ),
-      );
-    }
-  }
-
-  Future<void> clearCustomImage(int stickerId) async {
-    final pid = await _activeProfileId();
-    final existing = await _entry(pid, stickerId);
-    if (existing == null) return;
-    await (db.update(db.collections)..where((c) => c.id.equals(existing.id))).write(
-      const CollectionsCompanion(customImage: Value(null)),
-    );
-  }
-
-  /// Long press: removes ONE copy.
-  /// duplicate(N>1) → duplicate(N-1) · duplicate(1) → owned · owned → missing.
   Future<void> removeSticker(int stickerId) async {
     final pid = await _activeProfileId();
     final e = await _entry(pid, stickerId);
@@ -97,8 +63,33 @@ class CollectionRepo {
         await _upsert(pid, stickerId, 'duplicate', next);
       }
     } else {
-      // 'owned' → missing
       await _upsert(pid, stickerId, 'missing', 0);
     }
+  }
+
+  /// Updates the player/label name shown under the number on each card.
+  Future<void> setPlayerName(int stickerId, String? name) async {
+    final value = (name == null || name.trim().isEmpty) ? null : name.trim();
+    await (db.update(db.stickers)..where((s) => s.id.equals(stickerId)))
+        .write(StickersCompanion(playerName: Value(value)));
+  }
+
+  /// Bulk-update player names from a `code,name` pair map, e.g.
+  ///   {'BRA1': 'Alisson', 'BRA2': 'Marquinhos', ...}
+  Future<int> bulkSetPlayerNames(Map<String, String> codeToName) async {
+    var updated = 0;
+    final all = await db.select(db.stickers).get();
+    final byNumber = {for (final s in all) s.number.toUpperCase(): s};
+    await db.transaction(() async {
+      for (final entry in codeToName.entries) {
+        final s = byNumber[entry.key.toUpperCase()];
+        if (s == null) continue;
+        final v = entry.value.trim();
+        await (db.update(db.stickers)..where((x) => x.id.equals(s.id)))
+            .write(StickersCompanion(playerName: Value(v.isEmpty ? null : v)));
+        updated++;
+      }
+    });
+    return updated;
   }
 }

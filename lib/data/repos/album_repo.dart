@@ -53,6 +53,7 @@ class AlbumRepo {
         nationCode: s.nationId == null ? null : nationById[s.nationId!]?.code,
         status: status,
         duplicateCount: c?.duplicateCount ?? 0,
+        playerName: s.playerName,
       );
     }
 
@@ -70,7 +71,9 @@ class AlbumRepo {
     bool matchesSearch(StickerView v) {
       if (search == null || search.trim().isEmpty) return true;
       final q = search.trim().toLowerCase();
-      return v.number.toLowerCase().contains(q) || v.label.toLowerCase().contains(q);
+      return v.number.toLowerCase().contains(q) ||
+          v.label.toLowerCase().contains(q) ||
+          (v.playerName?.toLowerCase().contains(q) ?? false);
     }
 
     final views = stickerRows.map(toView).where(matchesFilter).where(matchesSearch).toList();

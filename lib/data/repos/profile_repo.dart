@@ -37,6 +37,37 @@ class ProfileRepo {
         .write(ProfilesCompanion(name: Value(name)));
   }
 
+  /// Returns the current set of nation codes favorited by the active profile.
+  Future<Set<String>> favoriteNations() async {
+    final p = await active();
+    return _parseFavorites(p.favoriteNations);
+  }
+
+  Future<void> setFavoriteNations(Set<String> codes) async {
+    final p = await active();
+    await (db.update(db.profiles)..where((x) => x.id.equals(p.id))).write(
+      ProfilesCompanion(favoriteNations: Value(codes.join(','))),
+    );
+  }
+
+  Future<void> toggleFavoriteNation(String code) async {
+    final favs = await favoriteNations();
+    if (favs.contains(code)) {
+      favs.remove(code);
+    } else {
+      favs.add(code);
+    }
+    await setFavoriteNations(favs);
+  }
+
+  static Set<String> _parseFavorites(String raw) {
+    return raw
+        .split(',')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toSet();
+  }
+
   Future<void> delete(int id) async {
     final all = await db.select(db.profiles).get();
     if (all.length <= 1) return; // never delete the last profile
