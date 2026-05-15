@@ -12,7 +12,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -23,6 +23,37 @@ class AppDatabase extends _$AppDatabase {
           if (from < 3) {
             await m.addColumn(stickers, stickers.playerName);
             await m.addColumn(profiles, profiles.favoriteNations);
+          }
+          if (from < 4) {
+            // Fix nation ordering to match printed album sequence.
+            const nationOrder = [
+              'MEX', 'RSA', 'KOR', 'CZE', 'CAN', 'BIH', 'QAT', 'SUI', 'BRA', 'MAR',
+              'HAI', 'SCO', 'USA', 'PAR', 'AUS', 'TUR', 'GER', 'CUW', 'CIV', 'ECU',
+              'NED', 'JPN', 'SWE', 'TUN', 'BEL', 'EGY', 'IRN', 'NZL', 'ESP', 'CPV',
+              'KSA', 'URU', 'FRA', 'SEN', 'IRQ', 'NOR', 'ARG', 'ALG', 'AUT', 'JOR',
+              'POR', 'COD', 'UZB', 'COL', 'ENG', 'CRO', 'GHA', 'PAN',
+            ];
+            for (var i = 0; i < nationOrder.length; i++) {
+              await customUpdate(
+                'UPDATE nations SET order_in_album = ? WHERE code = ?',
+                variables: [Variable.withInt(i), Variable.withString(nationOrder[i])],
+                updates: {nations},
+              );
+            }
+            // Populate player names from official checklist data.
+            for (final entry in WC2026Seed.playerNames.entries) {
+              final code = entry.key;
+              final names = entry.value;
+              for (var i = 0; i < names.length; i++) {
+                // Sticker positions 2..12 hold the 11 player names.
+                final stickerNum = '$code${i + 2}';
+                await customUpdate(
+                  'UPDATE stickers SET player_name = ? WHERE number = ?',
+                  variables: [Variable.withString(names[i]), Variable.withString(stickerNum)],
+                  updates: {stickers},
+                );
+              }
+            }
           }
         },
       );
