@@ -6,36 +6,35 @@ import '../../core/theme/app_theme.dart';
 import '../scan/ocr_service.dart';
 import '../scan/review_detections_sheet.dart';
 
-/// Three import flows from the user's previous app (Figuritas):
+/// Two import flows for bringing a sticker collection from any source:
 ///   1. Pick a screenshot → OCR extracts codes (mobile only).
-///   2. Paste a text export → regex parses every code-like token.
-///   3. (TODO) PDF parser when Figuritas Pro export becomes available.
+///   2. Paste a text list → regex parses every valid code.
 class FiguritasImportPage extends ConsumerWidget {
   const FiguritasImportPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Importar do Figuritas')),
+      appBar: AppBar(title: const Text('Importar coleção')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           const Text(
-            'Vindo do Figuritas? Trazemos sua coleção em segundos.',
+            'Traga sua coleção de qualquer lugar.',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),
-          Text(
-            'Sempre mostramos preview antes de salvar.',
+          const Text(
+            'Sempre mostramos um preview antes de salvar.',
             style: TextStyle(color: AppTheme.inkSoft),
           ),
           const SizedBox(height: 24),
           _ImportTile(
             icon: Icons.image_outlined,
-            title: 'Foto/screenshot do Figuritas',
+            title: 'Foto ou screenshot',
             subtitle: OcrService.isSupported
-                ? 'Tira screenshot da tela "Repetidas" ou "Me faltam" e a gente lê.'
-                : 'Disponível só no celular.',
+                ? 'Tire uma foto ou screenshot mostrando os códigos das figurinhas e a gente lê automaticamente.'
+                : 'Disponível apenas no celular.',
             enabled: OcrService.isSupported,
             onTap: () => _pickAndOcr(context, ref),
           ),
@@ -46,14 +45,6 @@ class FiguritasImportPage extends ConsumerWidget {
             subtitle: 'Ex.: BRA1, BRA10, MEX5, FWC9 — separados por vírgula, espaço ou linha.',
             enabled: true,
             onTap: () => _pasteList(context, ref),
-          ),
-          const SizedBox(height: 12),
-          _ImportTile(
-            icon: Icons.picture_as_pdf_outlined,
-            title: 'PDF do Figuritas Pro (em breve)',
-            subtitle: 'Suporte ao export PDF do Figuritas Pro vem na próxima atualização.',
-            enabled: false,
-            onTap: () {},
           ),
         ],
       ),

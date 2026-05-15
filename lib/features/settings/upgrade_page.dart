@@ -47,9 +47,8 @@ class UpgradePage extends StatelessWidget {
                   price: 'R\$ 9,90',
                   highlight: true,
                   features: const [
-                    'Sem anúncios',
+                    'Remove o banner de anúncios',
                     'Temas premium (paletas e shimmer foil exclusivos)',
-                    'Forjar repetidas ilimitado',
                     'Export PDF da coleção',
                   ],
                 ),
@@ -67,7 +66,7 @@ class UpgradePage extends StatelessWidget {
                 const SizedBox(height: 32),
                 Center(
                   child: Text(
-                    'Compare: Figuritas Pro custa US\$1.99/mês ≈ R\$120/ano.\nFigus Pro = R\$9,90 uma vez.',
+                    'Pagamento único via loja. Sem renovação automática.',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: AppTheme.inkSoft.withValues(alpha: 0.85)),
                   ),
