@@ -35,7 +35,7 @@ class StickerCard extends StatelessWidget {
     final gradient = owned
         ? (foil
             ? StickerGradients.foilShimmer
-            : StickerGradients.owned('${sticker.nationCode ?? 'FWC'}-${sticker.positionInPage}'))
+            : StickerGradients.forNation(sticker.nationCode ?? 'FWC'))
         : null;
 
     final headerText = sticker.nationCode ?? 'FWC';
@@ -205,7 +205,7 @@ class StickerBanner extends StatelessWidget {
     final gradient = owned
         ? (foil
             ? StickerGradients.foilShimmer
-            : StickerGradients.owned('${sticker.nationCode ?? 'FWC'}-banner-${sticker.positionInPage}'))
+            : StickerGradients.forNation(sticker.nationCode ?? 'FWC'))
         : null;
 
     final numericPart = sticker.number.replaceAll(RegExp(r'^[A-Z]+'), '');

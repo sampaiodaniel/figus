@@ -5,89 +5,97 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/providers.dart';
 
-/// "Você" — replaces the Figuritas-style chapadão de itens by grouping things
-/// in cards (Pro pitch + Coleção + Família + Ferramentas + Sobre).
 class YouPage extends ConsumerWidget {
   const YouPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(profilesListProvider);
+    final statsAsync = ref.watch(albumStatsProvider);
+
+    final profileName = profileAsync.maybeWhen(
+      data: (list) => list.firstWhere((p) => p.isActive, orElse: () => list.first).name,
+      orElse: () => '...',
+    );
+
+    final stats = statsAsync.valueOrNull;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Você')),
+      appBar: AppBar(title: const Text('Minha conta')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _ProfileHeader(
-            profileName: profileAsync.maybeWhen(
-              data: (list) => list.firstWhere((p) => p.isActive, orElse: () => list.first).name,
-              orElse: () => 'Você',
-            ),
+            profileName: profileName,
+            owned: stats?.owned,
+            total: stats?.total,
+            foilOwned: stats?.foilOwned,
+            foilTotal: stats?.foilTotal,
             onProfilesTap: () => context.push('/profiles'),
           ),
-          const SizedBox(height: 16),
-          _ProBanner(onTap: () => context.push('/upgrade')),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           _GroupCard(
-            title: 'Sua coleção',
+            title: 'Seu álbum',
             tiles: [
               _Tile(
                 icon: Icons.favorite_rounded,
                 title: 'Seleções favoritas',
-                subtitle: 'Sobem nas sugestões de troca',
+                subtitle: 'Prioridade nas sugestões de troca',
                 onTap: () => context.push('/favorites'),
               ),
               _Tile(
-                icon: Icons.text_fields_rounded,
-                title: 'Importar nomes dos jogadores',
-                subtitle: 'Cole uma lista código,nome',
+                icon: Icons.badge_rounded,
+                title: 'Nomes dos jogadores',
+                subtitle: 'Adicionar ou editar nomes nos slots',
                 onTap: () => context.push('/names-import'),
               ),
               _Tile(
-                icon: Icons.file_upload_rounded,
-                title: 'Importar do Figuritas',
-                subtitle: 'Foto, screenshot ou lista colada',
+                icon: Icons.swap_horiz_rounded,
+                title: 'Migrar de outro app',
+                subtitle: 'Importe do Figuritas ou cole uma lista',
                 onTap: () => context.push('/import'),
               ),
             ],
           ),
           const SizedBox(height: 16),
           _GroupCard(
-            title: 'Comunidade',
+            title: 'Trocas',
             tiles: [
               _Tile(
-                icon: Icons.compare_arrows_rounded,
-                title: 'Comparar com amigo',
-                subtitle: 'Sugestões automáticas de troca',
+                icon: Icons.people_alt_rounded,
+                title: 'Cruzar figurinhas com amigo',
+                subtitle: 'Sugestões automáticas de quem dá o quê',
                 onTap: () => context.push('/compare'),
               ),
-              _Tile(
-                icon: Icons.bluetooth_rounded,
-                title: 'Trocar por aproximação',
-                subtitle: 'Em breve — Bluetooth/Nearby',
+              const _Tile(
+                icon: Icons.bluetooth_searching_rounded,
+                title: 'Troca por aproximação',
+                subtitle: 'Em breve — Bluetooth P2P',
                 onTap: null,
               ),
             ],
           ),
           const SizedBox(height: 16),
+          _ProBanner(onTap: () => context.push('/upgrade')),
+          const SizedBox(height: 16),
           _GroupCard(
-            title: 'Sobre',
+            title: 'Sobre o Figus',
             tiles: [
               _Tile(
-                icon: Icons.help_outline_rounded,
-                title: 'Como funciona',
+                icon: Icons.sports_soccer_rounded,
+                title: 'Como marcar e trocar',
                 onTap: () => _showHowItWorks(context),
               ),
-              _Tile(
-                icon: Icons.coffee_rounded,
-                title: 'Apoie o Figus',
-                subtitle: 'Cafezinho via Pix (em breve)',
+              const _Tile(
+                icon: Icons.volunteer_activism_rounded,
+                title: 'Financiar o time',
+                subtitle: 'Pix — mantém o Figus gratuito pra todos',
                 onTap: null,
               ),
-              _Tile(
-                icon: Icons.code_rounded,
-                title: 'Versão',
-                subtitle: '0.1.0 alpha · open source',
+              const _Tile(
+                icon: Icons.info_outline_rounded,
+                title: 'Versão 0.1.0 alpha',
+                subtitle: 'Código aberto · sem anúncios · sem assinatura',
                 onTap: null,
               ),
             ],
@@ -101,19 +109,26 @@ class YouPage extends ConsumerWidget {
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
-      builder: (_) => Padding(
-        padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+      builder: (_) => const Padding(
+        padding: EdgeInsets.fromLTRB(24, 8, 24, 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: const [
-            Text('Como funciona',
+          children: [
+            Text('Como marcar e trocar',
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
             SizedBox(height: 16),
-            _HowRow(text: 'Toque numa figurinha → marca como tenho'),
-            _HowRow(text: 'Toque de novo → conta como repetida (+1)'),
-            _HowRow(text: 'Pressione e segure → tira UMA repetida por vez'),
-            _HowRow(text: 'Use a aba Forjar pra trocar 5 repetidas por 1 que falta'),
+            _HowRow(icon: Icons.touch_app_rounded, text: 'Toque → marca como tenho'),
+            _HowRow(icon: Icons.touch_app_rounded, text: 'Toque de novo → conta como repetida (+1)'),
+            _HowRow(
+                icon: Icons.touch_app_rounded,
+                text: 'Pressione e segure → remove uma cópia por vez'),
+            _HowRow(
+                icon: Icons.whatshot_rounded,
+                text: 'Forjar: 5 repetidas → 1 que falta'),
+            _HowRow(
+                icon: Icons.people_alt_rounded,
+                text: 'Trocas: compartilhe seu inventário, o amigo cola no app e vê sugestões automáticas'),
             SizedBox(height: 16),
           ],
         ),
@@ -124,11 +139,27 @@ class YouPage extends ConsumerWidget {
 
 class _ProfileHeader extends StatelessWidget {
   final String profileName;
+  final int? owned;
+  final int? total;
+  final int? foilOwned;
+  final int? foilTotal;
   final VoidCallback onProfilesTap;
-  const _ProfileHeader({required this.profileName, required this.onProfilesTap});
+
+  const _ProfileHeader({
+    required this.profileName,
+    required this.owned,
+    required this.total,
+    required this.foilOwned,
+    required this.foilTotal,
+    required this.onProfilesTap,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final pct = (owned != null && total != null && total! > 0)
+        ? (owned! / total! * 100).toStringAsFixed(1)
+        : null;
+
     return InkWell(
       onTap: onProfilesTap,
       borderRadius: BorderRadius.circular(20),
@@ -158,10 +189,16 @@ class _ProfileHeader extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(profileName,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 2),
-                  const Text('toque pra trocar de perfil ou criar novo',
-                      style: TextStyle(fontSize: 12, color: AppTheme.inkSoft)),
+                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 3),
+                  if (pct != null)
+                    Text(
+                      '$owned/$total figurinhas · $pct% · ${foilOwned ?? 0}/${foilTotal ?? 0} brilhantes',
+                      style: const TextStyle(fontSize: 12, color: AppTheme.inkSoft),
+                    )
+                  else
+                    const Text('toque para trocar de perfil',
+                        style: TextStyle(fontSize: 12, color: AppTheme.inkSoft)),
                 ],
               ),
             ),
@@ -192,27 +229,27 @@ class _ProBanner extends StatelessWidget {
           ),
           borderRadius: BorderRadius.circular(20),
         ),
-        child: Row(
+        child: const Row(
           children: [
-            const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 32),
-            const SizedBox(width: 14),
-            const Expanded(
+            Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 32),
+            SizedBox(width: 14),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Figus Pro',
+                  Text('Figus Pro — R\$ 9,90 único',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w800,
                       )),
                   SizedBox(height: 2),
-                  Text('R\$ 9,90 uma vez · sem assinatura',
-                      style: TextStyle(color: Colors.white)),
+                  Text('Sem anúncios · temas · forja ilimitada',
+                      style: TextStyle(color: Colors.white70, fontSize: 13)),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: Colors.white),
+            Icon(Icons.chevron_right_rounded, color: Colors.white),
           ],
         ),
       ),
@@ -274,8 +311,9 @@ class _Tile extends StatelessWidget {
 }
 
 class _HowRow extends StatelessWidget {
+  final IconData icon;
   final String text;
-  const _HowRow({required this.text});
+  const _HowRow({required this.icon, required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -284,9 +322,9 @@ class _HowRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.check_circle, color: AppTheme.seed, size: 20),
+          Icon(icon, color: AppTheme.seed, size: 20),
           const SizedBox(width: 12),
-          Expanded(child: Text(text)),
+          Expanded(child: Text(text, style: const TextStyle(height: 1.4))),
         ],
       ),
     );

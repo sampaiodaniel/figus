@@ -59,8 +59,8 @@ class TradesPage extends ConsumerWidget {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      'Cole o inventário do amigo e veja trocas sugeridas: 1×1 do '
-                      'mesmo tipo primeiro, depois 1 brilhante por 2 normais.',
+                      'Compartilhe seu inventário (botão ↗ lá dentro), mande pro amigo. '
+                      'Ele cola no app e vê as trocas sugeridas automaticamente.',
                       style: TextStyle(color: Colors.white, height: 1.4),
                     ),
                   ],
