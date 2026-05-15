@@ -62,6 +62,7 @@ class AppDatabase extends _$AppDatabase {
           pageNumber: s.pageNumber,
           positionInPage: s.positionInPage,
           label: s.label,
+          playerName: Value(s.playerName),
         ));
       }
 

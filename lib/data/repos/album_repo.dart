@@ -78,12 +78,17 @@ class AlbumRepo {
 
     final views = stickerRows.map(toView).where(matchesFilter).where(matchesSearch).toList();
 
-    // Group by section: specials (FWC) first, then by nation order.
-    final specials = views.where((v) => v.nationCode == null).toList()
-      ..sort((a, b) {
-        if (a.pageNumber != b.pageNumber) return a.pageNumber.compareTo(b.pageNumber);
-        return a.positionInPage.compareTo(b.positionInPage);
-      });
+    // Specials split into two groups: "FWC" (FWC00 + FWC1-8 intro) at the
+    // top and "FWC9+" (legends, FWC9..) at the bottom. Page 0 is the intro
+    // block in the seed, page 100 the legends block.
+    final introSpecials = views
+        .where((v) => v.nationCode == null && v.pageNumber == 0)
+        .toList()
+      ..sort((a, b) => a.positionInPage.compareTo(b.positionInPage));
+    final legendSpecials = views
+        .where((v) => v.nationCode == null && v.pageNumber >= 100)
+        .toList()
+      ..sort((a, b) => a.positionInPage.compareTo(b.positionInPage));
 
     final byNation = <String, List<StickerView>>{};
     for (final v in views.where((v) => v.nationCode != null)) {
@@ -95,15 +100,15 @@ class AlbumRepo {
 
     final sections = <AlbumSection>[];
 
-    if (specials.isNotEmpty) {
-      final ownedSpecials = specials.where((v) => v.status != StickerOwnership.missing).length;
+    if (introSpecials.isNotEmpty) {
+      final owned = introSpecials.where((v) => v.status != StickerOwnership.missing).length;
       sections.add(AlbumSection(
         key: 'FWC',
-        title: 'FIFA — Especiais',
+        title: 'FWC — FIFA WC 2026',
         flag: '🏆',
-        ownedCount: ownedSpecials,
-        totalCount: specials.length,
-        stickers: specials,
+        ownedCount: owned,
+        totalCount: introSpecials.length,
+        stickers: introSpecials,
       ));
     }
 
@@ -119,6 +124,18 @@ class AlbumRepo {
         ownedCount: owned,
         totalCount: list.length,
         stickers: list,
+      ));
+    }
+
+    if (legendSpecials.isNotEmpty) {
+      final owned = legendSpecials.where((v) => v.status != StickerOwnership.missing).length;
+      sections.add(AlbumSection(
+        key: 'FWC9+',
+        title: 'FWC9+ — Lendas da Copa',
+        flag: '⭐',
+        ownedCount: owned,
+        totalCount: legendSpecials.length,
+        stickers: legendSpecials,
       ));
     }
 

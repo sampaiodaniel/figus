@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -10,9 +11,10 @@ import '../../data/providers.dart';
 import '../../data/repos/album_repo.dart';
 import '../../domain/models/album_view_models.dart';
 import '../share/share_service.dart';
+import 'widgets/nation_panel.dart';
 
-/// Coleção — index of nations. Tap a nation → opens its dedicated page
-/// laid out like the physical album.
+/// Coleção — list of accordions (FWC + 48 nations + FWC9+ legends + CC).
+/// Tapping a header expands its sticker grid inline, tap again collapses.
 class AlbumPage extends ConsumerStatefulWidget {
   const AlbumPage({super.key});
   @override
@@ -21,10 +23,14 @@ class AlbumPage extends ConsumerStatefulWidget {
 
 class _AlbumPageState extends ConsumerState<AlbumPage> {
   final _searchCtrl = TextEditingController();
+  final _scrollCtrl = ScrollController();
+  final _expanded = <String>{};
+  List<AlbumSection>? _cached;
 
   @override
   void dispose() {
     _searchCtrl.dispose();
+    _scrollCtrl.dispose();
     super.dispose();
   }
 
@@ -37,11 +43,6 @@ class _AlbumPageState extends ConsumerState<AlbumPage> {
       appBar: AppBar(
         title: const Text('Coleção'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.qr_code_scanner_rounded),
-            tooltip: 'Escanear página',
-            onPressed: () => context.push('/scan'),
-          ),
           IconButton(
             icon: const Icon(Icons.insights_rounded),
             tooltip: 'Progresso',
@@ -66,7 +67,7 @@ class _AlbumPageState extends ConsumerState<AlbumPage> {
               controller: _searchCtrl,
               onChanged: (v) => ref.read(albumSearchProvider.notifier).state = v,
               decoration: InputDecoration(
-                hintText: 'Buscar seleção ou figurinha',
+                hintText: 'Buscar seleção, jogador ou número',
                 prefixIcon: const Icon(Icons.search_rounded),
                 suffixIcon: _searchCtrl.text.isEmpty
                     ? null
@@ -87,25 +88,122 @@ class _AlbumPageState extends ConsumerState<AlbumPage> {
               ),
             ),
           ),
-          Expanded(
-            child: sectionsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Erro: $e')),
-              data: (sections) {
-                if (sections.isEmpty) {
-                  return const Center(child: Text('Nenhuma seleção encontrada'));
-                }
-                return ListView.builder(
-                  key: const PageStorageKey('nations-list'),
-                  itemCount: sections.length,
-                  itemBuilder: (_, i) => _NationCard(section: sections[i]),
-                );
-              },
+          Expanded(child: _buildList(sectionsAsync)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildList(AsyncValue<List<AlbumSection>> async) {
+    final data = async.value ?? _cached;
+    if (async.hasValue) _cached = async.value;
+    if (data == null) {
+      return async.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Center(child: Text('Erro: ${async.error}'));
+    }
+    if (data.isEmpty) {
+      return const Center(child: Text('Nenhuma seleção encontrada'));
+    }
+    return ListView.builder(
+      key: const PageStorageKey('nations-list'),
+      controller: _scrollCtrl,
+      itemCount: data.length + 1, // +1 → "CC" placeholder
+      itemBuilder: (_, i) {
+        if (i == data.length) return const _CcPlaceholder();
+        final s = data[i];
+        return NationPanel(
+          section: s,
+          expanded: _expanded.contains(s.key),
+          onToggle: () => setState(() {
+            if (!_expanded.add(s.key)) _expanded.remove(s.key);
+          }),
+          onTapSticker: _onTapSticker,
+          onLongPressSticker: _onLongPressSticker,
+        );
+      },
+    );
+  }
+
+  Future<void> _onTapSticker(StickerView s) async {
+    HapticFeedback.lightImpact();
+    await ref.read(collectionRepoProvider).tapSticker(s.id);
+    ref.read(collectionVersionProvider.notifier).state++;
+  }
+
+  Future<void> _onLongPressSticker(StickerView s) async {
+    HapticFeedback.mediumImpact();
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetCtx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                s.displayName == null ? s.number : '${s.number} · ${s.displayName}',
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+              ),
             ),
+            if (s.status != StickerOwnership.missing)
+              ListTile(
+                dense: true,
+                leading: const Icon(Icons.remove_circle_outline_rounded),
+                title: const Text('Remover 1 cópia'),
+                onTap: () => Navigator.pop(sheetCtx, 'remove'),
+              ),
+            ListTile(
+              dense: true,
+              leading: const Icon(Icons.edit_rounded),
+              title: Text(s.playerName == null ? 'Definir nome' : 'Editar nome'),
+              onTap: () => Navigator.pop(sheetCtx, 'name'),
+            ),
+            const SizedBox(height: 4),
+          ],
+        ),
+      ),
+    );
+    if (action == null || !mounted) return;
+    switch (action) {
+      case 'remove':
+        await ref.read(collectionRepoProvider).removeSticker(s.id);
+        break;
+      case 'name':
+        await _editName(s);
+        break;
+    }
+    ref.read(collectionVersionProvider.notifier).state++;
+  }
+
+  Future<void> _editName(StickerView st) async {
+    final ctrl = TextEditingController(text: st.playerName ?? '');
+    final name = await showDialog<String?>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: Text('Nome — ${st.number}'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'ex.: Alisson'),
+        ),
+        actions: [
+          if (st.playerName != null)
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx, ''),
+              child: const Text('Apagar'),
+            ),
+          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancelar')),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogCtx, ctrl.text.trim()),
+            child: const Text('Salvar'),
           ),
         ],
       ),
     );
+    if (name == null) return;
+    await ref.read(collectionRepoProvider).setPlayerName(st.id, name.isEmpty ? null : name);
   }
 
   void _showShareSheet() {
@@ -212,108 +310,27 @@ class _FilterChips extends StatelessWidget {
   }
 }
 
-class _FlagThumb extends StatelessWidget {
-  final String code;
-  const _FlagThumb({required this.code});
-
+class _CcPlaceholder extends StatelessWidget {
+  const _CcPlaceholder();
   @override
   Widget build(BuildContext context) {
-    final iso = paniniToIso2[code];
-    return Container(
-      width: 44,
-      height: 44,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: AppTheme.slotSoft,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: iso == null
-          ? Text(
-              code == 'FWC' ? '🏆' : code,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
-            )
-          : CountryFlag.fromCountryCode(
-              iso,
-              shape: const RoundedRectangle(6),
-              width: 36,
-              height: 26,
-            ),
-    );
-  }
-}
-
-class _NationCard extends StatelessWidget {
-  final AlbumSection section;
-  const _NationCard({required this.section});
-
-  @override
-  Widget build(BuildContext context) {
-    final progress = section.totalCount == 0
-        ? 0.0
-        : section.ownedCount / section.totalCount;
-    final complete = section.ownedCount == section.totalCount && section.totalCount > 0;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: InkWell(
-        onTap: () => context.push('/nation/${section.key}'),
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-          child: Row(
-            children: [
-              _FlagThumb(code: section.key),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            section.title,
-                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (complete)
-                          const Padding(
-                            padding: EdgeInsets.only(left: 6),
-                            child: Icon(Icons.check_circle_rounded,
-                                color: Color(0xFF22C58A), size: 18),
-                          ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 6),
-                          child: Text(
-                            '${section.ownedCount}/${section.totalCount}',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.inkSoft,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        minHeight: 6,
-                        backgroundColor: AppTheme.slotSoft,
-                        color: complete ? const Color(0xFF22C58A) : AppTheme.seed,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(Icons.chevron_right_rounded, color: AppTheme.inkSoft),
-            ],
+      child: ListTile(
+        leading: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: AppTheme.slotSoft,
+            borderRadius: BorderRadius.circular(12),
           ),
+          child: const Icon(Icons.local_drink_rounded, color: AppTheme.inkSoft),
         ),
+        title: const Text('CC · Coca-Cola',
+            style: TextStyle(fontWeight: FontWeight.w700)),
+        subtitle: const Text('Coleção extra (em breve)',
+            style: TextStyle(fontSize: 12, color: AppTheme.inkSoft)),
+        trailing: const Icon(Icons.lock_outline_rounded, color: AppTheme.inkSoft),
       ),
     );
   }
