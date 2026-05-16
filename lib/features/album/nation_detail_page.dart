@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/country_codes.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/figus_colors.dart';
 import '../../data/providers.dart';
 import '../../data/seeds/wc2026_matches_seed.dart';
 import '../../domain/models/album_view_models.dart';
@@ -121,13 +122,14 @@ class _StatsHeader extends StatelessWidget {
         .fold(0, (sum, s) => sum + s.duplicateCount);
     final pct = total > 0 ? (owned / total * 100).round() : 0;
 
+    final c = context.fc;
     final iso = paniniToIso2[section.key];
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       decoration: BoxDecoration(
-        color: AppTheme.ink,
-        border: const Border(bottom: BorderSide(color: AppTheme.ink4)),
+        color: c.card,
+        border: Border(bottom: BorderSide(color: c.border)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -142,7 +144,7 @@ class _StatsHeader extends StatelessWidget {
             Container(
               width: 48, height: 34,
               decoration: BoxDecoration(
-                color: AppTheme.slotSoft,
+                color: c.cardAlt,
                 borderRadius: BorderRadius.circular(6),
               ),
               alignment: Alignment.center,
@@ -159,20 +161,20 @@ class _StatsHeader extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: AppTheme.gold,
+                        color: c.accent,
                         letterSpacing: 0.4,
                       )),
                 const SizedBox(height: 6),
                 Row(
                   children: [
                     _Stat(label: 'TENHO', value: '$owned',
-                        color: AppTheme.gold),
+                        color: c.accent),
                     const SizedBox(width: 16),
                     _Stat(label: 'FALTAM', value: '$missing',
-                        color: AppTheme.inkSoft),
+                        color: c.textMuted),
                     const SizedBox(width: 16),
                     _Stat(label: 'REPETIDAS', value: '$duplicates',
-                        color: const Color(0xFF1F66FF)),
+                        color: AppTheme.pulp),
                   ],
                 ),
               ],
@@ -187,15 +189,15 @@ class _StatsHeader extends StatelessWidget {
                 child: CircularProgressIndicator(
                   value: pct / 100,
                   strokeWidth: 4,
-                  backgroundColor: AppTheme.slotSoft,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.gold),
+                  backgroundColor: c.border,
+                  valueColor: AlwaysStoppedAnimation<Color>(c.accent),
                 ),
               ),
               Text('$pct%',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
-                    color: AppTheme.gold,
+                    color: c.accent,
                   )),
             ],
           ),
@@ -213,14 +215,15 @@ class _Stat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(value,
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: color)),
         Text(label,
-            style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600,
-                color: AppTheme.inkSoft, letterSpacing: 0.4)),
+            style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600,
+                color: c.textMuted, letterSpacing: 0.4)),
       ],
     );
   }
@@ -440,7 +443,7 @@ class _PageDivider extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 letterSpacing: 1.4,
-                color: AppTheme.inkSoft.withValues(alpha: 0.7),
+                color: context.fc.textMuted.withValues(alpha: 0.7),
                 fontWeight: FontWeight.w700,
               )),
         ),
