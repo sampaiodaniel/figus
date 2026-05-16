@@ -62,12 +62,15 @@ Future<void> _showSyncOptions(BuildContext context, WidgetRef ref, String email)
               ref.invalidate(collectionVersionProvider);
               // ignore: avoid_print
               print('[Sync] pushed=$pushed remoteRows=${remote.length} apply=$applyStats');
+              final sentPart =
+                  '${pushed.markedStickers} álbum + ${pushed.extraCopies} rep';
+              final recvPart =
+                  '${applyStats.markedApplied} álbum + ${applyStats.extrasApplied} rep';
               messenger
                 ..clearSnackBars()
                 ..showSnackBar(SnackBar(
                   content: Text(
-                    'Sync · ${pushed.markedStickers} enviada(s), '
-                    '${applyStats.markedApplied} recebida(s)'
+                    'Sync · enviadas: $sentPart · recebidas: $recvPart'
                     '${applyStats.unmatched > 0 ? " · ${applyStats.unmatched} código(s) não reconhecido(s)" : ""}',
                   ),
                   duration: const Duration(seconds: 6),

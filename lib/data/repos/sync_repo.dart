@@ -82,6 +82,10 @@ class SyncRepo {
             .from(_table)
             .select('sticker_number,status,duplicate_count')
             .eq('user_id', userId!)
+            // Deterministic order is REQUIRED for pagination — without it
+            // Postgres can return overlapping/missing rows across pages and
+            // the user has to sync twice to converge.
+            .order('sticker_number')
             .range(offset, offset + pageSize - 1);
         if (rows.isEmpty) break;
         for (final r in rows) {

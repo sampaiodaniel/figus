@@ -53,19 +53,19 @@ class CollectionRepo {
   }
 
   /// Apply remote entries pulled from Supabase without re-pushing them (avoids loop).
-  ///
-  /// Returns stats about what actually matched + got written, so the UI can
-  /// surface "X recebidas · Y ignoradas (códigos não reconhecidos)" instead
-  /// of pretending everything applied.
-  Future<({int applied, int unmatched, int markedApplied})> applyRemoteEntries(
-      Map<String, ({String status, int dupCount})> remote) async {
-    if (remote.isEmpty) return (applied: 0, unmatched: 0, markedApplied: 0);
+  Future<({int applied, int unmatched, int markedApplied, int extrasApplied})>
+      applyRemoteEntries(
+          Map<String, ({String status, int dupCount})> remote) async {
+    if (remote.isEmpty) {
+      return (applied: 0, unmatched: 0, markedApplied: 0, extrasApplied: 0);
+    }
     final pid = await _activeProfileId();
     final all = await db.select(db.stickers).get();
     final byNumber = {for (final s in all) s.number: s};
     var applied = 0;
     var unmatched = 0;
     var markedApplied = 0;
+    var extrasApplied = 0;
     final unmatchedSamples = <String>[];
     await db.transaction(() async {
       for (final entry in remote.entries) {
@@ -80,38 +80,43 @@ class CollectionRepo {
         if (entry.value.status == 'owned' || entry.value.status == 'duplicate') {
           markedApplied++;
         }
+        if (entry.value.status == 'duplicate') {
+          extrasApplied += entry.value.dupCount;
+        }
       }
     });
     // ignore: avoid_print
     print('[CollectionRepo] applyRemoteEntries '
         'pid=$pid remote=${remote.length} applied=$applied unmatched=$unmatched '
-        'markedApplied=$markedApplied unmatchedSamples=$unmatchedSamples');
+        'markedApplied=$markedApplied extras=$extrasApplied '
+        'unmatchedSamples=$unmatchedSamples');
     return (
       applied: applied,
       unmatched: unmatched,
       markedApplied: markedApplied,
+      extrasApplied: extrasApplied,
     );
   }
 
   /// Result of a bulk push: how many rows actually represent things the user
   /// has (owned + duplicates) vs the raw row count we pushed (including
-  /// missing markers needed for sync correctness).
-  ///
-  /// We pass both back so the UI can show user-friendly numbers while the
-  /// repo still pushes the full set needed for cross-device consistency.
-  Future<({int totalRows, int markedStickers})> pushAllLocal() async {
+  /// missing markers needed for sync correctness), plus the total extra
+  /// copies (duplicate_count sum) so the UI can show "X figurinhas + Y
+  /// repetidas".
+  Future<({int totalRows, int markedStickers, int extraCopies})> pushAllLocal() async {
     if (sync == null || !sync!.isSignedIn) {
-      return (totalRows: 0, markedStickers: 0);
+      return (totalRows: 0, markedStickers: 0, extraCopies: 0);
     }
     final pid = await _activeProfileId();
     final entries = await (db.select(db.collections)
           ..where((c) => c.profileId.equals(pid)))
         .get();
-    if (entries.isEmpty) return (totalRows: 0, markedStickers: 0);
+    if (entries.isEmpty) return (totalRows: 0, markedStickers: 0, extraCopies: 0);
     final stickers = await db.select(db.stickers).get();
     final byId = {for (final s in stickers) s.id: s};
     final payload = <({String stickerNumber, String status, int dupCount})>[];
     var marked = 0;
+    var extras = 0;
     for (final e in entries) {
       final sticker = byId[e.stickerId];
       if (sticker == null) continue;
@@ -121,11 +126,13 @@ class CollectionRepo {
         dupCount: e.duplicateCount,
       ));
       if (e.status == 'owned' || e.status == 'duplicate') marked++;
+      if (e.status == 'duplicate') extras += e.duplicateCount;
     }
     final ok = await sync!.pushEntriesBulk(payload);
     return (
       totalRows: ok ? payload.length : 0,
       markedStickers: ok ? marked : 0,
+      extraCopies: ok ? extras : 0,
     );
   }
 
