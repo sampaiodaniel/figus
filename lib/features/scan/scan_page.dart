@@ -8,6 +8,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../data/providers.dart';
+import '../pro/paywall_sheet.dart';
+import '../pro/pro_service.dart';
 import 'ocr_service.dart';
 import 'review_detections_sheet.dart';
 
@@ -31,6 +33,12 @@ class _ScanPageState extends ConsumerState<ScanPage> {
   Future<void> _initCamera() async {
     if (!OcrService.isSupported) {
       setState(() => _error = 'O scan funciona só no celular (iOS/Android).');
+      return;
+    }
+    // Check daily limit before opening camera
+    final pro = ref.read(proProvider);
+    if (!pro.canScanOcr) {
+      if (mounted) await showPaywall(context, trigger: PaywallContext.ocrLimit);
       return;
     }
     setState(() => _initializing = true);
@@ -91,6 +99,8 @@ class _ScanPageState extends ConsumerState<ScanPage> {
         return;
       }
       await showReviewDetectionsSheet(context, ref, detections);
+      // Count this scan against the daily quota (no-op for Pro)
+      await ref.read(proProvider.notifier).incrementOcrScan();
       // Cleanup temp file
       try {
         await File(imagePath).delete();
@@ -119,7 +129,13 @@ class _ScanPageState extends ConsumerState<ScanPage> {
       return Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(_error!)));
     }
     if (_controller == null) {
-      return _ScanIntro(onStart: _initCamera, loading: _initializing);
+      final pro = ref.watch(proProvider);
+      return _ScanIntro(
+        onStart: _initCamera,
+        loading: _initializing,
+        scansRemaining: pro.ocrScansRemaining,
+        isPro: pro.isActive,
+      );
     }
     return Column(
       children: [
@@ -168,7 +184,14 @@ class _ScanPageState extends ConsumerState<ScanPage> {
 class _ScanIntro extends StatelessWidget {
   final VoidCallback onStart;
   final bool loading;
-  const _ScanIntro({required this.onStart, required this.loading});
+  final int scansRemaining;
+  final bool isPro;
+  const _ScanIntro({
+    required this.onStart,
+    required this.loading,
+    required this.scansRemaining,
+    required this.isPro,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -193,7 +216,40 @@ class _ScanIntro extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyle(color: AppTheme.inkSoft),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
+          // OCR scan quota indicator
+          if (!isPro)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: scansRemaining == 0
+                    ? const Color(0xFFFFEBEB)
+                    : AppTheme.slotSoft,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    scansRemaining == 0 ? Icons.warning_rounded : Icons.document_scanner_rounded,
+                    size: 16,
+                    color: scansRemaining == 0 ? Colors.red : AppTheme.inkSoft,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    scansRemaining == 0
+                        ? 'Limite diário atingido (3/3) — renova amanhã'
+                        : 'Scans hoje: ${3 - scansRemaining}/3 • $scansRemaining restante${scansRemaining == 1 ? '' : 's'}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: scansRemaining == 0 ? Colors.red : AppTheme.inkSoft,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (!isPro) const SizedBox(height: 16),
           FilledButton.icon(
             onPressed: loading ? null : onStart,
             icon: loading

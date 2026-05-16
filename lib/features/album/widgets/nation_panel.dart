@@ -89,15 +89,17 @@ class NationPanel extends StatelessWidget {
                             )),
                           ),
                         const SizedBox(height: 4),
-                        ClipRRect(
+                        Builder(builder: (ctx) => ClipRRect(
                           borderRadius: BorderRadius.circular(6),
                           child: LinearProgressIndicator(
                             value: progress,
                             minHeight: 6,
                             backgroundColor: AppTheme.slotSoft,
-                            color: complete ? const Color(0xFF22C58A) : AppTheme.seed,
+                            color: complete
+                                ? const Color(0xFF22C58A)
+                                : Theme.of(ctx).colorScheme.primary,
                           ),
-                        ),
+                        )),
                       ],
                     ),
                   ),

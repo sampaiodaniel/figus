@@ -5,6 +5,7 @@ import 'db/database.dart';
 import 'repos/album_repo.dart';
 import 'repos/collection_repo.dart';
 import 'repos/profile_repo.dart';
+import 'repos/sync_repo.dart';
 
 final databaseProvider = Provider<AppDatabase>((ref) {
   final db = AppDatabase();
@@ -13,7 +14,10 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 });
 
 final albumRepoProvider = Provider<AlbumRepo>((ref) => AlbumRepo(ref.watch(databaseProvider)));
-final collectionRepoProvider = Provider<CollectionRepo>((ref) => CollectionRepo(ref.watch(databaseProvider)));
+final collectionRepoProvider = Provider<CollectionRepo>((ref) => CollectionRepo(
+  ref.watch(databaseProvider),
+  sync: ref.watch(syncRepoProvider),
+));
 final profileRepoProvider = Provider<ProfileRepo>((ref) => ProfileRepo(ref.watch(databaseProvider)));
 
 /// Bumped manually after every mutation to invalidate album/stats queries.

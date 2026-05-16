@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../data/providers.dart';
+import '../../data/repos/sync_repo.dart';
+import '../auth/auth_page.dart';
+import '../pro/pro_service.dart';
 
 class YouPage extends ConsumerWidget {
   const YouPage({super.key});
@@ -12,6 +15,8 @@ class YouPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(profilesListProvider);
     final statsAsync = ref.watch(albumStatsProvider);
+    final pro = ref.watch(proProvider);
+    final sync = ref.read(syncRepoProvider);
 
     final profileName = profileAsync.maybeWhen(
       data: (list) => list.firstWhere((p) => p.isActive, orElse: () => list.first).name,
@@ -37,6 +42,18 @@ class YouPage extends ConsumerWidget {
           _GroupCard(
             title: 'Seu álbum',
             tiles: [
+              _Tile(
+                icon: Icons.insights_rounded,
+                title: 'Estatísticas',
+                subtitle: 'Progresso detalhado por seleção e categoria',
+                onTap: () => context.push('/progress'),
+              ),
+              _Tile(
+                icon: Icons.palette_rounded,
+                title: 'Temas',
+                subtitle: 'Personalizar cores do app',
+                onTap: () => context.push('/themes'),
+              ),
               _Tile(
                 icon: Icons.favorite_rounded,
                 title: 'Seleções favoritas',
@@ -70,7 +87,15 @@ class YouPage extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 16),
-          _ProBanner(onTap: () => context.push('/upgrade')),
+          // Sync / auth section
+          _SyncCard(sync: sync),
+          const SizedBox(height: 16),
+
+          // Pro status tile (trial countdown or upgrade banner)
+          if (pro.isTrial)
+            _TrialBanner(daysLeft: pro.trialDaysLeft, onTap: () => context.push('/upgrade'))
+          else if (!pro.isPro)
+            _ProBanner(onTap: () => context.push('/upgrade')),
           const SizedBox(height: 16),
           _GroupCard(
             title: 'Sobre o Figus',
@@ -201,6 +226,55 @@ class _ProfileHeader extends StatelessWidget {
   }
 }
 
+class _TrialBanner extends StatelessWidget {
+  final int daysLeft;
+  final VoidCallback onTap;
+  const _TrialBanner({required this.daysLeft, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF007A5A), Color(0xFF22C58A)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.timer_rounded, color: Colors.white, size: 32),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Trial Pro ativo',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      )),
+                  Text(
+                    '$daysLeft dia${daysLeft == 1 ? '' : 's'} restante${daysLeft == 1 ? '' : 's'} — toque para comprar e manter',
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: Colors.white),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ProBanner extends StatelessWidget {
   final VoidCallback onTap;
   const _ProBanner({required this.onTap});
@@ -228,19 +302,100 @@ class _ProBanner extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Figus Pro — R\$ 9,90 único',
+                  Text('Figus Pro — a partir de R\$ 6,90/mês',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
                       )),
                   SizedBox(height: 2),
-                  Text('Remove anúncios · temas premium',
+                  Text('Sem anúncios · temas · sync · mais barato que Figuritas',
                       style: TextStyle(color: Colors.white70, fontSize: 13)),
                 ],
               ),
             ),
             Icon(Icons.chevron_right_rounded, color: Colors.white),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SyncCard extends StatelessWidget {
+  final SyncRepo sync;
+  const _SyncCard({required this.sync});
+
+  @override
+  Widget build(BuildContext context) {
+    final isSignedIn = sync.isSignedIn;
+    final email = sync.userEmail;
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: isSignedIn
+                    ? const Color(0xFF22C58A).withValues(alpha: 0.1)
+                    : AppTheme.slotSoft,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isSignedIn ? Icons.cloud_done_rounded : Icons.cloud_off_rounded,
+                color: isSignedIn ? const Color(0xFF22C58A) : AppTheme.inkSoft,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isSignedIn ? 'Sync ativo' : 'Sync desativado',
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                  ),
+                  Text(
+                    isSignedIn
+                        ? email ?? 'Conta conectada'
+                        : 'Entre para sincronizar entre dispositivos',
+                    style: const TextStyle(fontSize: 12, color: AppTheme.inkSoft),
+                  ),
+                ],
+              ),
+            ),
+            if (isSignedIn)
+              TextButton(
+                onPressed: () async {
+                  await sync.signOut();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Conta desconectada')),
+                    );
+                  }
+                },
+                child: const Text('Sair'),
+              )
+            else
+              FilledButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(builder: (_) => const AuthPage()),
+                  );
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppTheme.seed,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                ),
+                child: const Text('Entrar'),
+              ),
           ],
         ),
       ),

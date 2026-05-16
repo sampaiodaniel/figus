@@ -15,7 +15,7 @@ if (Test-Path "$root\.ghpages") {
     git worktree remove --force .ghpages 2>$null
     Remove-Item -Recurse -Force "$root\.ghpages" -ErrorAction SilentlyContinue
 }
-git branch -D deploy-temp 2>$null
+try { git branch -D deploy-temp 2>$null } catch {}
 
 Write-Host "Deploying to gh-pages..." -ForegroundColor Cyan
 git fetch origin gh-pages
@@ -31,6 +31,6 @@ git push origin HEAD:gh-pages
 
 Set-Location $root
 git worktree remove .ghpages
-git branch -D deploy-temp 2>$null
+try { git branch -D deploy-temp 2>$null } catch {}
 
 Write-Host "Done! https://sampaiodaniel.github.io/figus/" -ForegroundColor Green

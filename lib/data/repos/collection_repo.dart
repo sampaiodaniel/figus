@@ -1,12 +1,14 @@
 import 'package:drift/drift.dart';
 
 import '../db/database.dart';
+import 'sync_repo.dart';
 
 /// Mutates ownership for a single sticker.
 /// UX from refs:  tap → owned · tap again → duplicate (+1) · long press → missing.
 class CollectionRepo {
   final AppDatabase db;
-  CollectionRepo(this.db);
+  final SyncRepo? sync;
+  CollectionRepo(this.db, {this.sync});
 
   Future<int> _activeProfileId() async {
     final p = await (db.select(db.profiles)..where((t) => t.isActive.equals(true))).getSingleOrNull();
@@ -36,6 +38,14 @@ class CollectionRepo {
           updatedAt: Value(DateTime.now()),
         ),
       );
+    }
+    // Fire-and-forget sync — look up sticker number for the remote key
+    if (sync != null) {
+      final sticker = await (db.select(db.stickers)..where((s) => s.id.equals(stickerId)))
+          .getSingleOrNull();
+      if (sticker != null) {
+        sync!.pushEntry(sticker.number, status, dupCount);
+      }
     }
   }
 

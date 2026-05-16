@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+
+import '../ads/interstitial_helper.dart';
+import '../pro/pro_service.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../data/providers.dart';
 import '../../data/repos/album_repo.dart';
 import '../../domain/models/album_view_models.dart';
-import '../ads/banner_ad_widget.dart';
 import '../share/share_service.dart';
 import 'widgets/nation_panel.dart';
 
@@ -41,16 +42,6 @@ class _AlbumPageState extends ConsumerState<AlbumPage> {
       appBar: AppBar(
         title: const Text('Coleção'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.emoji_events_rounded),
-            tooltip: 'Copa 2026',
-            onPressed: () => context.push('/copa'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.insights_rounded),
-            tooltip: 'Progresso',
-            onPressed: () => context.push('/progress'),
-          ),
           IconButton(
             icon: const Icon(Icons.ios_share_rounded),
             tooltip: 'Compartilhar',
@@ -92,7 +83,6 @@ class _AlbumPageState extends ConsumerState<AlbumPage> {
             ),
           ),
           Expanded(child: _buildList(sectionsAsync)),
-          const BannerAdWidget(),
         ],
       ),
     );
@@ -132,6 +122,8 @@ class _AlbumPageState extends ConsumerState<AlbumPage> {
     HapticFeedback.lightImpact();
     await ref.read(collectionRepoProvider).tapSticker(s.id);
     ref.read(collectionVersionProvider.notifier).state++;
+    final isPro = ref.read(proProvider).isActive;
+    InterstitialHelper.onStickerTap(isPro: isPro);
   }
 
   Future<void> _onLongPressSticker(StickerView s) async {
@@ -209,6 +201,7 @@ class _FilterChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
     const items = <(AlbumFilter, String, IconData)>[
       (AlbumFilter.all, 'Todas', Icons.apps_rounded),
       (AlbumFilter.missing, 'Me faltam', Icons.radar_rounded),
@@ -233,7 +226,7 @@ class _FilterChips extends StatelessWidget {
                   color: current == f ? Colors.white : AppTheme.inkSoft,
                   fontWeight: FontWeight.w600,
                 ),
-                selectedColor: AppTheme.seed,
+                selectedColor: primary,
                 backgroundColor: AppTheme.slotSoft,
                 showCheckmark: false,
                 side: BorderSide.none,

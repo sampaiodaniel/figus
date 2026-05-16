@@ -4,6 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/theme/app_theme.dart';
+import 'features/ads/banner_ad_widget.dart';
+import 'features/ads/interstitial_helper.dart';
+import 'features/pro/theme_picker_page.dart';
+import 'features/pro/theme_service.dart';
 import 'features/album/album_page.dart';
 import 'features/album/nation_detail_page.dart';
 import 'features/copa/copa_page.dart';
@@ -31,6 +35,11 @@ class FigusApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final onboardedAsync = ref.watch(onboardedProvider);
+    // Effective seed: preview overrides saved theme during 10s demo
+    final savedSeed = ref.watch(themeSeedProvider);
+    final previewSeed = ref.watch(previewThemeSeedProvider);
+    final effectiveSeed = (previewSeed ?? savedSeed).color;
+
     final router = GoRouter(
       initialLocation: '/',
       redirect: (context, state) {
@@ -56,6 +65,8 @@ class FigusApp extends ConsumerWidget {
         ),
         GoRoute(path: '/scan', builder: (_, __) => const ScanPage()),
         GoRoute(path: '/progress', builder: (_, __) => const StatsPage()),
+        GoRoute(path: '/themes', builder: (_, __) => const ThemePickerPage()),
+
         GoRoute(path: '/profiles', builder: (_, __) => const ProfilesPage()),
         GoRoute(path: '/import', builder: (_, __) => const FiguritasImportPage()),
         GoRoute(path: '/upgrade', builder: (_, __) => const UpgradePage()),
@@ -65,11 +76,14 @@ class FigusApp extends ConsumerWidget {
       ],
     );
 
+    // Preload interstitial on app start
+    InterstitialHelper.preload();
+
     return MaterialApp.router(
       title: 'Figus',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
+      theme: AppTheme.light(overrideSeed: effectiveSeed),
+      darkTheme: AppTheme.dark(overrideSeed: effectiveSeed),
       routerConfig: router,
     );
   }
@@ -82,6 +96,7 @@ class RootShell extends StatelessWidget {
   static const _navTabs = <_NavItem>[
     _NavItem('/', Icons.grid_view_rounded, 'Coleção'),
     _NavItem('/duplicates', Icons.copy_all_rounded, 'Repetidas'),
+    _NavItem('/copa', Icons.emoji_events_rounded, 'Copa'),
     _NavItem('/trades', Icons.swap_horiz_rounded, 'Trocas'),
     _NavItem('/you', Icons.person_rounded, 'Você'),
   ];
@@ -91,14 +106,19 @@ class RootShell extends StatelessWidget {
     final loc = GoRouterState.of(context).matchedLocation;
     final activeIndex = _navTabs.indexWhere((t) => loc == t.path);
     return Scaffold(
-      body: child,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: activeIndex < 0 ? 0 : activeIndex,
-        onTap: (i) => context.go(_navTabs[i].path),
-        type: BottomNavigationBarType.fixed,
-        items: [
+      body: Column(
+        children: [
+          const BannerAdWidget(),
+          Expanded(child: child),
+        ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: activeIndex < 0 ? 0 : activeIndex,
+        onDestinationSelected: (i) => context.go(_navTabs[i].path),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        destinations: [
           for (final t in _navTabs)
-            BottomNavigationBarItem(icon: Icon(t.icon), label: t.label),
+            NavigationDestination(icon: Icon(t.icon), label: t.label),
         ],
       ),
     );

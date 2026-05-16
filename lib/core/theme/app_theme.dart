@@ -8,13 +8,15 @@ class AppTheme {
   static const slot = Color(0xFFB8C0CC);
   static const slotSoft = Color(0xFFE3E7EE);
 
-  static ThemeData light() {
-    final scheme = ColorScheme.fromSeed(seedColor: seed, brightness: Brightness.light);
+  static ThemeData light({Color? overrideSeed}) {
+    final s = overrideSeed ?? seed;
+    final scheme = ColorScheme.fromSeed(seedColor: s, brightness: Brightness.light);
     return _base(scheme);
   }
 
-  static ThemeData dark() {
-    final scheme = ColorScheme.fromSeed(seedColor: seed, brightness: Brightness.dark);
+  static ThemeData dark({Color? overrideSeed}) {
+    final s = overrideSeed ?? seed;
+    final scheme = ColorScheme.fromSeed(seedColor: s, brightness: Brightness.dark);
     return _base(scheme);
   }
 
