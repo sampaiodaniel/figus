@@ -5,8 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../data/providers.dart';
-import '../../data/repos/sync_repo.dart';
-import '../auth/auth_page.dart';
 import '../pro/pro_service.dart';
 
 class YouPage extends ConsumerWidget {
@@ -17,105 +15,312 @@ class YouPage extends ConsumerWidget {
     final profileAsync = ref.watch(profilesListProvider);
     final statsAsync = ref.watch(albumStatsProvider);
     final pro = ref.watch(proProvider);
-    final sync = ref.read(syncRepoProvider);
 
     final profileName = profileAsync.maybeWhen(
-      data: (list) => list.firstWhere((p) => p.isActive, orElse: () => list.first).name,
+      data: (list) =>
+          list.firstWhere((p) => p.isActive, orElse: () => list.first).name,
       orElse: () => '...',
     );
 
     final stats = statsAsync.valueOrNull;
+    final owned = stats?.owned ?? 0;
+    final total = stats?.total ?? 0;
+    final missing = total - owned;
+    final pct = total > 0 ? (owned / total * 100).round() : 0;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Minha conta')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _ProfileHeader(
-            profileName: profileName,
-            owned: stats?.owned,
-            total: stats?.total,
-            foilOwned: stats?.foilOwned,
-            foilTotal: stats?.foilTotal,
-            onProfilesTap: () => context.push('/profiles'),
+      backgroundColor: AppTheme.inkDeep,
+      appBar: AppBar(
+        title: Text(
+          'Você',
+          style: GoogleFonts.inter(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.cream,
           ),
+        ),
+        backgroundColor: AppTheme.ink,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        children: [
           const SizedBox(height: 16),
 
-          // Pro banner — top prominence
-          if (pro.isTrial)
-            _TrialBanner(daysLeft: pro.trialDaysLeft, onTap: () => context.push('/upgrade'))
-          else if (!pro.isPro)
-            _ProBanner(onTap: () => context.push('/upgrade')),
-          if (!pro.isPro) const SizedBox(height: 16),
+          // ── Profile card ───────────────────────────────────────────────────
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppTheme.ink3,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: AppTheme.ink4),
+            ),
+            child: Row(
+              children: [
+                // Avatar
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: AppTheme.gold,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.gold.withValues(alpha: 0.20),
+                        blurRadius: 14,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    profileName.isNotEmpty
+                        ? profileName[0].toUpperCase()
+                        : '?',
+                    style: GoogleFonts.inter(
+                      color: AppTheme.inkDeep,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        profileName,
+                        style: GoogleFonts.instrumentSerif(
+                          fontStyle: FontStyle.italic,
+                          fontSize: 22,
+                          color: AppTheme.cream,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Copa 2026',
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 10,
+                          color: AppTheme.gold,
+                          letterSpacing: 0.06,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // PRO/FREE badge
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: pro.isPro
+                        ? AppTheme.gold.withValues(alpha: 0.15)
+                        : AppTheme.cream.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(4),
+                    border: pro.isPro
+                        ? Border.all(
+                            color: AppTheme.gold.withValues(alpha: 0.4))
+                        : null,
+                  ),
+                  child: Text(
+                    pro.isPro ? 'PRO' : 'FREE',
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      color: pro.isPro
+                          ? AppTheme.gold
+                          : AppTheme.cream.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
 
-          _GroupCard(
-            title: 'Seu álbum',
-            tiles: [
-              _Tile(
+          // ── Progress card ──────────────────────────────────────────────────
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.ink3,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: AppTheme.ink4),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'PROGRESSO · COPA 2026',
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 10,
+                        color: AppTheme.gold,
+                        letterSpacing: 0.08,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => context.push('/progress'),
+                      child: Text(
+                        'Ver tudo →',
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 10,
+                          color: AppTheme.creamSoft,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    // Progress ring
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          width: 80,
+                          height: 80,
+                          child: CircularProgressIndicator(
+                            value: total > 0 ? owned / total : 0,
+                            strokeWidth: 6,
+                            backgroundColor: AppTheme.ink4,
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                                AppTheme.gold),
+                          ),
+                        ),
+                        Text(
+                          '$pct%',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.gold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          _StatRow(
+                            color: AppTheme.cream,
+                            label: 'TENHO',
+                            value: owned.toString(),
+                          ),
+                          const SizedBox(height: 8),
+                          _StatRow(
+                            color: AppTheme.pulpSoft,
+                            label: 'FALTAM',
+                            value: missing.toString(),
+                          ),
+                          const SizedBox(height: 8),
+                          const _StatRow(
+                            color: AppTheme.gold,
+                            label: 'REPETIDAS',
+                            value: '—',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(color: AppTheme.ink4, height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${stats?.foilOwned ?? 0} brilhantes',
+                      style: const TextStyle(
+                          fontSize: 11, color: AppTheme.creamSoft),
+                    ),
+                    const Text(
+                      'Sincronizado',
+                      style:
+                          TextStyle(fontSize: 11, color: AppTheme.creamSoft),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // ── Menu group 1 ───────────────────────────────────────────────────
+          _MenuGroup(
+            children: [
+              _MenuRow(
                 icon: Icons.insights_rounded,
                 title: 'Estatísticas',
-                subtitle: 'Progresso detalhado por seleção e categoria',
                 onTap: () => context.push('/progress'),
               ),
-              _Tile(
-                icon: Icons.palette_rounded,
-                title: 'Temas',
-                subtitle: 'Personalizar cores do app',
-                onTap: () => context.push('/themes'),
-              ),
-              _Tile(
-                icon: Icons.favorite_rounded,
+              _MenuRow(
+                icon: Icons.star_outline_rounded,
                 title: 'Seleções favoritas',
-                subtitle: 'Prioridade nas sugestões de troca',
+                iconColor: AppTheme.gold,
                 onTap: () => context.push('/favorites'),
               ),
-              _Tile(
-                icon: Icons.swap_horiz_rounded,
+              _MenuRow(
+                icon: Icons.upload_rounded,
                 title: 'Importar coleção',
-                subtitle: 'Cole uma lista de códigos ou foto da tela',
                 onTap: () => context.push('/import'),
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _GroupCard(
-            title: 'Trocas',
-            tiles: [
-              _Tile(
-                icon: Icons.people_alt_rounded,
-                title: 'Comparar com amigo',
-                subtitle: 'Sugestões automáticas de troca',
-                onTap: () => context.push('/compare'),
-              ),
-              const _Tile(
-                icon: Icons.bluetooth_searching_rounded,
-                title: 'Troca por aproximação',
-                subtitle: 'Em breve — Bluetooth P2P',
-                onTap: null,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _SyncCard(sync: sync),
-          const SizedBox(height: 16),
-          _GroupCard(
-            title: 'Sobre o Figus',
-            tiles: [
-              _Tile(
-                icon: Icons.sports_soccer_rounded,
+              _MenuRow(
+                icon: Icons.help_outline_rounded,
                 title: 'Como marcar e trocar',
-                onTap: () => _showHowItWorks(context),
+                onTap: () => context.push('/how-to'),
               ),
-              const _Tile(
-                icon: Icons.pix_rounded,
-                title: 'Mandar um Pix pro dev',
-                subtitle: 'Doação opcional — em breve',
-                onTap: null,
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // ── Menu group 2 ───────────────────────────────────────────────────
+          _MenuGroup(
+            children: [
+              _MenuRow(
+                icon: Icons.workspace_premium_rounded,
+                title: 'Figus Pro',
+                subtitle: pro.isPro
+                    ? 'Ativo'
+                    : 'Sem anúncios · R\$4,90/mês',
+                iconColor: AppTheme.gold,
+                onTap: () => context.push('/upgrade'),
               ),
-              const _Tile(
+              _MenuRow(
+                icon: Icons.share_rounded,
+                title: 'Compartilhar Figus',
+                onTap: () {
+                  // Share sheet
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Em breve!')),
+                  );
+                },
+              ),
+              _MenuRow(
+                icon: Icons.favorite_border_rounded,
+                title: 'Doar ao dev',
+                iconColor: AppTheme.pulpSoft,
+                onTap: () => context.push('/donate'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // ── Menu group 3 ───────────────────────────────────────────────────
+          _MenuGroup(
+            children: [
+              _MenuRow(
+                icon: Icons.settings_outlined,
+                title: 'Configurações',
+                onTap: () => context.push('/settings'),
+              ),
+              const _MenuRow(
                 icon: Icons.info_outline_rounded,
-                title: 'Versão 0.1.0 beta',
-                subtitle: 'Grátis com banner · Pro remove anúncios e desbloqueia temas',
+                title: 'Sobre · v 2.6.0',
+                muted: true,
                 onTap: null,
               ),
             ],
@@ -124,287 +329,111 @@ class YouPage extends ConsumerWidget {
       ),
     );
   }
+}
 
-  void _showHowItWorks(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      backgroundColor: AppTheme.ink,
-      builder: (_) => const Padding(
-        padding: EdgeInsets.fromLTRB(24, 8, 24, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('Como marcar e trocar',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.cream,
-                )),
-            SizedBox(height: 16),
-            _HowRow(icon: Icons.touch_app_rounded, text: 'Toque → marca como tenho'),
-            _HowRow(icon: Icons.touch_app_rounded, text: 'Toque de novo → conta como repetida (+1)'),
-            _HowRow(
-                icon: Icons.touch_app_rounded,
-                text: 'Pressione e segure → remove uma cópia por vez'),
-            _HowRow(
-                icon: Icons.people_alt_rounded,
-                text: 'Trocas: compartilhe seu inventário, o amigo cola no app e vê sugestões automáticas'),
-            SizedBox(height: 16),
-          ],
-        ),
+// ── _MenuGroup ────────────────────────────────────────────────────────────────
+
+class _MenuGroup extends StatelessWidget {
+  final List<Widget> children;
+  const _MenuGroup({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.ink3,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.ink4),
       ),
+      clipBehavior: Clip.hardEdge,
+      child: Column(children: children),
     );
   }
 }
 
-class _ProfileHeader extends StatelessWidget {
-  final String profileName;
-  final int? owned;
-  final int? total;
-  final int? foilOwned;
-  final int? foilTotal;
-  final VoidCallback onProfilesTap;
+// ── _MenuRow ──────────────────────────────────────────────────────────────────
 
-  const _ProfileHeader({
-    required this.profileName,
-    required this.owned,
-    required this.total,
-    required this.foilOwned,
-    required this.foilTotal,
-    required this.onProfilesTap,
+class _MenuRow extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final Color? iconColor;
+  final bool muted;
+  final VoidCallback? onTap;
+
+  const _MenuRow({
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    this.iconColor,
+    this.muted = false,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final pct = (owned != null && total != null && total! > 0)
-        ? (owned! / total! * 100).toStringAsFixed(1)
-        : null;
-
-    return InkWell(
-      onTap: onProfilesTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppTheme.ink,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppTheme.ink4),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [AppTheme.gold, AppTheme.goldDeep],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                profileName.isNotEmpty ? profileName[0].toUpperCase() : '?',
-                style: GoogleFonts.inter(
-                  color: AppTheme.inkDeep,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(profileName,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: AppTheme.cream,
-                      )),
-                  const SizedBox(height: 3),
-                  if (pct != null)
-                    Text(
-                      '$owned/$total figurinhas · $pct% · ${foilOwned ?? 0}/${foilTotal ?? 0} brilhantes',
-                      style: const TextStyle(fontSize: 12, color: AppTheme.creamSoft),
-                    )
-                  else
-                    const Text('toque para trocar de perfil',
-                        style: TextStyle(fontSize: 12, color: AppTheme.creamSoft)),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right_rounded, color: AppTheme.creamSoft),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TrialBanner extends StatelessWidget {
-  final int daysLeft;
-  final VoidCallback onTap;
-  const _TrialBanner({required this.daysLeft, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [AppTheme.field, Color(0xFF52C97A)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.timer_rounded, color: Colors.white, size: 32),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Trial Pro ativo',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                      )),
-                  Text(
-                    '$daysLeft dia${daysLeft == 1 ? '' : 's'} restante${daysLeft == 1 ? '' : 's'} — toque para comprar e manter',
-                    style: const TextStyle(color: Colors.white70, fontSize: 13),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right_rounded, color: Colors.white),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ProBanner extends StatelessWidget {
-  final VoidCallback onTap;
-  const _ProBanner({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
+    final effectiveIconColor = iconColor ?? AppTheme.cream;
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Container(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [AppTheme.inkDeep, AppTheme.ink, Color(0xFF2A1F10)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppTheme.gold.withValues(alpha: 0.5), width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.gold.withValues(alpha: 0.20),
-              blurRadius: 20,
-              offset: const Offset(0, 6),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        decoration: const BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: Color(0x662A231D), // ink4 at ~40%
+              width: 0.5,
             ),
-          ],
+          ),
         ),
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Row(
-              children: [
-                const Icon(Icons.workspace_premium_rounded, color: AppTheme.gold, size: 24),
-                const SizedBox(width: 8),
-                Text('FIGUS',
+            // Icon container
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: effectiveIconColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.center,
+              child: Icon(icon, color: effectiveIconColor, size: 16),
+            ),
+            const SizedBox(width: 12),
+            // Title + subtitle
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
                     style: GoogleFonts.inter(
-                      color: AppTheme.cream,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1.5,
-                    )),
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppTheme.gold,
-                    borderRadius: BorderRadius.circular(6),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: muted
+                          ? AppTheme.cream.withValues(alpha: 0.55)
+                          : AppTheme.cream,
+                    ),
                   ),
-                  child: Text('PRO',
-                      style: GoogleFonts.inter(
-                        color: AppTheme.inkDeep,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.0,
-                      )),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppTheme.gold.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppTheme.gold.withValues(alpha: 0.4)),
-                  ),
-                  child: const Text('7 dias grátis',
-                      style: TextStyle(
-                        color: AppTheme.gold,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      )),
-                ),
-              ],
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle!,
+                      style: const TextStyle(
+                          fontSize: 11, color: AppTheme.creamSoft),
+                    ),
+                  ],
+                ],
+              ),
             ),
-            const SizedBox(height: 14),
-            const Text('Sem anúncios.\nMais recursos. Mais Copa.',
-                style: TextStyle(
-                  color: AppTheme.cream,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                  height: 1.2,
-                )),
-            const SizedBox(height: 8),
-            const Text(
-              'Temas · Sync entre aparelhos · Sem anúncios',
-              style: TextStyle(color: AppTheme.creamSoft, fontSize: 13),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'R\$ 4,90/mês · R\$ 9,90/ano',
-                    style: TextStyle(color: AppTheme.goldSoft, fontSize: 13, fontWeight: FontWeight.w600),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: AppTheme.gold,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text('Assinar',
-                      style: GoogleFonts.inter(
-                        color: AppTheme.inkDeep,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
-                      )),
-                ),
-              ],
-            ),
+            const Spacer(),
+            if (onTap != null)
+              Icon(
+                Icons.chevron_right_rounded,
+                color: AppTheme.creamSoft.withValues(alpha: 0.35),
+                size: 12,
+              ),
           ],
         ),
       ),
@@ -412,177 +441,52 @@ class _ProBanner extends StatelessWidget {
   }
 }
 
-class _SyncCard extends StatelessWidget {
-  final SyncRepo sync;
-  const _SyncCard({required this.sync});
+// ── _StatRow ──────────────────────────────────────────────────────────────────
+
+class _StatRow extends StatelessWidget {
+  final Color color;
+  final String label;
+  final String value;
+
+  const _StatRow({
+    required this.color,
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final isSignedIn = sync.isSignedIn;
-    final email = sync.userEmail;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.ink,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.ink4),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: isSignedIn
-                  ? AppTheme.field.withValues(alpha: 0.15)
-                  : AppTheme.ink3,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              isSignedIn ? Icons.cloud_done_rounded : Icons.cloud_off_rounded,
-              color: isSignedIn ? AppTheme.field : AppTheme.creamSoft,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isSignedIn ? 'Sync ativo' : 'Sync desativado',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                    color: AppTheme.cream,
-                  ),
-                ),
-                Text(
-                  isSignedIn
-                      ? email ?? 'Conta conectada'
-                      : 'Entre para sincronizar entre dispositivos',
-                  style: const TextStyle(fontSize: 12, color: AppTheme.creamSoft),
-                ),
-              ],
-            ),
-          ),
-          if (isSignedIn)
-            TextButton(
-              onPressed: () async {
-                await sync.signOut();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Conta desconectada')),
-                  );
-                }
-              },
-              child: const Text('Sair'),
-            )
-          else
-            FilledButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(builder: (_) => const AuthPage()),
-                );
-              },
-              style: FilledButton.styleFrom(
-                backgroundColor: AppTheme.gold,
-                foregroundColor: AppTheme.inkDeep,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                minimumSize: Size.zero,
-                textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
-              ),
-              child: const Text('Entrar'),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _GroupCard extends StatelessWidget {
-  final String title;
-  final List<_Tile> tiles;
-  const _GroupCard({required this.title, required this.tiles});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 0, 0, 8),
-          child: Text(title.toUpperCase(),
-              style: const TextStyle(
-                fontSize: 11,
-                letterSpacing: 0.8,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.creamSoft,
-              )),
-        ),
         Container(
+          width: 5,
+          height: 5,
           decoration: BoxDecoration(
-            color: AppTheme.ink,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppTheme.ink4),
+            color: color,
+            shape: BoxShape.circle,
           ),
-          child: Column(children: tiles),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            label,
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 10,
+              color: AppTheme.cream.withValues(alpha: 0.55),
+              letterSpacing: 0.06,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        Text(
+          value,
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: color,
+          ),
         ),
       ],
-    );
-  }
-}
-
-class _Tile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String? subtitle;
-  final VoidCallback? onTap;
-  const _Tile({required this.icon, required this.title, this.subtitle, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final disabled = onTap == null;
-    return ListTile(
-      leading: Icon(icon,
-          color: disabled ? AppTheme.ink4 : AppTheme.gold),
-      title: Text(title,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: disabled ? AppTheme.creamSoft : AppTheme.cream,
-          )),
-      subtitle: subtitle == null
-          ? null
-          : Text(subtitle!,
-              style: const TextStyle(color: AppTheme.creamSoft, fontSize: 12)),
-      trailing: disabled ? null : const Icon(Icons.chevron_right_rounded, color: AppTheme.creamSoft),
-      onTap: onTap,
-    );
-  }
-}
-
-class _HowRow extends StatelessWidget {
-  final IconData icon;
-  final String text;
-  const _HowRow({required this.icon, required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: AppTheme.gold, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(text,
-                style: const TextStyle(height: 1.4, color: AppTheme.cream)),
-          ),
-        ],
-      ),
     );
   }
 }

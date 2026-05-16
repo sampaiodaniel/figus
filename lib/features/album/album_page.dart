@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../ads/interstitial_helper.dart';
 import '../pro/pro_service.dart';
@@ -51,6 +52,7 @@ class _AlbumPageState extends ConsumerState<AlbumPage> {
       ),
       body: Column(
         children: [
+          _HeroStatsCard(),
           _FilterChips(
             current: filter,
             onChanged: (f) => ref.read(albumFilterProvider.notifier).state = f,
@@ -194,6 +196,124 @@ class _AlbumPageState extends ConsumerState<AlbumPage> {
   }
 }
 
+// ── Hero Stats Card ──────────────────────────────────────────────────────────
+
+class _HeroStatsCard extends ConsumerWidget {
+  const _HeroStatsCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final statsAsync = ref.watch(albumStatsProvider);
+    final stats = statsAsync.valueOrNull;
+
+    if (stats == null) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: SizedBox(height: 110),
+      );
+    }
+
+    final owned = stats.owned;
+    final total = stats.total;
+    final missing = stats.missing;
+    final pct = total > 0 ? (owned / total * 100).round() : 0;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [AppTheme.ink3, AppTheme.ink],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppTheme.gold.withValues(alpha: 0.18)),
+        ),
+        child: Row(
+          children: [
+            // Left: circular progress ring
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 72,
+                  height: 72,
+                  child: CircularProgressIndicator(
+                    value: pct / 100,
+                    strokeWidth: 6,
+                    backgroundColor: AppTheme.ink4,
+                    valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.gold),
+                  ),
+                ),
+                Text(
+                  '$pct%',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.gold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 18),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'COPA 2026',
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: 10,
+                      color: AppTheme.gold,
+                      letterSpacing: 0.12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: '$owned',
+                          style: GoogleFonts.instrumentSerif(
+                            fontSize: 28,
+                            fontStyle: FontStyle.italic,
+                            color: AppTheme.cream,
+                          ),
+                        ),
+                        TextSpan(
+                          text: ' / $total',
+                          style: GoogleFonts.instrumentSerif(
+                            fontSize: 28,
+                            fontStyle: FontStyle.italic,
+                            color: AppTheme.creamSoft.withValues(alpha: 0.4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$missing faltando',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.creamSoft,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Filter Chips ─────────────────────────────────────────────────────────────
+
 class _FilterChips extends StatelessWidget {
   final AlbumFilter current;
   final ValueChanged<AlbumFilter> onChanged;
@@ -237,4 +357,3 @@ class _FilterChips extends StatelessWidget {
     );
   }
 }
-

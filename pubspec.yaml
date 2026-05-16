@@ -74,17 +74,21 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: "assets/icon/app_icon.png"
-  adaptive_icon_background: "#1F66FF"
-  adaptive_icon_foreground: "assets/icon/app_icon.png"
+  image_path: "assets/figus-icon-512.png"
+  adaptive_icon_background: "#13100E"
+  adaptive_icon_foreground: "assets/figus-icon-512.png"
   web:
     generate: true
-    image_path: "assets/icon/app_icon.png"
-    background_color: "#1F66FF"
-    theme_color: "#1F66FF"
+    image_path: "assets/figus-icon-512.png"
+    background_color: "#13100E"
+    theme_color: "#E5B14B"
 
 flutter:
   uses-material-design: true
   assets:
     - assets/seeds/
     - assets/icon/
+    - assets/figus-logo-transparent.png
+    - assets/figus-logo-dark.png
+    - assets/figus-logo.png
+    - assets/figus-icon-512.png

@@ -25,18 +25,26 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // Skip button
-            Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(0, 12, 20, 0),
-                child: _index < _total - 1
-                    ? TextButton(
-                        onPressed: _finish,
-                        style: TextButton.styleFrom(foregroundColor: AppTheme.creamSoft),
-                        child: const Text('Pular'),
-                      )
-                    : const SizedBox(height: 40),
+            // Dot indicators
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(_total, (i) {
+                  final active = i == _index;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: active ? 22 : 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: active
+                          ? AppTheme.gold
+                          : AppTheme.cream.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  );
+                }),
               ),
             ),
 
@@ -53,46 +61,47 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               ),
             ),
 
-            // Page dots
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(_total, (i) {
-                final active = i == _index;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width: active ? 24 : 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: active ? AppTheme.gold : AppTheme.ink4,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                );
-              }),
-            ),
-            const SizedBox(height: 20),
-
-            // CTA button
+            // Bottom nav row
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
-              child: FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppTheme.gold,
-                  foregroundColor: AppTheme.inkDeep,
-                  minimumSize: const Size(double.infinity, 54),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800),
-                ),
-                onPressed: () async {
-                  if (_index < _total - 1) {
-                    _ctrl.nextPage(
-                        duration: const Duration(milliseconds: 280),
-                        curve: Curves.easeOut);
-                  } else {
-                    await _finish();
-                  }
-                },
-                child: Text(_index < _total - 1 ? 'Próximo' : 'Entrar no álbum'),
+              padding: const EdgeInsets.fromLTRB(28, 0, 28, 32),
+              child: Row(
+                children: [
+                  if (_index < _total - 1)
+                    TextButton(
+                      onPressed: _finish,
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppTheme.cream.withValues(alpha: 0.5),
+                      ),
+                      child: const Text('Pular'),
+                    )
+                  else
+                    const SizedBox.shrink(),
+                  const Spacer(),
+                  FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppTheme.gold,
+                      foregroundColor: AppTheme.inkDeep,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 14),
+                      minimumSize: Size.zero,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(999)),
+                      textStyle: GoogleFonts.inter(
+                          fontSize: 16, fontWeight: FontWeight.w700),
+                    ),
+                    onPressed: () async {
+                      if (_index < _total - 1) {
+                        _ctrl.nextPage(
+                            duration: const Duration(milliseconds: 280),
+                            curve: Curves.easeOut);
+                      } else {
+                        await _finish();
+                      }
+                    },
+                    child: Text(
+                        _index < _total - 1 ? 'Próximo' : 'Entrar no álbum'),
+                  ),
+                ],
               ),
             ),
           ],
@@ -116,70 +125,157 @@ class _Slide0 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(32, 0, 32, 24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Logo placeholder (ball icon in golden circle)
-          Container(
-            width: 96,
-            height: 96,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                colors: [AppTheme.gold, AppTheme.goldDeep],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.gold.withValues(alpha: 0.35),
-                  blurRadius: 28,
-                  offset: const Offset(0, 8),
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Sticker cards stack
+        LayoutBuilder(builder: (context, constraints) {
+          final w = constraints.maxWidth;
+          return SizedBox(
+            height: 280,
+            width: double.infinity,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // Card 1 — left, rotate -0.2 rad
+                Positioned(
+                  left: w * 0.08,
+                  top: 30,
+                  child: Transform.rotate(
+                    angle: -0.2,
+                    child: _StickerCard(
+                      gradient: const LinearGradient(
+                        colors: [AppTheme.gold, AppTheme.goldDeep],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shadowColor: AppTheme.gold,
+                      label: '#073',
+                    ),
+                  ),
+                ),
+                // Card 2 — center
+                Positioned(
+                  left: w * 0.38,
+                  top: 10,
+                  child: _StickerCard(
+                    gradient: const LinearGradient(
+                      colors: [AppTheme.pulp, Color(0xFF8A2E5A)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    shadowColor: AppTheme.pulp,
+                    label: '#142',
+                  ),
+                ),
+                // Card 3 — right, rotate +0.18 rad
+                Positioned(
+                  right: w * 0.08,
+                  top: 20,
+                  child: Transform.rotate(
+                    angle: 0.18,
+                    child: _StickerCard(
+                      gradient: const LinearGradient(
+                        colors: [AppTheme.field, Color(0xFF1F5F36)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shadowColor: AppTheme.field,
+                      label: '#218',
+                    ),
+                  ),
                 ),
               ],
             ),
-            child: const Icon(Icons.sports_soccer_rounded,
-                color: AppTheme.inkDeep, size: 52),
-          ),
-          const SizedBox(height: 36),
-          Text(
-            'Figus',
-            style: GoogleFonts.inter(
-              fontSize: 48,
-              fontWeight: FontWeight.w900,
-              color: AppTheme.cream,
-              height: 1.0,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Sua coleção, raríssima.',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: AppTheme.goldSoft,
-              height: 1.3,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppTheme.ink3,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              'Copa do Mundo 2026 · 980 figurinhas',
-              style: GoogleFonts.jetBrainsMono(
-                fontSize: 12,
-                color: AppTheme.creamSoft,
+          );
+        }),
+
+        // Text block
+        Padding(
+          padding: const EdgeInsets.fromLTRB(32, 0, 32, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'BEM-VINDO',
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 10,
+                  color: AppTheme.gold,
+                  letterSpacing: 1.2,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
+              const SizedBox(height: 14),
+              RichText(
+                text: TextSpan(
+                  style: GoogleFonts.instrumentSerif(
+                    fontSize: 40,
+                    color: AppTheme.cream,
+                    fontStyle: FontStyle.italic,
+                    height: 1.1,
+                  ),
+                  children: const [
+                    TextSpan(text: 'Sua coleção,\n'),
+                    TextSpan(
+                      text: 'raríssima',
+                      style: TextStyle(color: AppTheme.gold),
+                    ),
+                    TextSpan(text: '.'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Monte seu álbum da Copa 2026, encontre trocas e acompanhe cada figurinha.',
+                style: TextStyle(
+                  color: AppTheme.creamSoft,
+                  fontSize: 15,
+                  height: 1.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StickerCard extends StatelessWidget {
+  final LinearGradient gradient;
+  final Color shadowColor;
+  final String label;
+
+  const _StickerCard({
+    required this.gradient,
+    required this.shadowColor,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 86,
+      height: 114,
+      decoration: BoxDecoration(
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: shadowColor.withValues(alpha: 0.45),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        label,
+        style: GoogleFonts.jetBrainsMono(
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.w800,
+        ),
       ),
     );
   }
@@ -197,7 +293,6 @@ class _Slide1 extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Mini album grid demo
           SizedBox(
             width: 200,
             height: 160,
@@ -214,22 +309,26 @@ class _Slide1 extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 36),
-          Text('Toque para marcar.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 26,
-                fontWeight: FontWeight.w900,
-                color: AppTheme.cream,
-                height: 1.1,
-              )),
+          Text(
+            'Toque para marcar.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.instrumentSerif(
+              fontSize: 32,
+              fontStyle: FontStyle.italic,
+              color: AppTheme.cream,
+              height: 1.1,
+            ),
+          ),
           const SizedBox(height: 8),
-          Text('Toque novamente para adicionar outra cópia.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppTheme.creamSoft,
-                fontSize: 15,
-                height: 1.4,
-              )),
+          const Text(
+            'Toque novamente para adicionar outra cópia. Pressione e segure para remover.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppTheme.creamSoft,
+              fontSize: 15,
+              height: 1.4,
+            ),
+          ),
         ],
       ),
     );
@@ -272,10 +371,14 @@ class _DemoCard extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: AppTheme.inkDeep, width: 1.5),
               ),
-              child: const Center(
-                child: Text('2',
-                    style: TextStyle(
-                        color: Colors.white, fontSize: 8, fontWeight: FontWeight.w800)),
+              alignment: Alignment.center,
+              child: Text(
+                '2',
+                style: GoogleFonts.jetBrainsMono(
+                  color: Colors.white,
+                  fontSize: 8,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
           ),
@@ -309,17 +412,19 @@ class _Slide2 extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 36),
-          Text('O Figus encontra o\nmatch pra você.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 26,
-                fontWeight: FontWeight.w900,
-                color: AppTheme.cream,
-                height: 1.1,
-              )),
+          Text(
+            'Troque com\namigos.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.instrumentSerif(
+              fontSize: 32,
+              fontStyle: FontStyle.italic,
+              color: AppTheme.cream,
+              height: 1.1,
+            ),
+          ),
           const SizedBox(height: 8),
           const Text(
-            'Compartilhe sua coleção e receba sugestões automáticas de troca com amigos.',
+            'Compartilhe sua coleção e receba sugestões automáticas de troca.',
             textAlign: TextAlign.center,
             style: TextStyle(color: AppTheme.creamSoft, fontSize: 15, height: 1.4),
           ),
@@ -337,7 +442,7 @@ class _TradePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 28),
+      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [color, color.withValues(alpha: 0.7)],
@@ -353,26 +458,39 @@ class _TradePill extends StatelessWidget {
           ),
         ],
       ),
-      child: Text(code,
-          style: GoogleFonts.jetBrainsMono(
-            color: Colors.white,
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-          )),
+      child: Text(
+        code,
+        style: GoogleFonts.jetBrainsMono(
+          color: Colors.white,
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 }
 
-// ── Slide 3 — Favoritos ──────────────────────────────────────────────────────
+// ── Slide 3 — Favoritas ──────────────────────────────────────────────────────
 
 class _Slide3 extends StatelessWidget {
   const _Slide3();
 
+  static const _sky = Color(0xFF3F8FE0);
+  static const _flame = Color(0xFFE85A3C);
+
   static const _countries = [
-    ('BRA', AppTheme.gold), ('ARG', AppTheme.sky), ('FRA', AppTheme.sky),
-    ('ESP', AppTheme.flame), ('GER', AppTheme.creamSoft), ('ING', AppTheme.flame),
-    ('POR', AppTheme.field), ('NED', AppTheme.flame), ('USA', AppTheme.sky),
-    ('MEX', AppTheme.field), ('URU', AppTheme.sky), ('BEL', AppTheme.flame),
+    ('BRA', AppTheme.gold),
+    ('ARG', _sky),
+    ('FRA', _sky),
+    ('ESP', _flame),
+    ('GER', AppTheme.creamSoft),
+    ('ENG', _flame),
+    ('POR', AppTheme.field),
+    ('NED', _flame),
+    ('USA', _sky),
+    ('MEX', AppTheme.field),
+    ('URU', _sky),
+    ('BEL', _flame),
   ];
 
   @override
@@ -382,7 +500,6 @@ class _Slide3 extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Country grid
           GridView.count(
             shrinkWrap: true,
             crossAxisCount: 4,
@@ -392,18 +509,24 @@ class _Slide3 extends StatelessWidget {
             physics: const NeverScrollableScrollPhysics(),
             children: [
               for (final (code, color) in _countries)
-                _CountryChip(code: code, color: color, selected: code == 'BRA' || code == 'ARG'),
+                _CountryChip(
+                  code: code,
+                  color: color,
+                  selected: code == 'BRA' || code == 'ARG',
+                ),
             ],
           ),
           const SizedBox(height: 32),
-          Text('Escolha suas favoritas.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 26,
-                fontWeight: FontWeight.w900,
-                color: AppTheme.cream,
-                height: 1.1,
-              )),
+          Text(
+            'Escolha suas\nfavoritas.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.instrumentSerif(
+              fontSize: 32,
+              fontStyle: FontStyle.italic,
+              color: AppTheme.cream,
+              height: 1.1,
+            ),
+          ),
           const SizedBox(height: 8),
           const Text(
             'Prioridade nas alertas de jogos e nas sugestões de troca.',
@@ -420,7 +543,8 @@ class _CountryChip extends StatelessWidget {
   final String code;
   final Color color;
   final bool selected;
-  const _CountryChip({required this.code, required this.color, required this.selected});
+  const _CountryChip(
+      {required this.code, required this.color, required this.selected});
 
   @override
   Widget build(BuildContext context) {

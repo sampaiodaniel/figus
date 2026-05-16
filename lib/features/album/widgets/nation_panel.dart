@@ -1,5 +1,6 @@
 import 'package:country_flags/country_flags.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/country_codes.dart';
 import '../../../core/theme/app_theme.dart';
@@ -25,187 +26,263 @@ class NationPanel extends StatelessWidget {
     required this.onLongPressSticker,
   });
 
+  static String _nameFromTitle(String title) {
+    final idx = title.indexOf('-');
+    if (idx < 0) return title;
+    return title.substring(idx + 1).trim();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final progress = section.totalCount == 0
-        ? 0.0
-        : section.ownedCount / section.totalCount;
-    final complete = section.ownedCount == section.totalCount && section.totalCount > 0;
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Column(
-        children: [
-          InkWell(
-            onTap: onToggle,
+    final owned = section.ownedCount;
+    final total = section.totalCount;
+    final progress = total == 0 ? 0.0 : owned / total;
+    final complete = owned == total && total > 0;
+    final dupes = section.stickers
+        .where((s) => s.status == StickerOwnership.duplicate)
+        .fold<int>(0, (sum, s) => sum + s.duplicateCount);
+
+    final iso = paniniToIso2[section.key];
+    final nameOnly = _nameFromTitle(section.title);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // ── Header ──────────────────────────────────────────────────────────
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppTheme.ink,
             borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
-              child: Row(
-                children: [
-                  _FlagThumb(code: section.key),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            border: Border.all(color: AppTheme.ink4),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onToggle,
+              borderRadius: BorderRadius.circular(16),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+                child: Column(
+                  children: [
+                    Row(
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                section.title,
-                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                        // Flag or fallback
+                        if (iso != null)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: CountryFlag.fromCountryCode(
+                              iso,
+                              width: 36,
+                              height: 26,
                             ),
-                            if (complete)
-                              const Padding(
-                                padding: EdgeInsets.only(left: 6),
-                                child: Icon(Icons.check_circle_rounded,
-                                    color: Color(0xFF22C58A), size: 18),
-                              ),
-                            Padding(
-                              padding: const EdgeInsets.only(left: 6),
-                              child: Text(
-                                '${section.ownedCount}/${section.totalCount}',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppTheme.inkSoft,
+                          )
+                        else
+                          _SpecialThumb(code: section.key),
+
+                        const SizedBox(width: 14),
+
+                        // Name + complete badge
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  nameOnly,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppTheme.cream,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
+                              if (complete)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 8),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.gold,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      'COMPLETO',
+                                      style: GoogleFonts.jetBrainsMono(
+                                        fontSize: 9,
+                                        color: AppTheme.inkDeep,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+
+                        // Count + dupes
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '$owned/$total',
+                              style: GoogleFonts.jetBrainsMono(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.cream,
+                              ),
                             ),
+                            if (dupes > 0)
+                              Text(
+                                '+$dupes rep',
+                                style: GoogleFonts.jetBrainsMono(
+                                  fontSize: 9,
+                                  color: AppTheme.pulpSoft,
+                                ),
+                              ),
                           ],
                         ),
-                        if (WC2026Seed.albumPageByCode.containsKey(section.key))
-                          Padding(
-                            padding: const EdgeInsets.only(top: 2, bottom: 2),
-                            child: Builder(builder: (ctx) => Text(
-                              'pág. ${WC2026Seed.albumPageByCode[section.key]}',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Theme.of(ctx).colorScheme.onSurface,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            )),
-                          ),
-                        const SizedBox(height: 4),
-                        Builder(builder: (ctx) => ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: LinearProgressIndicator(
-                            value: progress,
-                            minHeight: 6,
-                            backgroundColor: AppTheme.slotSoft,
-                            color: complete
-                                ? const Color(0xFF22C58A)
-                                : Theme.of(ctx).colorScheme.primary,
-                          ),
-                        )),
+
+                        const SizedBox(width: 4),
+
+                        Icon(
+                          expanded
+                              ? Icons.expand_less_rounded
+                              : Icons.expand_more_rounded,
+                          color: AppTheme.creamSoft,
+                          size: 18,
+                        ),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  AnimatedRotation(
-                    turns: expanded ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 180),
-                    child: const Icon(Icons.keyboard_arrow_down_rounded, color: AppTheme.inkSoft),
-                  ),
-                ],
+
+                    const SizedBox(height: 6),
+
+                    // Progress bar
+                    LayoutBuilder(
+                      builder: (ctx, constraints) => Container(
+                        height: 4,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: AppTheme.ink4,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Container(
+                            height: 4,
+                            width: constraints.maxWidth * progress,
+                            decoration: BoxDecoration(
+                              color: complete
+                                  ? AppTheme.field
+                                  : (progress > 0.7
+                                      ? AppTheme.gold
+                                      : AppTheme.pulpSoft),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-          if (expanded)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
-              child: _PaniniGrid(
-                section: section,
-                onTap: onTapSticker,
-                onLongPress: onLongPressSticker,
-              ),
+        ),
+
+        // ── Expanded sticker grid ────────────────────────────────────────────
+        if (expanded)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+            child: _PaniniGrid(
+              section: section,
+              onTap: onTapSticker,
+              onLongPress: onLongPressSticker,
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 }
 
-class _FlagThumb extends StatelessWidget {
+// ── Special thumb for non-country keys (FWC, FWC9+, CC, LGD) ────────────────
+
+class _SpecialThumb extends StatelessWidget {
   final String code;
-  const _FlagThumb({required this.code});
+  const _SpecialThumb({required this.code});
 
   @override
   Widget build(BuildContext context) {
-    final iso = paniniToIso2[code];
-    if (iso != null) {
-      return Container(
-        width: 44,
-        height: 44,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: AppTheme.slotSoft,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: CountryFlag.fromCountryCode(iso, shape: const RoundedRectangle(6), width: 36, height: 26),
-      );
-    }
     return switch (code) {
-      'FWC' => _specialThumb(
+      'FWC' => _thumb(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [Color(0xFF1F66FF), Color(0xFF7A5BFF)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.all(Radius.circular(12)),
+            borderRadius: BorderRadius.all(Radius.circular(4)),
           ),
-          child: const Icon(Icons.emoji_events_rounded, color: Colors.amber, size: 24),
+          child: const Icon(Icons.emoji_events_rounded,
+              color: Colors.amber, size: 20),
         ),
-      'FWC9+' => _specialThumb(
+      'FWC9+' => _thumb(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [Color(0xFFB8860B), Color(0xFF8B6914)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.all(Radius.circular(12)),
+            borderRadius: BorderRadius.all(Radius.circular(4)),
           ),
-          child: const Icon(Icons.star_rounded, color: Colors.white, size: 22),
+          child: const Icon(Icons.star_rounded, color: Colors.white, size: 18),
         ),
-      'CC' => _specialThumb(
+      'CC' => _thumb(
           decoration: const BoxDecoration(
             color: Color(0xFFCC0000),
-            borderRadius: BorderRadius.all(Radius.circular(12)),
+            borderRadius: BorderRadius.all(Radius.circular(4)),
           ),
           child: const Text(
             'CC',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15, letterSpacing: 1),
+            style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 13,
+                letterSpacing: 1),
           ),
         ),
-      'LGD' => _specialThumb(
+      'LGD' => _thumb(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [Color(0xFF40CCFF), Color(0xFF8840FF)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.all(Radius.circular(12)),
+            borderRadius: BorderRadius.all(Radius.circular(4)),
           ),
-          child: const Icon(Icons.stars_rounded, color: Colors.white, size: 22),
+          child:
+              const Icon(Icons.stars_rounded, color: Colors.white, size: 18),
         ),
-      _ => _specialThumb(
+      _ => _thumb(
           decoration: const BoxDecoration(
-            color: AppTheme.slotSoft,
-            borderRadius: BorderRadius.all(Radius.circular(12)),
+            color: AppTheme.ink4,
+            borderRadius: BorderRadius.all(Radius.circular(4)),
           ),
-          child: Text(code, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+          child: Text(code,
+              style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.cream)),
         ),
     };
   }
 
-  static Widget _specialThumb({required BoxDecoration decoration, required Widget child}) {
+  static Widget _thumb(
+      {required BoxDecoration decoration, required Widget child}) {
     return Container(
-      width: 44,
-      height: 44,
+      width: 36,
+      height: 26,
       alignment: Alignment.center,
       decoration: decoration,
       child: child,
@@ -231,7 +308,10 @@ class _PaniniGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final byPosition = {for (final s in section.stickers) s.positionInPage: s};
-    final isNation = section.key != 'FWC' && section.key != 'FWC9+' && section.key != 'CC' && section.key != 'LGD';
+    final isNation = section.key != 'FWC' &&
+        section.key != 'FWC9+' &&
+        section.key != 'CC' &&
+        section.key != 'LGD';
 
     return LayoutBuilder(builder: (ctx, c) {
       final cell = (c.maxWidth - 3 * _gap) / 4;
@@ -347,7 +427,8 @@ class _HeaderBlock extends StatelessWidget {
   final double width;
   final double height;
   final AlbumSection section;
-  const _HeaderBlock({required this.width, required this.height, required this.section});
+  const _HeaderBlock(
+      {required this.width, required this.height, required this.section});
 
   @override
   Widget build(BuildContext context) {
@@ -382,7 +463,8 @@ class _HeaderBlock extends StatelessWidget {
               if (iso != null)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
-                  child: CountryFlag.fromCountryCode(iso, width: 22, height: 16),
+                  child:
+                      CountryFlag.fromCountryCode(iso, width: 22, height: 16),
                 ),
             ],
           ),

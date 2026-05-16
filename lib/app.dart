@@ -73,6 +73,9 @@ class FigusApp extends ConsumerWidget {
         GoRoute(path: '/favorites', builder: (_, __) => const FavoriteNationsPage()),
         GoRoute(path: '/names-import', builder: (_, __) => const PlayerNamesImportPage()),
         GoRoute(path: '/compare', builder: (_, __) => const CompareFriendPage()),
+        GoRoute(path: '/donate', builder: (_, __) => const _SimplePage(title: 'Apoiar o dev', body: 'Obrigado! Em breve.')),
+        GoRoute(path: '/how-to', builder: (_, __) => const _SimplePage(title: 'Como usar', body: 'Toque = marcar. Toque novamente = repetida. Toque longo = remover.')),
+        GoRoute(path: '/settings', builder: (_, __) => const _SimplePage(title: 'Configurações', body: 'Em breve.')),
       ],
     );
 
@@ -131,4 +134,21 @@ class _NavItem {
   final IconData icon;
   final String label;
   const _NavItem(this.path, this.icon, this.label);
+}
+
+class _SimplePage extends StatelessWidget {
+  final String title;
+  final String body;
+  const _SimplePage({required this.title, required this.body});
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: Center(child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Text(body, textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 16)),
+      )),
+    );
+  }
 }
