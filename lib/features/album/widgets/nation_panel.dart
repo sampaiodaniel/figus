@@ -79,14 +79,14 @@ class NationPanel extends StatelessWidget {
                         if (WC2026Seed.albumPageByCode.containsKey(section.key))
                           Padding(
                             padding: const EdgeInsets.only(top: 2, bottom: 2),
-                            child: Text(
+                            child: Builder(builder: (ctx) => Text(
                               'pág. ${WC2026Seed.albumPageByCode[section.key]}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11,
-                                color: AppTheme.ink,
+                                color: Theme.of(ctx).colorScheme.onSurface,
                                 fontWeight: FontWeight.w600,
                               ),
-                            ),
+                            )),
                           ),
                         const SizedBox(height: 4),
                         ClipRRect(
