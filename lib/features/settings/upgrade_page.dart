@@ -442,17 +442,18 @@ class _ComparisonTable extends StatelessWidget {
   static const _rows = <(String, bool, bool)>[
     // ── Grátis para todos ────────────────────────────────────────────────────
     ('Marcar figurinhas (ilimitado)', true, true),
-    ('Scan OCR para marcar rápido', true, true),
+    ('Scan OCR · 3 por dia no Free', true, true),
     ('Estatísticas e progresso', true, true),
     ('Copa ao vivo · grupos e resultados', true, true),
     ('Comparar coleção com amigo', true, true),
-    ('Múltiplos perfis · ideal para família', true, true),
+    ('1 perfil pessoal', true, true),
     ('Importar do Figuritas App', true, true),
     ('Sync entre dispositivos · mesmo perfil em 2 celulares', true, true),
     // ── Exclusivo Pro ────────────────────────────────────────────────────────
     ('Sem anúncios no app', false, true),
     ('Temas de cor exclusivos · modo claro e escuro', false, true),
-    ('Perfis adicionais ilimitados · renomear perfis', false, true),
+    ('Perfis adicionais (família) + renomear perfis', false, true),
+    ('Scan OCR ilimitado', false, true),
     ('Troca por Bluetooth (em breve)', false, true),
   ];
 

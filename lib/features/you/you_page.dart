@@ -104,7 +104,9 @@ class YouPage extends ConsumerWidget {
           // ── Profile card ───────────────────────────────────────────────────
           _ProfileCard(
             name: profileName,
-            isPro: pro.isPro,
+            isPro: pro.isActive,
+            isTrial: pro.isTrial,
+            trialDaysLeft: pro.trialDaysLeft,
             onTap: () => context.push('/profiles'),
           ),
           const SizedBox(height: 12),
@@ -204,7 +206,11 @@ class YouPage extends ConsumerWidget {
 
           // ── Figus Pro ──────────────────────────────────────────────────────
           _ProCard(
-            isPro: pro.isPro,
+            isPro: pro.isActive,
+            isTrial: pro.isTrial,
+            trialDaysLeft: pro.trialDaysLeft,
+            // Trial users go to /upgrade so they can convert before expiry.
+            // Paid Pro goes to /themes (showcase).
             onTap: () => context.push(pro.isPro ? '/themes' : '/upgrade'),
           ),
           const SizedBox(height: 16),
@@ -272,6 +278,30 @@ class YouPage extends ConsumerWidget {
           ),
           const SizedBox(height: 10),
 
+          // ── Debug Pro toggle (remove before public release) ────────────────
+          _MenuGroup(
+            children: [
+              _MenuRow(
+                icon: pro.isPro
+                    ? Icons.toggle_on_rounded
+                    : Icons.toggle_off_outlined,
+                iconColor: pro.isPro ? c.accent : c.textMuted,
+                title: pro.isPro ? 'Desativar Pro (debug)' : 'Ativar Pro (debug)',
+                subtitle: pro.isTrial
+                    ? 'Trial ativo · ${pro.trialDaysLeft}d restantes'
+                    : 'Atalho de desenvolvedor pra testar visão Pro',
+                onTap: () async {
+                  if (pro.isPro) {
+                    await ref.read(proProvider.notifier).deactivatePro();
+                  } else {
+                    await ref.read(proProvider.notifier).activatePro();
+                  }
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
           // ── Menu group 3 ───────────────────────────────────────────────────
           _MenuGroup(
             children: [
@@ -299,8 +329,16 @@ class YouPage extends ConsumerWidget {
 class _ProfileCard extends StatelessWidget {
   final String name;
   final bool isPro;
+  final bool isTrial;
+  final int trialDaysLeft;
   final VoidCallback onTap;
-  const _ProfileCard({required this.name, required this.isPro, required this.onTap});
+  const _ProfileCard({
+    required this.name,
+    required this.isPro,
+    required this.isTrial,
+    required this.trialDaysLeft,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -370,7 +408,7 @@ class _ProfileCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                // PRO/FREE badge
+                // PRO/TRIAL/FREE badge
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
@@ -383,7 +421,7 @@ class _ProfileCard extends StatelessWidget {
                         : null,
                   ),
                   child: Text(
-                    isPro ? 'PRO' : 'FREE',
+                    isTrial ? 'TRIAL ${trialDaysLeft}d' : (isPro ? 'PRO' : 'FREE'),
                     style: GoogleFonts.jetBrainsMono(
                       fontSize: 9,
                       fontWeight: FontWeight.w700,
@@ -412,8 +450,15 @@ class _ProfileCard extends StatelessWidget {
 
 class _ProCard extends StatelessWidget {
   final bool isPro;
+  final bool isTrial;
+  final int trialDaysLeft;
   final VoidCallback onTap;
-  const _ProCard({required this.isPro, required this.onTap});
+  const _ProCard({
+    required this.isPro,
+    required this.isTrial,
+    required this.trialDaysLeft,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -459,7 +504,9 @@ class _ProCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    isPro ? 'FIGUS PRO · ATIVO' : 'FIGUS PRO',
+                    isTrial
+                        ? 'FIGUS PRO · TRIAL'
+                        : (isPro ? 'FIGUS PRO · ATIVO' : 'FIGUS PRO'),
                     style: GoogleFonts.jetBrainsMono(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
@@ -469,9 +516,11 @@ class _ProCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    isPro
-                        ? 'Ativo · Sem anúncios · Temas premium desbloqueados'
-                        : 'Remove anúncios · Temas premium · Sync multi-device',
+                    isTrial
+                        ? 'Trial expira em ${trialDaysLeft}d · toque pra assinar'
+                        : (isPro
+                            ? 'Ativo · Sem anúncios · Temas premium desbloqueados'
+                            : 'Remove anúncios · Temas premium · Sync multi-device'),
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.white.withValues(alpha: 0.85),
@@ -491,7 +540,7 @@ class _ProCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
-                isPro ? '✓ Ativo' : 'R\$6,90',
+                isTrial ? '${trialDaysLeft}d' : (isPro ? '✓ Ativo' : 'R\$6,90'),
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w800,

@@ -99,6 +99,23 @@ class ProNotifier extends StateNotifier<ProState> {
     state = state.copyWith(isPro: true);
   }
 
+  /// Debug-only: clears Pro flag so Daniel can test the free-tier UX.
+  /// Remove before public release once real billing is wired up.
+  /// Bypasses copyWith because it can't set trialEndsAt to null.
+  Future<void> deactivatePro() async {
+    final p = await SharedPreferences.getInstance();
+    await p.setBool(_keyIsPro, false);
+    await p.remove(_keyTrialEnds);
+    await p.setBool(_keyHasUsedTrial, false);
+    state = ProState(
+      isPro: false,
+      trialEndsAt: null,
+      hasUsedTrial: false,
+      ocrScansToday: state.ocrScansToday,
+      ocrCountDate: state.ocrCountDate,
+    );
+  }
+
   Future<bool> startTrial() async {
     if (state.hasUsedTrial || state.isActive) return false;
     final ends = DateTime.now().add(const Duration(days: 3));
