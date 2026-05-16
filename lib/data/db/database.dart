@@ -81,11 +81,31 @@ class AppDatabase extends _$AppDatabase {
             }
           }
           if (from < 6) {
-            // Insert Legendary stickers (16 players × 4 rarities = 64 cards).
+            // Insert CC10-CC14 and all Legendary stickers for existing users.
             final albumRow = await (select(albums)
                   ..where((a) => a.code.equals(WC2026Seed.albumCode)))
                 .getSingleOrNull();
             if (albumRow != null) {
+              // Extra CC stickers (CC10-CC14) missed by v5 migration.
+              final newCcStickers = WC2026Seed.stickers.where(
+                (s) => s.number.startsWith('CC') && int.tryParse(s.number.substring(2) ) != null && int.parse(s.number.substring(2)) >= 10,
+              );
+              for (final s in newCcStickers) {
+                final exists = await (select(stickers)..where((st) => st.number.equals(s.number))).getSingleOrNull();
+                if (exists == null) {
+                  await into(stickers).insert(StickersCompanion.insert(
+                    albumId: albumRow.id,
+                    nationId: const Value(null),
+                    number: s.number,
+                    type: s.type,
+                    isFoil: Value(s.isFoil),
+                    pageNumber: s.pageNumber,
+                    positionInPage: s.positionInPage,
+                    label: s.label,
+                    playerName: const Value(null),
+                  ));
+                }
+              }
               final lgdStickers = WC2026Seed.stickers.where((s) => s.number.startsWith('LGD'));
               for (final s in lgdStickers) {
                 final exists = await (select(stickers)

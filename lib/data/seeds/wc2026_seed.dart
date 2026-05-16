@@ -374,8 +374,7 @@ class WC2026Seed {
       ));
     }
 
-    // Coca-Cola section (CC) — 9 stickers at the end of the album.
-    // Labels will be updated once the official CC checklist is published.
+    // Coca-Cola section (CC) — 14 stickers (4 blocks of 3 + 1 block of 2).
     const ccLabels = [
       'Coca-Cola × FIFA WC 2026',
       'Celebração',
@@ -386,6 +385,11 @@ class WC2026Seed {
       'Heróis da Copa',
       'Troféu',
       'Próxima Copa',
+      'Fan Zone',
+      'Família',
+      'Copo Colecionável',
+      'Mascote',
+      'Brinde',
     ];
     for (var i = 0; i < ccLabels.length; i++) {
       list.add(SeedSticker(
