@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app.dart' show onboardedProvider;
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/figus_colors.dart';
 
 class OnboardingPage extends ConsumerStatefulWidget {
   const OnboardingPage({super.key});
@@ -20,91 +21,100 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: AppTheme.inkDeep,
+      backgroundColor: c.bg,
       body: SafeArea(
-        child: Column(
-          children: [
-            // Dot indicators
-            Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(_total, (i) {
-                  final active = i == _index;
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    width: active ? 22 : 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: active
-                          ? AppTheme.gold
-                          : AppTheme.cream.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  );
-                }),
-              ),
-            ),
-
-            Expanded(
-              child: PageView(
-                controller: _ctrl,
-                onPageChanged: (i) => setState(() => _index = i),
-                children: const [
-                  _Slide0(),
-                  _Slide1(),
-                  _Slide2(),
-                  _Slide3(),
-                ],
-              ),
-            ),
-
-            // Bottom nav row
-            Padding(
-              padding: const EdgeInsets.fromLTRB(28, 0, 28, 32),
-              child: Row(
-                children: [
-                  if (_index < _total - 1)
-                    TextButton(
-                      onPressed: _finish,
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppTheme.cream.withValues(alpha: 0.5),
-                      ),
-                      child: const Text('Pular'),
-                    )
-                  else
-                    const SizedBox.shrink(),
-                  const Spacer(),
-                  FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppTheme.gold,
-                      foregroundColor: AppTheme.inkDeep,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 14),
-                      minimumSize: Size.zero,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(999)),
-                      textStyle: GoogleFonts.inter(
-                          fontSize: 16, fontWeight: FontWeight.w700),
-                    ),
-                    onPressed: () async {
-                      if (_index < _total - 1) {
-                        _ctrl.nextPage(
-                            duration: const Duration(milliseconds: 280),
-                            curve: Curves.easeOut);
-                      } else {
-                        await _finish();
-                      }
-                    },
-                    child: Text(
-                        _index < _total - 1 ? 'Próximo' : 'Entrar no álbum'),
+        // Cap the onboarding to a mobile-sized column so the layout doesn't
+        // explode on wide desktop browsers — slides were designed for ~400px.
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              children: [
+                // Dot indicators
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(_total, (i) {
+                      final active = i == _index;
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        width: active ? 22 : 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: active
+                              ? c.accent
+                              : c.text.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      );
+                    }),
                   ),
-                ],
-              ),
+                ),
+
+                Expanded(
+                  child: PageView(
+                    controller: _ctrl,
+                    onPageChanged: (i) => setState(() => _index = i),
+                    children: const [
+                      _Slide0(),
+                      _Slide1(),
+                      _Slide2(),
+                      _Slide3(),
+                    ],
+                  ),
+                ),
+
+                // Bottom nav row
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(28, 0, 28, 32),
+                  child: Row(
+                    children: [
+                      if (_index < _total - 1)
+                        TextButton(
+                          onPressed: _finish,
+                          style: TextButton.styleFrom(
+                            foregroundColor: c.text.withValues(alpha: 0.5),
+                          ),
+                          child: const Text('Pular'),
+                        )
+                      else
+                        const SizedBox.shrink(),
+                      const Spacer(),
+                      FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: c.accent,
+                          foregroundColor: scheme.onPrimary,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 14),
+                          minimumSize: Size.zero,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(999)),
+                          textStyle: GoogleFonts.inter(
+                              fontSize: 16, fontWeight: FontWeight.w700),
+                        ),
+                        onPressed: () async {
+                          if (_index < _total - 1) {
+                            _ctrl.nextPage(
+                                duration: const Duration(milliseconds: 280),
+                                curve: Curves.easeOut);
+                          } else {
+                            await _finish();
+                          }
+                        },
+                        child: Text(
+                            _index < _total - 1 ? 'Próximo' : 'Entrar no álbum'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
