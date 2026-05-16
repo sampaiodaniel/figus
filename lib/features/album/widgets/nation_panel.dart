@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/country_codes.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../data/seeds/wc2026_seed.dart';
 import '../../../domain/models/album_view_models.dart';
 import 'sticker_card.dart';
 
@@ -75,7 +76,19 @@ class NationPanel extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        if (WC2026Seed.albumPageByCode.containsKey(section.key))
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2, bottom: 2),
+                            child: Text(
+                              'pág. ${WC2026Seed.albumPageByCode[section.key]}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppTheme.inkSoft,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 4),
                         ClipRRect(
                           borderRadius: BorderRadius.circular(6),
                           child: LinearProgressIndicator(

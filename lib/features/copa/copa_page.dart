@@ -245,9 +245,20 @@ class _TeamRow extends StatelessWidget {
         ),
         const SizedBox(width: 10),
         Expanded(
-          child: Text(
-            team.name,
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: scheme.onSurface),
+          child: RichText(
+            text: TextSpan(
+              style: DefaultTextStyle.of(context).style,
+              children: [
+                TextSpan(
+                  text: team.name,
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: scheme.onSurface),
+                ),
+                TextSpan(
+                  text: '  (${team.code})',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: scheme.onSurface.withValues(alpha: 0.5)),
+                ),
+              ],
+            ),
           ),
         ),
       ],
