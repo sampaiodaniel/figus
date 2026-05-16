@@ -84,6 +84,7 @@ class FigusApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(overrideSeed: effectiveSeed),
       darkTheme: AppTheme.dark(overrideSeed: effectiveSeed),
+      themeMode: ThemeMode.dark,
       routerConfig: router,
     );
   }

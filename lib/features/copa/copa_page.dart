@@ -212,16 +212,23 @@ class _FeaturedMatch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [scheme.primary, scheme.primary.withValues(alpha: 0.7)],
+        gradient: const LinearGradient(
+          colors: [AppTheme.ink, AppTheme.ink3, Color(0xFF2A1F10)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppTheme.gold.withValues(alpha: 0.35), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.gold.withValues(alpha: 0.12),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,13 +238,13 @@ class _FeaturedMatch extends StatelessWidget {
               Text(
                 match.displayRound,
                 style: const TextStyle(
-                  color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8),
+                    color: AppTheme.creamSoft, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8),
               ),
               const Spacer(),
               if (isLive) _LiveBadge(minute: match.liveMinute)
               else Text(
                 _formatKickoff(match.kickoff),
-                style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
+                style: const TextStyle(color: AppTheme.creamSoft, fontSize: 11, fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -251,22 +258,23 @@ class _FeaturedMatch extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(match.home.code,
                         style: const TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+                          color: AppTheme.cream, fontWeight: FontWeight.w800, fontSize: 16)),
                   ],
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: AppTheme.gold.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.gold.withValues(alpha: 0.3)),
                 ),
                 child: Text(
                   isLive || match.status == MatchStatus.finished
                       ? '${match.homeScore ?? 0}  –  ${match.awayScore ?? 0}'
                       : 'x',
                   style: const TextStyle(
-                    color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900),
+                      color: AppTheme.cream, fontSize: 22, fontWeight: FontWeight.w900),
                 ),
               ),
               Expanded(
@@ -276,7 +284,7 @@ class _FeaturedMatch extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(match.away.code,
                         style: const TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+                          color: AppTheme.cream, fontWeight: FontWeight.w800, fontSize: 16)),
                   ],
                 ),
               ),
@@ -286,7 +294,7 @@ class _FeaturedMatch extends StatelessWidget {
           Center(
             child: Text(
               '${match.venue} · ${match.city}',
-              style: const TextStyle(color: Colors.white60, fontSize: 11),
+              style: const TextStyle(color: AppTheme.creamSoft, fontSize: 11),
               textAlign: TextAlign.center,
             ),
           ),
@@ -329,34 +337,38 @@ class _GroupCard extends StatelessWidget {
           builder: (_) => GroupDetailPage(letter: letter, matches: groupMatches),
         ),
       ),
-      child: Card(
-        margin: EdgeInsets.zero,
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                children: [
-                  Container(
-                    width: 24, height: 24,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(letter,
-                        style: const TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12)),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppTheme.ink,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.ink4),
+        ),
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Container(
+                  width: 24, height: 24,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppTheme.gold,
+                    borderRadius: BorderRadius.circular(6),
                   ),
-                  const SizedBox(width: 6),
-                  Text('Grupo $letter',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                  const Spacer(),
-                  const Icon(Icons.chevron_right_rounded, size: 16, color: AppTheme.inkSoft),
-                ],
-              ),
+                  child: Text(letter,
+                      style: const TextStyle(
+                        color: AppTheme.inkDeep, fontWeight: FontWeight.w800, fontSize: 12)),
+                ),
+                const SizedBox(width: 6),
+                Text('Grupo $letter',
+                    style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.cream)),
+                const Spacer(),
+                const Icon(Icons.chevron_right_rounded, size: 16, color: AppTheme.creamSoft),
+              ],
+            ),
               const SizedBox(height: 8),
               // Mini standings
               for (var i = 0; i < standings.length; i++)
@@ -368,7 +380,6 @@ class _GroupCard extends StatelessWidget {
             ],
           ),
         ),
-      ),
     );
   }
 }
@@ -387,7 +398,7 @@ class _MiniStandingRow extends StatelessWidget {
         children: [
           Text('$rank', style: TextStyle(
             fontSize: 10, fontWeight: FontWeight.w600,
-            color: qualified ? Theme.of(context).colorScheme.primary : AppTheme.inkSoft,
+            color: qualified ? AppTheme.gold : AppTheme.creamSoft,
           )),
           const SizedBox(width: 4),
           _TeamFlag(code: standing.team.code, size: 18),
@@ -445,7 +456,7 @@ class GroupDetailPage extends StatelessWidget {
                   fontSize: 11,
                   letterSpacing: 0.8,
                   fontWeight: FontWeight.w700,
-                  color: AppTheme.inkSoft.withValues(alpha: 0.7),
+                  color: AppTheme.creamSoft.withValues(alpha: 0.8),
                 )),
           ),
           Row(
@@ -459,19 +470,22 @@ class GroupDetailPage extends StatelessWidget {
           const SizedBox(height: 20),
 
           // Full standings table
-          Card(
-            margin: EdgeInsets.zero,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('A classificação',
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.ink,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.ink4),
+            ),
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                  const Text('A classificação',
                       style: TextStyle(
                         fontSize: 18,
                         fontStyle: FontStyle.italic,
                         fontWeight: FontWeight.w800,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: AppTheme.gold,
                       )),
                   const SizedBox(height: 10),
                   _StandingHeader(),
@@ -485,12 +499,11 @@ class GroupDetailPage extends StatelessWidget {
                 ],
               ),
             ),
-          ),
           const SizedBox(height: 16),
 
           if (played.isNotEmpty) ...[
             Text('Jogos • ${played.length} de ${matches.length}',
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.inkSoft)),
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.creamSoft)),
             const SizedBox(height: 8),
             for (final m in matches) _MatchRow(match: m),
           ],
@@ -516,8 +529,9 @@ class _TeamTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
-          color: AppTheme.slotSoft,
+          color: AppTheme.ink,
           borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppTheme.ink4),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -526,12 +540,12 @@ class _TeamTile extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               team.code,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppTheme.cream),
             ),
             const SizedBox(height: 2),
             Text(
               team.name,
-              style: const TextStyle(fontSize: 9, color: AppTheme.inkSoft),
+              style: const TextStyle(fontSize: 9, color: AppTheme.creamSoft),
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -546,7 +560,7 @@ class _TeamTile extends StatelessWidget {
 class _StandingHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    const style = TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.inkSoft);
+    const style = TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.creamSoft);
     return Row(
       children: const [
         SizedBox(width: 16),
@@ -570,10 +584,11 @@ class _StandingRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
+    final textColor = qualified ? AppTheme.cream : AppTheme.creamSoft;
     final style = TextStyle(
       fontSize: 13,
       fontWeight: qualified ? FontWeight.w700 : FontWeight.w500,
+      color: textColor,
     );
     final sg = standing.goalDiff;
     return Padding(
@@ -584,7 +599,7 @@ class _StandingRow extends StatelessWidget {
             width: 16,
             child: Text('$rank',
                 style: style.copyWith(
-                  color: qualified ? primary : AppTheme.inkSoft,
+                  color: qualified ? AppTheme.gold : AppTheme.creamSoft,
                   fontSize: 12,
                 )),
           ),
@@ -610,7 +625,7 @@ class _StandingRow extends StatelessWidget {
               child: Text(
                 sg >= 0 ? '+$sg' : '$sg',
                 style: style.copyWith(
-                  color: sg > 0 ? const Color(0xFF22C58A) : sg < 0 ? Colors.red : null,
+                  color: sg > 0 ? AppTheme.field : sg < 0 ? AppTheme.flame : AppTheme.creamSoft,
                 ),
               ),
             ),
@@ -621,7 +636,7 @@ class _StandingRow extends StatelessWidget {
               child: Text(
                 '${standing.points}',
                 style: style.copyWith(
-                  color: qualified ? primary : null,
+                  color: qualified ? AppTheme.gold : AppTheme.creamSoft,
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -641,52 +656,54 @@ class _MatchRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final isLive = match.status == MatchStatus.live;
     final isDone = match.status == MatchStatus.finished;
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 6),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            Text(_formatKickoff(match.kickoff),
-                style: const TextStyle(fontSize: 11, color: AppTheme.inkSoft, fontWeight: FontWeight.w500)),
-            const Spacer(),
-            _TeamFlag(code: match.home.code, size: 22),
-            const SizedBox(width: 6),
-            Text(match.home.code,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-            const SizedBox(width: 10),
-            if (isLive || isDone)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: isLive ? Colors.red.withValues(alpha: 0.1) : AppTheme.slotSoft,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  '${match.homeScore ?? 0} – ${match.awayScore ?? 0}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: isLive ? Colors.red : null,
-                  ),
-                ),
-              )
-            else
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppTheme.slotSoft,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Text('x', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.inkSoft)),
+      decoration: BoxDecoration(
+        color: AppTheme.ink,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.ink4),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Row(
+        children: [
+          Text(_formatKickoff(match.kickoff),
+              style: const TextStyle(fontSize: 11, color: AppTheme.creamSoft, fontWeight: FontWeight.w500)),
+          const Spacer(),
+          _TeamFlag(code: match.home.code, size: 22),
+          const SizedBox(width: 6),
+          Text(match.home.code,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.cream)),
+          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: isLive
+                  ? Colors.red.withValues(alpha: 0.15)
+                  : isDone
+                      ? AppTheme.gold.withValues(alpha: 0.12)
+                      : AppTheme.ink3,
+              borderRadius: BorderRadius.circular(6),
+              border: isLive
+                  ? Border.all(color: Colors.red.withValues(alpha: 0.4))
+                  : null,
+            ),
+            child: Text(
+              (isLive || isDone)
+                  ? '${match.homeScore ?? 0} – ${match.awayScore ?? 0}'
+                  : 'x',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: isLive ? Colors.red : isDone ? AppTheme.gold : AppTheme.creamSoft,
               ),
-            const SizedBox(width: 10),
-            Text(match.away.code,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-            const SizedBox(width: 6),
-            _TeamFlag(code: match.away.code, size: 22),
-          ],
-        ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(match.away.code,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.cream)),
+          const SizedBox(width: 6),
+          _TeamFlag(code: match.away.code, size: 22),
+        ],
       ),
     );
   }
@@ -731,88 +748,104 @@ class _MatchesTabState extends State<_MatchesTab> {
     final filtered = _filtered();
     final primary = Theme.of(context).colorScheme.primary;
 
-    return ListView.builder(
-      padding: EdgeInsets.zero,
-      // +1 for filter bar; when empty add 1 extra slot for the empty-state widget
-      itemCount: filtered.isEmpty ? 2 : filtered.length + 1,
-      itemBuilder: (ctx, index) {
-        // index 0: filter chips
-        if (index == 0) {
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  for (final (f, label) in [
-                    (_DateFilter.today,    'Hoje'),
-                    (_DateFilter.tomorrow, 'Amanhã'),
-                    (_DateFilter.week,     'Esta semana'),
-                    (_DateFilter.all,      'Todos'),
-                  ])
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: FilterChip(
-                        selected: _filter == f,
-                        label: Text(label),
-                        onSelected: (_) => setState(() => _filter = f),
-                        labelStyle: TextStyle(
+    // Build flat list: filter bar first, then headers + cards interleaved
+    final items = <Widget>[];
+
+    // Filter bar
+    items.add(
+      Padding(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final entry in const [
+                (_DateFilter.today,    'Hoje'),
+                (_DateFilter.tomorrow, 'Amanhã'),
+                (_DateFilter.week,     'Esta semana'),
+                (_DateFilter.all,      'Todos'),
+              ])
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _filter = entry.$1),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _filter == entry.$1 ? primary : AppTheme.slotSoft,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        entry.$2,
+                        style: TextStyle(
+                          fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: _filter == f ? Colors.white : AppTheme.inkSoft,
+                          color: _filter == entry.$1 ? Colors.white : AppTheme.inkSoft,
                         ),
-                        selectedColor: primary,
-                        backgroundColor: AppTheme.slotSoft,
-                        showCheckmark: false,
-                        side: BorderSide.none,
                       ),
                     ),
-                ],
-              ),
-            ),
-          );
-        }
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
 
-        if (filtered.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.only(top: 64),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.sports_soccer_rounded, size: 48, color: AppTheme.slot),
-                SizedBox(height: 12),
-                Center(child: Text('Nenhum jogo neste período',
-                    style: TextStyle(color: AppTheme.inkSoft, fontWeight: FontWeight.w600))),
-                SizedBox(height: 4),
-                Center(child: Text('A Copa começa em 11 de junho de 2026',
-                    style: TextStyle(color: AppTheme.inkSoft, fontSize: 12))),
-              ],
-            ),
-          );
-        }
-
-        final m = filtered[index - 1];
-        // Show date header if this is the first match of a new day
-        final showHeader = index == 1 ||
-            _groupKey(filtered[index - 2].kickoff.toLocal()) !=
-                _groupKey(m.kickoff.toLocal());
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (showHeader)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 16, 12, 6),
+    if (filtered.isEmpty) {
+      items.add(
+        const Padding(
+          padding: EdgeInsets.only(top: 64),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.sports_soccer_rounded, size: 48, color: AppTheme.slot),
+              SizedBox(height: 12),
+              Center(
                 child: Text(
-                  _groupKey(m.kickoff.toLocal()),
-                  style: const TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.inkSoft),
+                  'Nenhum jogo neste período',
+                  style: TextStyle(color: AppTheme.inkSoft, fontWeight: FontWeight.w600),
                 ),
               ),
-            _FullMatchCard(match: m),
-          ],
-        );
-      },
+              SizedBox(height: 4),
+              Center(
+                child: Text(
+                  'A Copa começa em 11 de junho de 2026',
+                  style: TextStyle(color: AppTheme.inkSoft, fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else {
+      String? lastKey;
+      for (final m in filtered) {
+        final key = _groupKey(m.kickoff.toLocal());
+        if (key != lastKey) {
+          items.add(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 16, 12, 6),
+              child: Text(
+                key,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: primary.withValues(alpha: 0.8),
+                ),
+              ),
+            ),
+          );
+          lastKey = key;
+        }
+        items.add(_FullMatchCard(match: m));
+      }
+    }
+
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 24),
+      children: items,
     );
   }
 }
@@ -826,104 +859,107 @@ class _FullMatchCard extends StatelessWidget {
     final isLive = match.status == MatchStatus.live;
     final isDone = match.status == MatchStatus.finished;
     final timeStr = _hhmm(match.kickoff.toLocal());
-    final scheme = Theme.of(context).colorScheme;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            // Time column
-            SizedBox(
-              width: 44,
-              child: Column(
-                children: [
-                  if (isLive)
-                    _LiveBadge(minute: match.liveMinute)
-                  else
-                    Text(timeStr,
-                        style: const TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.inkSoft)),
-                  const SizedBox(height: 2),
-                  Text(match.displayRound,
-                      style: const TextStyle(fontSize: 9, color: AppTheme.inkSoft),
-                      textAlign: TextAlign.center),
-                ],
-              ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8, left: 12, right: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.ink,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.ink4),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          // Time column
+          SizedBox(
+            width: 44,
+            child: Column(
+              children: [
+                if (isLive)
+                  _LiveBadge(minute: match.liveMinute)
+                else
+                  Text(timeStr,
+                      style: const TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.cream)),
+                const SizedBox(height: 2),
+                Text(match.displayRound,
+                    style: const TextStyle(fontSize: 9, color: AppTheme.creamSoft),
+                    textAlign: TextAlign.center),
+              ],
             ),
-            const SizedBox(width: 10),
-            // Home team
-            Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Flexible(
-                    child: Text(match.home.name,
-                        textAlign: TextAlign.right,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: isDone && (match.homeScore ?? 0) > (match.awayScore ?? 0)
-                              ? scheme.primary
-                              : null,
-                        ),
-                        overflow: TextOverflow.ellipsis),
-                  ),
-                  const SizedBox(width: 6),
-                  _TeamFlag(code: match.home.code, size: 26),
-                ],
-              ),
-            ),
-            // Score
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: isLive
-                    ? Colors.red.withValues(alpha: 0.1)
-                    : isDone
-                        ? scheme.primary.withValues(alpha: 0.1)
-                        : AppTheme.slotSoft,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                isLive || isDone
-                    ? '${match.homeScore ?? 0} – ${match.awayScore ?? 0}'
-                    : 'x',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                  color: isLive
-                      ? Colors.red
-                      : isDone
-                          ? scheme.primary
-                          : AppTheme.inkSoft,
+          ),
+          const SizedBox(width: 10),
+          // Home team
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Flexible(
+                  child: Text(match.home.name,
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isDone && (match.homeScore ?? 0) > (match.awayScore ?? 0)
+                            ? AppTheme.gold
+                            : AppTheme.cream,
+                      ),
+                      overflow: TextOverflow.ellipsis),
                 ),
+                const SizedBox(width: 6),
+                _TeamFlag(code: match.home.code, size: 26),
+              ],
+            ),
+          ),
+          // Score
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: isLive
+                  ? Colors.red.withValues(alpha: 0.15)
+                  : isDone
+                      ? AppTheme.gold.withValues(alpha: 0.12)
+                      : AppTheme.ink3,
+              borderRadius: BorderRadius.circular(8),
+              border: isLive
+                  ? Border.all(color: Colors.red.withValues(alpha: 0.4))
+                  : isDone
+                      ? Border.all(color: AppTheme.gold.withValues(alpha: 0.3))
+                      : null,
+            ),
+            child: Text(
+              isLive || isDone
+                  ? '${match.homeScore ?? 0} – ${match.awayScore ?? 0}'
+                  : 'x',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w900,
+                color: isLive ? Colors.red : isDone ? AppTheme.gold : AppTheme.creamSoft,
               ),
             ),
-            // Away team
-            Expanded(
-              child: Row(
-                children: [
-                  _TeamFlag(code: match.away.code, size: 26),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(match.away.name,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: isDone && (match.awayScore ?? 0) > (match.homeScore ?? 0)
-                              ? scheme.primary
-                              : null,
-                        ),
-                        overflow: TextOverflow.ellipsis),
-                  ),
-                ],
-              ),
+          ),
+          // Away team
+          Expanded(
+            child: Row(
+              children: [
+                _TeamFlag(code: match.away.code, size: 26),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(match.away.name,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isDone && (match.awayScore ?? 0) > (match.homeScore ?? 0)
+                            ? AppTheme.gold
+                            : AppTheme.cream,
+                      ),
+                      overflow: TextOverflow.ellipsis),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

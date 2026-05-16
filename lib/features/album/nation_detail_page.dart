@@ -113,7 +113,6 @@ class _StatsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final owned = section.ownedCount;
     final total = section.totalCount;
     final missing = total - owned;
@@ -127,8 +126,8 @@ class _StatsHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       decoration: BoxDecoration(
-        color: scheme.primary.withValues(alpha: 0.08),
-        border: Border(bottom: BorderSide(color: scheme.primary.withValues(alpha: 0.15))),
+        color: AppTheme.ink,
+        border: const Border(bottom: BorderSide(color: AppTheme.ink4)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -160,14 +159,14 @@ class _StatsHeader extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: scheme.primary,
+                        color: AppTheme.gold,
                         letterSpacing: 0.4,
                       )),
                 const SizedBox(height: 6),
                 Row(
                   children: [
                     _Stat(label: 'TENHO', value: '$owned',
-                        color: scheme.primary),
+                        color: AppTheme.gold),
                     const SizedBox(width: 16),
                     _Stat(label: 'FALTAM', value: '$missing',
                         color: AppTheme.inkSoft),
@@ -189,14 +188,14 @@ class _StatsHeader extends StatelessWidget {
                   value: pct / 100,
                   strokeWidth: 4,
                   backgroundColor: AppTheme.slotSoft,
-                  valueColor: AlwaysStoppedAnimation<Color>(scheme.primary),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.gold),
                 ),
               ),
               Text('$pct%',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
-                    color: scheme.primary,
+                    color: AppTheme.gold,
                   )),
             ],
           ),
@@ -373,7 +372,7 @@ class _HeaderBlock extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppTheme.seed, AppTheme.seed.withValues(alpha: 0.7)],
+          colors: [AppTheme.gold, AppTheme.goldDeep],
         ),
         borderRadius: BorderRadius.circular(14),
       ),

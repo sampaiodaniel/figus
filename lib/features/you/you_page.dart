@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../data/providers.dart';
@@ -40,7 +41,7 @@ class YouPage extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
 
-          // Pro banner — top prominence (trial countdown or upgrade CTA)
+          // Pro banner — top prominence
           if (pro.isTrial)
             _TrialBanner(daysLeft: pro.trialDaysLeft, onTap: () => context.push('/upgrade'))
           else if (!pro.isPro)
@@ -95,7 +96,6 @@ class YouPage extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 16),
-          // Sync / auth section
           _SyncCard(sync: sync),
           const SizedBox(height: 16),
           _GroupCard(
@@ -129,6 +129,7 @@ class YouPage extends ConsumerWidget {
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
+      backgroundColor: AppTheme.ink,
       builder: (_) => const Padding(
         padding: EdgeInsets.fromLTRB(24, 8, 24, 24),
         child: Column(
@@ -136,7 +137,11 @@ class YouPage extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text('Como marcar e trocar',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.cream,
+                )),
             SizedBox(height: 16),
             _HowRow(icon: Icons.touch_app_rounded, text: 'Toque → marca como tenho'),
             _HowRow(icon: Icons.touch_app_rounded, text: 'Toque de novo → conta como repetida (+1)'),
@@ -183,20 +188,30 @@ class _ProfileHeader extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppTheme.slotSoft.withValues(alpha: 0.5),
+          color: AppTheme.ink,
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppTheme.ink4),
         ),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 28,
-              backgroundColor: AppTheme.seed,
+            Container(
+              width: 56,
+              height: 56,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [AppTheme.gold, AppTheme.goldDeep],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              alignment: Alignment.center,
               child: Text(
                 profileName.isNotEmpty ? profileName[0].toUpperCase() : '?',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: GoogleFonts.inter(
+                  color: AppTheme.inkDeep,
                   fontSize: 24,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
             ),
@@ -206,20 +221,24 @@ class _ProfileHeader extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(profileName,
-                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.cream,
+                      )),
                   const SizedBox(height: 3),
                   if (pct != null)
                     Text(
                       '$owned/$total figurinhas · $pct% · ${foilOwned ?? 0}/${foilTotal ?? 0} brilhantes',
-                      style: const TextStyle(fontSize: 12, color: AppTheme.inkSoft),
+                      style: const TextStyle(fontSize: 12, color: AppTheme.creamSoft),
                     )
                   else
                     const Text('toque para trocar de perfil',
-                        style: TextStyle(fontSize: 12, color: AppTheme.inkSoft)),
+                        style: TextStyle(fontSize: 12, color: AppTheme.creamSoft)),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: AppTheme.inkSoft),
+            const Icon(Icons.chevron_right_rounded, color: AppTheme.creamSoft),
           ],
         ),
       ),
@@ -241,7 +260,7 @@ class _TrialBanner extends StatelessWidget {
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [Color(0xFF007A5A), Color(0xFF22C58A)],
+            colors: [AppTheme.field, Color(0xFF52C97A)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -287,15 +306,16 @@ class _ProBanner extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [Color(0xFF1A0A3C), Color(0xFF2E1A6E), AppTheme.seed],
+            colors: [AppTheme.inkDeep, AppTheme.ink, Color(0xFF2A1F10)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppTheme.gold.withValues(alpha: 0.5), width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.seed.withValues(alpha: 0.4),
-              blurRadius: 16,
+              color: AppTheme.gold.withValues(alpha: 0.20),
+              blurRadius: 20,
               offset: const Offset(0, 6),
             ),
           ],
@@ -306,63 +326,79 @@ class _ProBanner extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 26),
-                const SizedBox(width: 10),
-                const Text('FIGUS PRO',
-                    style: TextStyle(
-                      color: Colors.white,
+                const Icon(Icons.workspace_premium_rounded, color: AppTheme.gold, size: 24),
+                const SizedBox(width: 8),
+                Text('FIGUS',
+                    style: GoogleFonts.inter(
+                      color: AppTheme.cream,
                       fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.5,
                     )),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppTheme.gold,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text('PRO',
+                      style: GoogleFonts.inter(
+                        color: AppTheme.inkDeep,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.0,
+                      )),
+                ),
                 const Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: AppTheme.gold.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppTheme.gold.withValues(alpha: 0.4)),
                   ),
                   child: const Text('7 dias grátis',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppTheme.gold,
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                       )),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             const Text('Sem anúncios.\nMais recursos. Mais Copa.',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppTheme.cream,
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
                   height: 1.2,
                 )),
             const SizedBox(height: 8),
             const Text(
-              'Temas · OCR ilimitado · Sync entre aparelhos',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
+              'Temas · Sync entre aparelhos · Sem anúncios',
+              style: TextStyle(color: AppTheme.creamSoft, fontSize: 13),
             ),
             const SizedBox(height: 16),
             Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'A partir de R\$ 6,90/mês — Figuritas cobra R\$ 9,90',
-                    style: TextStyle(color: Colors.white60, fontSize: 12),
+                    'R\$ 4,90/mês · R\$ 9,90/ano',
+                    style: TextStyle(color: AppTheme.goldSoft, fontSize: 13, fontWeight: FontWeight.w600),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppTheme.gold,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text('Assinar',
-                      style: TextStyle(
-                        color: AppTheme.seed,
+                      style: GoogleFonts.inter(
+                        color: AppTheme.inkDeep,
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
                       )),
@@ -385,73 +421,82 @@ class _SyncCard extends StatelessWidget {
     final isSignedIn = sync.isSignedIn;
     final email = sync.userEmail;
 
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: isSignedIn
-                    ? const Color(0xFF22C58A).withValues(alpha: 0.1)
-                    : AppTheme.slotSoft,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                isSignedIn ? Icons.cloud_done_rounded : Icons.cloud_off_rounded,
-                color: isSignedIn ? const Color(0xFF22C58A) : AppTheme.inkSoft,
-                size: 22,
-              ),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.ink,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.ink4),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: isSignedIn
+                  ? AppTheme.field.withValues(alpha: 0.15)
+                  : AppTheme.ink3,
+              shape: BoxShape.circle,
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isSignedIn ? 'Sync ativo' : 'Sync desativado',
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-                  ),
-                  Text(
-                    isSignedIn
-                        ? email ?? 'Conta conectada'
-                        : 'Entre para sincronizar entre dispositivos',
-                    style: const TextStyle(fontSize: 12, color: AppTheme.inkSoft),
-                  ),
-                ],
-              ),
+            child: Icon(
+              isSignedIn ? Icons.cloud_done_rounded : Icons.cloud_off_rounded,
+              color: isSignedIn ? AppTheme.field : AppTheme.creamSoft,
+              size: 22,
             ),
-            if (isSignedIn)
-              TextButton(
-                onPressed: () async {
-                  await sync.signOut();
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Conta desconectada')),
-                    );
-                  }
-                },
-                child: const Text('Sair'),
-              )
-            else
-              FilledButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(builder: (_) => const AuthPage()),
-                  );
-                },
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppTheme.seed,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isSignedIn ? 'Sync ativo' : 'Sync desativado',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: AppTheme.cream,
+                  ),
                 ),
-                child: const Text('Entrar'),
+                Text(
+                  isSignedIn
+                      ? email ?? 'Conta conectada'
+                      : 'Entre para sincronizar entre dispositivos',
+                  style: const TextStyle(fontSize: 12, color: AppTheme.creamSoft),
+                ),
+              ],
+            ),
+          ),
+          if (isSignedIn)
+            TextButton(
+              onPressed: () async {
+                await sync.signOut();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Conta desconectada')),
+                  );
+                }
+              },
+              child: const Text('Sair'),
+            )
+          else
+            FilledButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(builder: (_) => const AuthPage()),
+                );
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.gold,
+                foregroundColor: AppTheme.inkDeep,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                minimumSize: Size.zero,
+                textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
               ),
-          ],
-        ),
+              child: const Text('Entrar'),
+            ),
+        ],
       ),
     );
   }
@@ -470,15 +515,19 @@ class _GroupCard extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(4, 0, 0, 8),
           child: Text(title.toUpperCase(),
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 11,
                 letterSpacing: 0.8,
                 fontWeight: FontWeight.w700,
-                color: AppTheme.inkSoft.withValues(alpha: 0.8),
+                color: AppTheme.creamSoft,
               )),
         ),
-        Card(
-          margin: EdgeInsets.zero,
+        Container(
+          decoration: BoxDecoration(
+            color: AppTheme.ink,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppTheme.ink4),
+          ),
           child: Column(children: tiles),
         ),
       ],
@@ -497,14 +546,18 @@ class _Tile extends StatelessWidget {
   Widget build(BuildContext context) {
     final disabled = onTap == null;
     return ListTile(
-      leading: Icon(icon, color: disabled ? AppTheme.slot : AppTheme.seed),
+      leading: Icon(icon,
+          color: disabled ? AppTheme.ink4 : AppTheme.gold),
       title: Text(title,
           style: TextStyle(
             fontWeight: FontWeight.w600,
-            color: disabled ? AppTheme.inkSoft : null,
+            color: disabled ? AppTheme.creamSoft : AppTheme.cream,
           )),
-      subtitle: subtitle == null ? null : Text(subtitle!),
-      trailing: disabled ? null : const Icon(Icons.chevron_right_rounded),
+      subtitle: subtitle == null
+          ? null
+          : Text(subtitle!,
+              style: const TextStyle(color: AppTheme.creamSoft, fontSize: 12)),
+      trailing: disabled ? null : const Icon(Icons.chevron_right_rounded, color: AppTheme.creamSoft),
       onTap: onTap,
     );
   }
@@ -522,9 +575,12 @@ class _HowRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: AppTheme.seed, size: 20),
+          Icon(icon, color: AppTheme.gold, size: 20),
           const SizedBox(width: 12),
-          Expanded(child: Text(text, style: const TextStyle(height: 1.4))),
+          Expanded(
+            child: Text(text,
+                style: const TextStyle(height: 1.4, color: AppTheme.cream)),
+          ),
         ],
       ),
     );

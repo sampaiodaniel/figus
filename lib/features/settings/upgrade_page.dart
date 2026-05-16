@@ -1,48 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../pro/pro_service.dart';
 
 // ── Plan definitions ──────────────────────────────────────────────────────────
 
-enum _Plan { monthly, semiannual, annual }
+enum _Plan { monthly, annual }
 
 extension _PlanDetails on _Plan {
   String get label => switch (this) {
         _Plan.monthly => 'Mensal',
-        _Plan.semiannual => 'Semestral',
-        _Plan.annual => 'Anual',
+        _Plan.annual  => 'Anual',
       };
 
   String get price => switch (this) {
-        _Plan.monthly => 'R\$ 6,90',
-        _Plan.semiannual => 'R\$ 39',
-        _Plan.annual => 'R\$ 50',
+        _Plan.monthly => 'R\$ 4,90',
+        _Plan.annual  => 'R\$ 9,90',
       };
 
   String get period => switch (this) {
         _Plan.monthly => '/mês',
-        _Plan.semiannual => 'por 6 meses',
-        _Plan.annual => 'por 12 meses',
+        _Plan.annual  => '/ano',
       };
 
   String get perMonth => switch (this) {
-        _Plan.monthly => 'R\$ 6,90/mês',
-        _Plan.semiannual => 'R\$ 6,50/mês',
-        _Plan.annual => 'R\$ 4,17/mês',
+        _Plan.monthly => 'R\$ 4,90/mês',
+        _Plan.annual  => 'R\$ 0,82/mês • economiza 83%',
       };
 
   String? get badge => switch (this) {
         _Plan.monthly => null,
-        _Plan.semiannual => 'Popular',
-        _Plan.annual => '★ Melhor valor',
+        _Plan.annual  => '★ Melhor valor',
       };
 
   String? get hook => switch (this) {
         _Plan.monthly => null,
-        _Plan.semiannual => null,
-        _Plan.annual => 'Só R\$ 11 a mais que semestral — 2× o tempo!',
+        _Plan.annual  => 'Figus o ano inteiro por menos que um café',
       };
 }
 
@@ -60,19 +55,45 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
   @override
   Widget build(BuildContext context) {
     final pro = ref.watch(proProvider);
+    final primary = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           SliverAppBar.large(
-            backgroundColor: const Color(0xFF1A0A3C),
-            foregroundColor: Colors.white,
-            title: const Text('Figus Pro'),
+            backgroundColor: AppTheme.inkDeep,
+            foregroundColor: AppTheme.cream,
+            title: Row(
+              children: [
+                Text('FIGUS',
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: AppTheme.gold,
+                      letterSpacing: 1.5,
+                    )),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppTheme.gold,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text('PRO',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.inkDeep,
+                        letterSpacing: 1.0,
+                      )),
+                ),
+              ],
+            ),
             flexibleSpace: const FlexibleSpaceBar(
               background: DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Color(0xFF1A0A3C), Color(0xFF2E1A6E), Color(0xFF1F66FF)],
+                    colors: [AppTheme.inkDeep, AppTheme.ink, Color(0xFF2A1F10)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -87,59 +108,75 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
                 // Status badges
                 if (pro.isTrial)
                   _StatusBadge(
-                    color: const Color(0xFF22C58A),
+                    color: AppTheme.field,
                     icon: Icons.timer_rounded,
                     text: 'Trial ativo — ${pro.trialDaysLeft} dias restantes',
                   ),
                 if (pro.isPro)
-                  const _StatusBadge(
-                    color: Color(0xFFB8860B),
+                  _StatusBadge(
+                    color: AppTheme.gold,
                     icon: Icons.workspace_premium_rounded,
                     text: 'Você já é Pro! Obrigado ❤️',
                   ),
 
                 if (!pro.isActive) ...[
-                  const Text(
-                    'Mais por menos.\nSem anúncios, sempre.',
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, height: 1.1),
+                  Text(
+                    'Sem anúncios.\nMais recursos.\nMais Copa.',
+                    style: GoogleFonts.inter(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                      height: 1.15,
+                      color: AppTheme.cream,
+                    ),
                   ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Figuritas cobra R\$ 9,90/mês. Nós custamos R\$ 6,90.',
-                    style: TextStyle(color: AppTheme.inkSoft, fontSize: 14),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Figuritas cobra R\$ 9,90/mês. Nós custamos R\$ 4,90.',
+                    style: TextStyle(
+                      color: AppTheme.creamSoft,
+                      fontSize: 14,
+                    ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
 
                   // Social proof
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     decoration: BoxDecoration(
-                      color: AppTheme.slotSoft,
+                      color: AppTheme.ink3,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.people_alt_rounded, size: 18, color: AppTheme.seed),
-                        SizedBox(width: 8),
+                        Icon(Icons.people_alt_rounded, size: 18, color: primary),
+                        const SizedBox(width: 8),
                         Text(
                           '847 colecionadores já são Pro',
-                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                            color: AppTheme.cream,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
                 ],
 
                 // Comparison table
                 const _ComparisonTable(),
-                const SizedBox(height: 24),
+                const SizedBox(height: 28),
 
                 // Plan selector + CTA
                 if (!pro.isPro) ...[
-                  const Text('Escolha seu plano',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                  Text('Escolha seu plano',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.cream,
+                      )),
                   const SizedBox(height: 12),
                   for (final plan in _Plan.values) ...[
                     _PlanTile(
@@ -149,9 +186,9 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
                     ),
                     const SizedBox(height: 8),
                   ],
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
 
-                  // Trial CTA (if eligible)
+                  // Trial CTA
                   if (!pro.hasUsedTrial) ...[
                     SizedBox(
                       width: double.infinity,
@@ -159,7 +196,7 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
                         icon: const Icon(Icons.lock_open_rounded),
                         label: const Text('Experimentar 7 dias grátis'),
                         style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFF22C58A),
+                          backgroundColor: AppTheme.field,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
@@ -167,9 +204,9 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
                           await ref.read(proProvider.notifier).startTrial();
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Pro ativado! 7 dias grátis.'),
-                                backgroundColor: Color(0xFF22C58A),
+                              SnackBar(
+                                content: const Text('Pro ativado! 7 dias grátis.'),
+                                backgroundColor: AppTheme.field,
                               ),
                             );
                           }
@@ -177,16 +214,21 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Center(
-                      child: Text('Sem cartão. Cancela a qualquer momento.',
-                          style: TextStyle(fontSize: 11, color: AppTheme.inkSoft)),
+                    Center(
+                      child: Text(
+                        'Sem cartão. Cancela a qualquer momento.',
+                        style: TextStyle(fontSize: 11, color: AppTheme.creamSoft),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Center(
-                      child: Text('— ou —',
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.inkSoft.withValues(alpha: 0.6))),
+                      child: Text(
+                        '— ou —',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.creamSoft.withValues(alpha: 0.6),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 12),
                   ],
@@ -196,19 +238,24 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
                     width: double.infinity,
                     child: FilledButton(
                       style: FilledButton.styleFrom(
-                        backgroundColor: AppTheme.seed,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        backgroundColor: AppTheme.gold,
+                        foregroundColor: AppTheme.inkDeep,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        textStyle: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                       onPressed: () => _showComingSoon(context),
                       child: Text('Assinar ${_selected.label} — ${_selected.price}'),
                     ),
                   ),
                   const SizedBox(height: 10),
-                  const Center(
+                  Center(
                     child: Text(
                       'Compra dentro do app disponível ao entrar nas lojas',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 11, color: AppTheme.inkSoft),
+                      style: TextStyle(fontSize: 11, color: AppTheme.creamSoft),
                     ),
                   ),
                 ],
@@ -261,7 +308,7 @@ class _StatusBadge extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
@@ -284,45 +331,39 @@ class _PlanTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final accent = selected ? AppTheme.gold : AppTheme.ink4;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: selected ? scheme.primary.withValues(alpha: 0.08) : AppTheme.slotSoft,
+          color: selected ? AppTheme.gold.withValues(alpha: 0.10) : AppTheme.ink,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: selected ? scheme.primary : Colors.transparent,
-            width: 2,
-          ),
+          border: Border.all(color: accent, width: selected ? 2 : 1),
         ),
         child: Row(
           children: [
             // Radio indicator
             Container(
-              width: 20,
-              height: 20,
+              width: 20, height: 20,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: selected ? scheme.primary : AppTheme.inkSoft, width: 2),
+                border: Border.all(color: accent, width: 2),
               ),
               child: selected
                   ? Center(
                       child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
+                        width: 10, height: 10,
+                        decoration: const BoxDecoration(
                           shape: BoxShape.circle,
-                          color: scheme.primary,
+                          color: AppTheme.gold,
                         ),
                       ),
                     )
                   : null,
             ),
             const SizedBox(width: 12),
-            // Plan info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -333,24 +374,22 @@ class _PlanTile extends StatelessWidget {
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 15,
-                            color: selected ? scheme.primary : null,
+                            color: selected ? AppTheme.gold : AppTheme.cream,
                           )),
                       if (plan.badge != null) ...[
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                           decoration: BoxDecoration(
-                            color: plan == _Plan.annual
-                                ? const Color(0xFFB8860B)
-                                : scheme.primary,
+                            color: AppTheme.gold,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
                             plan.badge!,
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: AppTheme.inkDeep,
                               fontSize: 10,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
                         ),
@@ -359,31 +398,29 @@ class _PlanTile extends StatelessWidget {
                   ),
                   if (plan.hook != null) ...[
                     const SizedBox(height: 2),
-                    Text(
-                      plan.hook!,
-                      style: const TextStyle(
+                    Text(plan.hook!,
+                        style: const TextStyle(
                           fontSize: 12,
-                          color: Color(0xFFB8860B),
-                          fontWeight: FontWeight.w600),
-                    ),
+                          color: AppTheme.goldSoft,
+                          fontWeight: FontWeight.w600,
+                        )),
                   ],
                   Text(plan.perMonth,
-                      style: const TextStyle(fontSize: 12, color: AppTheme.inkSoft)),
+                      style: TextStyle(fontSize: 12, color: AppTheme.creamSoft)),
                 ],
               ),
             ),
-            // Price
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(plan.price,
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.w900,
-                      color: selected ? scheme.primary : null,
+                      color: selected ? AppTheme.gold : AppTheme.cream,
                     )),
                 Text(plan.period,
-                    style: const TextStyle(fontSize: 10, color: AppTheme.inkSoft)),
+                    style: TextStyle(fontSize: 11, color: AppTheme.creamSoft)),
               ],
             ),
           ],
@@ -402,81 +439,118 @@ class _ComparisonTable extends StatelessWidget {
     ('Estatísticas e progresso', true, true),
     ('Copa do Mundo ao vivo', true, true),
     ('Comparar coleção com amigo', true, true),
-    ('Scan OCR ilimitado (3/dia no free)', false, true),
-    ('Sem banner e sem intersticiais', false, true),
-    ('5 temas exclusivos de cor', false, true),
+    ('Sem anúncios', false, true),
+    ('Temas exclusivos de cor', false, true),
     ('Export da coleção em PDF', false, true),
     ('Sync entre dispositivos', false, true),
     ('Troca por Bluetooth (em breve)', false, true),
-    ('Acesso antecipado a novos álbuns', false, true),
+    ('Badge de apoiador', false, true),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Expanded(
-              child: Text('Recurso',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.inkSoft)),
-            ),
-            SizedBox(
-              width: 56,
-              child: Text('Free',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.inkSoft.withValues(alpha: 0.7),
-                  )),
-            ),
-            SizedBox(
-              width: 56,
-              child: Text('Pro',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFFB8860B),
-                  )),
-            ),
-          ],
-        ),
-        const Divider(height: 16),
-        for (final (label, free, proVal) in _rows)
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.ink,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.ink4),
+      ),
+      child: Column(
+        children: [
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 7),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
             child: Row(
               children: [
-                Expanded(
-                  child: Text(label,
+                const Expanded(
+                  child: Text('Recurso',
                       style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: free ? FontWeight.w400 : FontWeight.w600,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.creamSoft,
                       )),
                 ),
                 SizedBox(
                   width: 56,
-                  child: Center(
-                    child: free
-                        ? Icon(Icons.check_rounded, size: 18,
-                            color: AppTheme.inkSoft.withValues(alpha: 0.5))
-                        : const Icon(Icons.remove_rounded, size: 18, color: AppTheme.slot),
-                  ),
+                  child: Text('Free',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.creamSoft.withValues(alpha: 0.7),
+                      )),
                 ),
                 SizedBox(
                   width: 56,
-                  child: Center(
-                    child: proVal
-                        ? const Icon(Icons.check_rounded, size: 18, color: Color(0xFF22C58A))
-                        : const Icon(Icons.remove_rounded, size: 18, color: AppTheme.slot),
-                  ),
+                  child: Text('Pro',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.gold,
+                      )),
                 ),
               ],
             ),
           ),
+          const Divider(height: 1),
+          for (int i = 0; i < _rows.length; i++)
+            _TableRow(
+              label: _rows[i].$1,
+              free: _rows[i].$2,
+              proVal: _rows[i].$3,
+              last: i == _rows.length - 1,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TableRow extends StatelessWidget {
+  final String label;
+  final bool free;
+  final bool proVal;
+  final bool last;
+  const _TableRow({required this.label, required this.free, required this.proVal, required this.last});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: free ? AppTheme.creamSoft : AppTheme.cream,
+                      fontWeight: free ? FontWeight.w400 : FontWeight.w600,
+                    )),
+              ),
+              SizedBox(
+                width: 56,
+                child: Center(
+                  child: free
+                      ? Icon(Icons.check_rounded, size: 18,
+                          color: AppTheme.creamSoft.withValues(alpha: 0.5))
+                      : Icon(Icons.remove_rounded, size: 18,
+                          color: AppTheme.ink4),
+                ),
+              ),
+              SizedBox(
+                width: 56,
+                child: Center(
+                  child: proVal
+                      ? const Icon(Icons.check_rounded, size: 18, color: AppTheme.gold)
+                      : Icon(Icons.remove_rounded, size: 18, color: AppTheme.ink4),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (!last) const Divider(height: 1),
       ],
     );
   }
