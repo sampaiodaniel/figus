@@ -7,6 +7,7 @@ import '../ads/interstitial_helper.dart';
 import '../pro/pro_service.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/figus_colors.dart';
 import '../../data/providers.dart';
 import '../../data/repos/album_repo.dart';
 import '../../domain/models/album_view_models.dart';
@@ -144,7 +145,7 @@ class _AlbumPageState extends ConsumerState<AlbumPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.percent_rounded, color: AppTheme.seed),
+              leading: Icon(Icons.percent_rounded, color: context.fc.accent),
               title: const Text('Meu progresso (cartão visual)'),
               onTap: () async {
                 Navigator.pop(sheetCtx);
@@ -160,7 +161,7 @@ class _AlbumPageState extends ConsumerState<AlbumPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.checklist_rounded, color: AppTheme.seed),
+              leading: Icon(Icons.checklist_rounded, color: context.fc.accent),
               title: const Text('Lista das que me faltam'),
               onTap: () async {
                 Navigator.pop(sheetCtx);
@@ -168,7 +169,7 @@ class _AlbumPageState extends ConsumerState<AlbumPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.swap_horiz_rounded, color: AppTheme.seed),
+              leading: Icon(Icons.swap_horiz_rounded, color: context.fc.accent),
               title: const Text('Lista das repetidas'),
               onTap: () async {
                 Navigator.pop(sheetCtx);
@@ -229,7 +230,7 @@ class _HeroStatsCard extends ConsumerWidget {
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppTheme.gold.withValues(alpha: 0.18)),
+          border: Border.all(color: context.fc.accent.withValues(alpha: 0.18)),
         ),
         child: Row(
           children: [
@@ -244,15 +245,15 @@ class _HeroStatsCard extends ConsumerWidget {
                     value: pct / 100,
                     strokeWidth: 6,
                     backgroundColor: AppTheme.ink4,
-                    valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.gold),
+                    valueColor: AlwaysStoppedAnimation<Color>(context.fc.accent),
                   ),
                 ),
                 Text(
                   '$pct%',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
-                    color: AppTheme.gold,
+                    color: context.fc.accent,
                   ),
                 ),
               ],
@@ -266,7 +267,7 @@ class _HeroStatsCard extends ConsumerWidget {
                     'COPA 2026',
                     style: GoogleFonts.jetBrainsMono(
                       fontSize: 10,
-                      color: AppTheme.gold,
+                      color: context.fc.accent,
                       letterSpacing: 0.12,
                       fontWeight: FontWeight.w600,
                     ),

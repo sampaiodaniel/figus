@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/figus_colors.dart';
 import '../../data/providers.dart';
 import '../scan/ocr_service.dart';
 import '../scan/review_detections_sheet.dart';
@@ -315,7 +316,7 @@ class FiguritasImportPage extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             _SummaryRow(
-              color: AppTheme.seed,
+              color: context.fc.accent,
               icon: Icons.check_circle_outline_rounded,
               label: 'Tenho',
               value: '$ownedCount figurinhas',
@@ -462,7 +463,7 @@ class _ImportTile extends StatelessWidget {
     return Card(
       child: ListTile(
         enabled: enabled,
-        leading: Icon(icon, color: enabled ? AppTheme.seed : AppTheme.slot),
+        leading: Icon(icon, color: enabled ? context.fc.accent : AppTheme.slot),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
         subtitle: Text(subtitle),
         trailing: enabled ? const Icon(Icons.chevron_right) : null,

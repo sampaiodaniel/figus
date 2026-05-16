@@ -123,7 +123,7 @@ class _StatsBody extends StatelessWidget {
                   style: GoogleFonts.jetBrainsMono(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.gold,
+                    color: c.accent,
                     letterSpacing: 0.1,
                   ),
                 ),
@@ -138,8 +138,7 @@ class _StatsBody extends StatelessWidget {
                         value: pct,
                         strokeWidth: 12,
                         backgroundColor: c.border,
-                        valueColor:
-                            const AlwaysStoppedAnimation<Color>(AppTheme.gold),
+                        valueColor: AlwaysStoppedAnimation<Color>(c.accent),
                         strokeCap: StrokeCap.round,
                       ),
                     ),
@@ -151,7 +150,7 @@ class _StatsBody extends StatelessWidget {
                           style: GoogleFonts.inter(
                             fontSize: 40,
                             fontWeight: FontWeight.w900,
-                            color: AppTheme.gold,
+                            color: c.accent,
                             height: 1.0,
                           ),
                         ),
@@ -178,8 +177,7 @@ class _StatsBody extends StatelessWidget {
                           value: pct,
                           minHeight: 8,
                           backgroundColor: c.border,
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                              AppTheme.gold),
+                          valueColor: AlwaysStoppedAnimation<Color>(c.accent),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -212,7 +210,7 @@ class _StatsBody extends StatelessWidget {
               Expanded(
                 child: _StatTile(
                   icon: Icons.check_circle_rounded,
-                  iconColor: AppTheme.gold,
+                  iconColor: c.accent,
                   label: 'TENHO',
                   value: '${stats.owned}',
                 ),
@@ -282,7 +280,7 @@ class _StatsBody extends StatelessWidget {
               style: GoogleFonts.jetBrainsMono(
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
-                color: AppTheme.gold,
+                color: c.accent,
                 letterSpacing: 0.1,
               ),
             ),
@@ -292,7 +290,7 @@ class _StatsBody extends StatelessWidget {
               Expanded(
                 child: _StatTile(
                   icon: Icons.trending_up_rounded,
-                  iconColor: AppTheme.seed,
+                  iconColor: c.accent,
                   label: 'ESTA SEMANA',
                   value: '+${stats.collectedThisWeek}',
                 ),

@@ -67,10 +67,12 @@ class AppTheme {
 
   static ThemeData _base(ColorScheme scheme, {required bool isDark, required FigusColors fc}) {
     final text = GoogleFonts.interTextTheme();
+    // Inject the live seed-derived primary so context.fc.accent changes with the theme
+    final dynamicFc = fc.copyWith(accent: scheme.primary);
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
-      extensions: [fc],
+      extensions: [dynamicFc],
       scaffoldBackgroundColor: fc.bg,
       textTheme: text.apply(
         bodyColor:    scheme.onSurface,

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show AuthState;
 
 import '../domain/models/album_view_models.dart';
 import 'db/database.dart';
@@ -43,4 +44,9 @@ final albumStatsProvider = FutureProvider.autoDispose<AlbumStats>((ref) async {
 final profilesListProvider = FutureProvider.autoDispose((ref) async {
   ref.watch(collectionVersionProvider);
   return ref.watch(profileRepoProvider).all();
+});
+
+/// Emits Supabase auth state changes; used to reactively rebuild sync UI.
+final syncAuthStateProvider = StreamProvider<AuthState>((ref) {
+  return ref.watch(syncRepoProvider).authStateChanges;
 });

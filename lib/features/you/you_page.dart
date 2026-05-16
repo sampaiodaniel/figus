@@ -7,7 +7,51 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/figus_colors.dart';
 import '../../data/providers.dart';
+import '../../data/repos/sync_repo.dart';
 import '../pro/pro_service.dart';
+
+Future<void> _showSyncOptions(BuildContext context, WidgetRef ref, String email) async {
+  final messenger = ScaffoldMessenger.of(context);
+  await showModalBottomSheet<void>(
+    context: context,
+    builder: (sheetCtx) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.account_circle_rounded),
+            title: Text(email),
+            subtitle: const Text('Conta conectada'),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.sync_rounded),
+            title: const Text('Sincronizar agora'),
+            onTap: () async {
+              Navigator.pop(sheetCtx);
+              final remote = await ref.read(syncRepoProvider).pullAll();
+              await ref.read(collectionRepoProvider).applyRemoteEntries(remote);
+              ref.invalidate(collectionVersionProvider);
+              messenger.showSnackBar(
+                const SnackBar(content: Text('Coleção sincronizada ✓')),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.logout_rounded),
+            title: const Text('Sair da conta'),
+            iconColor: Colors.red,
+            textColor: Colors.red,
+            onTap: () async {
+              Navigator.pop(sheetCtx);
+              await ref.read(syncRepoProvider).signOut();
+            },
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
 class YouPage extends ConsumerWidget {
   const YouPage({super.key});
@@ -24,6 +68,12 @@ class YouPage extends ConsumerWidget {
           list.firstWhere((p) => p.isActive, orElse: () => list.first).name,
       orElse: () => '...',
     );
+
+    // Watch for reactivity on sign-in / sign-out
+    ref.watch(syncAuthStateProvider);
+    final sync = ref.read(syncRepoProvider);
+    final isSignedIn = sync.isSignedIn;
+    final syncEmail = sync.userEmail;
 
     final stats = statsAsync.valueOrNull;
     final owned = stats?.owned ?? 0;
@@ -77,7 +127,7 @@ class YouPage extends ConsumerWidget {
                       'PROGRESSO · COPA 2026',
                       style: GoogleFonts.jetBrainsMono(
                         fontSize: 10,
-                        color: AppTheme.gold,
+                        color: c.accent,
                         letterSpacing: 0.08,
                         fontWeight: FontWeight.w700,
                       ),
@@ -107,8 +157,7 @@ class YouPage extends ConsumerWidget {
                             value: total > 0 ? owned / total : 0,
                             strokeWidth: 6,
                             backgroundColor: c.border,
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                                AppTheme.gold),
+                            valueColor: AlwaysStoppedAnimation<Color>(c.accent),
                           ),
                         ),
                         Text(
@@ -116,7 +165,7 @@ class YouPage extends ConsumerWidget {
                           style: GoogleFonts.inter(
                             fontSize: 13,
                             fontWeight: FontWeight.w800,
-                            color: AppTheme.gold,
+                            color: c.accent,
                           ),
                         ),
                       ],
@@ -129,7 +178,7 @@ class YouPage extends ConsumerWidget {
                           const SizedBox(height: 8),
                           _StatRow(color: AppTheme.pulpSoft, label: 'FALTAM',    value: missing.toString()),
                           const SizedBox(height: 8),
-                          _StatRow(color: AppTheme.gold,     label: 'REPETIDAS', value: '${stats?.duplicates ?? 0}'),
+                          _StatRow(color: c.accent,          label: 'REPETIDAS', value: '${stats?.duplicates ?? 0}'),
                         ],
                       ),
                     ),
@@ -144,7 +193,7 @@ class YouPage extends ConsumerWidget {
                       style: TextStyle(fontSize: 11, color: c.textMuted),
                     ),
                     Text(
-                      'Sincronizado',
+                      isSignedIn ? '☁ ${syncEmail ?? "Sync ativo"}' : '○ Local',
                       style: TextStyle(fontSize: 11, color: c.textMuted),
                     ),
                   ],
@@ -164,6 +213,15 @@ class YouPage extends ConsumerWidget {
           _MenuGroup(
             children: [
               _MenuRow(
+                icon: isSignedIn ? Icons.cloud_done_rounded : Icons.cloud_off_rounded,
+                iconColor: isSignedIn ? c.accent : c.textMuted,
+                title: isSignedIn ? 'Conta sync ativa' : 'Entrar · Sincronizar',
+                subtitle: isSignedIn ? syncEmail : 'Acesse em vários dispositivos',
+                onTap: isSignedIn
+                    ? () => _showSyncOptions(context, ref, syncEmail ?? '')
+                    : () => context.push('/auth'),
+              ),
+              _MenuRow(
                 icon: Icons.insights_rounded,
                 title: 'Estatísticas',
                 onTap: () => context.push('/progress'),
@@ -171,13 +229,13 @@ class YouPage extends ConsumerWidget {
               _MenuRow(
                 icon: Icons.palette_outlined,
                 title: 'Temas de cor',
-                iconColor: AppTheme.gold,
+                iconColor: c.accent,
                 onTap: () => context.push('/themes'),
               ),
               _MenuRow(
                 icon: Icons.star_outline_rounded,
                 title: 'Seleções favoritas',
-                iconColor: AppTheme.gold,
+                iconColor: c.accent,
                 onTap: () => context.push('/favorites'),
               ),
               _MenuRow(
@@ -267,11 +325,11 @@ class _ProfileCard extends StatelessWidget {
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
-                    color: AppTheme.gold,
+                    color: c.accent,
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.gold.withValues(alpha: 0.20),
+                        color: c.accent.withValues(alpha: 0.20),
                         blurRadius: 14,
                         offset: const Offset(0, 4),
                       ),
@@ -305,7 +363,7 @@ class _ProfileCard extends StatelessWidget {
                         'Copa 2026',
                         style: GoogleFonts.jetBrainsMono(
                           fontSize: 10,
-                          color: AppTheme.gold,
+                          color: c.accent,
                           letterSpacing: 0.06,
                         ),
                       ),
@@ -317,11 +375,11 @@ class _ProfileCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: isPro
-                        ? AppTheme.gold.withValues(alpha: 0.15)
+                        ? c.accent.withValues(alpha: 0.15)
                         : c.text.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(4),
                     border: isPro
-                        ? Border.all(color: AppTheme.gold.withValues(alpha: 0.4))
+                        ? Border.all(color: c.accent.withValues(alpha: 0.4))
                         : null,
                   ),
                   child: Text(
@@ -330,7 +388,7 @@ class _ProfileCard extends StatelessWidget {
                       fontSize: 9,
                       fontWeight: FontWeight.w700,
                       color: isPro
-                          ? AppTheme.gold
+                          ? c.accent
                           : c.text.withValues(alpha: 0.7),
                     ),
                   ),
@@ -474,6 +532,7 @@ class _MenuGroup extends StatelessWidget {
 class _MenuRow extends StatelessWidget {
   final IconData icon;
   final String title;
+  final String? subtitle;
   final Color? iconColor;
   final bool muted;
   final VoidCallback? onTap;
@@ -481,6 +540,7 @@ class _MenuRow extends StatelessWidget {
   const _MenuRow({
     required this.icon,
     required this.title,
+    this.subtitle,
     this.iconColor,
     this.muted = false,
     this.onTap,
@@ -513,13 +573,26 @@ class _MenuRow extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                title,
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: muted ? c.text.withValues(alpha: 0.45) : c.text,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: muted ? c.text.withValues(alpha: 0.45) : c.text,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 1),
+                    Text(
+                      subtitle!,
+                      style: GoogleFonts.inter(fontSize: 11, color: c.textMuted),
+                    ),
+                  ],
+                ],
               ),
             ),
             const Spacer(),

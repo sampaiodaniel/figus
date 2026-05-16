@@ -21,7 +21,7 @@ class CollectionRepo {
         .getSingleOrNull();
   }
 
-  Future<void> _upsert(int profileId, int stickerId, String status, int dupCount) async {
+  Future<void> _localUpsert(int profileId, int stickerId, String status, int dupCount) async {
     final existing = await _entry(profileId, stickerId);
     if (existing == null) {
       await db.into(db.collections).insert(CollectionsCompanion.insert(
@@ -39,7 +39,10 @@ class CollectionRepo {
         ),
       );
     }
-    // Fire-and-forget sync — look up sticker number for the remote key
+  }
+
+  Future<void> _upsert(int profileId, int stickerId, String status, int dupCount) async {
+    await _localUpsert(profileId, stickerId, status, dupCount);
     if (sync != null) {
       final sticker = await (db.select(db.stickers)..where((s) => s.id.equals(stickerId)))
           .getSingleOrNull();
@@ -47,6 +50,22 @@ class CollectionRepo {
         sync!.pushEntry(sticker.number, status, dupCount);
       }
     }
+  }
+
+  /// Apply remote entries pulled from Supabase without re-pushing them (avoids loop).
+  Future<void> applyRemoteEntries(
+      Map<String, ({String status, int dupCount})> remote) async {
+    if (remote.isEmpty) return;
+    final pid = await _activeProfileId();
+    final all = await db.select(db.stickers).get();
+    final byNumber = {for (final s in all) s.number: s};
+    await db.transaction(() async {
+      for (final entry in remote.entries) {
+        final sticker = byNumber[entry.key];
+        if (sticker == null) continue;
+        await _localUpsert(pid, sticker.id, entry.value.status, entry.value.dupCount);
+      }
+    });
   }
 
   Future<void> tapSticker(int stickerId) async {

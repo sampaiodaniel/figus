@@ -9,6 +9,10 @@ class FigusColors extends ThemeExtension<FigusColors> {
   final Color border;    // dividers / borders
   final Color text;      // primary text
   final Color textMuted; // secondary / hint text
+  /// The seed-derived primary accent (colorScheme.primary).
+  /// Set dynamically at theme build time — do NOT use AppTheme.gold
+  /// for anything that should change with the theme.
+  final Color accent;
 
   const FigusColors({
     required this.bg,
@@ -17,6 +21,7 @@ class FigusColors extends ThemeExtension<FigusColors> {
     required this.border,
     required this.text,
     required this.textMuted,
+    this.accent = const Color(0xFF1F66FF),
   });
 
   // ── Palettes ─────────────────────────────────────────────────────────────────
@@ -55,7 +60,7 @@ class FigusColors extends ThemeExtension<FigusColors> {
   @override
   FigusColors copyWith({
     Color? bg, Color? card, Color? cardAlt,
-    Color? border, Color? text, Color? textMuted,
+    Color? border, Color? text, Color? textMuted, Color? accent,
   }) =>
       FigusColors(
         bg:        bg        ?? this.bg,
@@ -64,6 +69,7 @@ class FigusColors extends ThemeExtension<FigusColors> {
         border:    border    ?? this.border,
         text:      text      ?? this.text,
         textMuted: textMuted ?? this.textMuted,
+        accent:    accent    ?? this.accent,
       );
 
   @override
@@ -76,6 +82,7 @@ class FigusColors extends ThemeExtension<FigusColors> {
       border:    Color.lerp(border,    other.border,    t)!,
       text:      Color.lerp(text,      other.text,      t)!,
       textMuted: Color.lerp(textMuted, other.textMuted, t)!,
+      accent:    Color.lerp(accent,    other.accent,    t)!,
     );
   }
 }

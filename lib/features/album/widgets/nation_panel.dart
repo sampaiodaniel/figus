@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/country_codes.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/figus_colors.dart';
 import '../../../data/seeds/wc2026_seed.dart';
 import '../../../domain/models/album_view_models.dart';
 import 'sticker_card.dart';
@@ -159,29 +160,32 @@ class NationPanel extends StatelessWidget {
                     const SizedBox(height: 6),
 
                     // Progress bar
-                    LayoutBuilder(
-                      builder: (ctx, constraints) => Container(
-                        height: 4,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: AppTheme.ink4,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Container(
-                            height: 4,
-                            width: constraints.maxWidth * progress,
-                            decoration: BoxDecoration(
-                              color: complete
-                                  ? AppTheme.gold
-                                  : AppTheme.goldDeep,
-                              borderRadius: BorderRadius.circular(2),
+                    Builder(builder: (ctx) {
+                      final ac = ctx.fc.accent;
+                      return LayoutBuilder(
+                        builder: (ctx2, constraints) => Container(
+                          height: 4,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: AppTheme.ink4,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Container(
+                              height: 4,
+                              width: constraints.maxWidth * progress,
+                              decoration: BoxDecoration(
+                                color: complete
+                                    ? ac
+                                    : ac.withValues(alpha: 0.55),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
+                      );
+                    }),
                   ],
                 ),
               ),

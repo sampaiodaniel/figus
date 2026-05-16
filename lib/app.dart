@@ -20,6 +20,7 @@ import 'features/settings/upgrade_page.dart';
 import 'features/stats/stats_page.dart';
 import 'features/trades/compare_friend_page.dart';
 import 'features/trades/trades_page.dart';
+import 'features/auth/auth_page.dart';
 import 'features/help/help_page.dart';
 import 'features/you/favorite_nations_page.dart';
 import 'features/you/player_names_import_page.dart';
@@ -68,6 +69,7 @@ class FigusApp extends ConsumerWidget {
         GoRoute(path: '/progress', builder: (_, __) => const StatsPage()),
         GoRoute(path: '/themes', builder: (_, __) => const ThemePickerPage()),
 
+        GoRoute(path: '/auth', builder: (_, __) => const AuthPage()),
         GoRoute(path: '/profiles', builder: (_, __) => const ProfilesPage()),
         GoRoute(path: '/import', builder: (_, __) => const FiguritasImportPage()),
         GoRoute(path: '/upgrade', builder: (_, __) => const UpgradePage()),

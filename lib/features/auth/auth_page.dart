@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../data/providers.dart';
 import '../../data/repos/sync_repo.dart';
 
 enum _Step { email, otp, done }
@@ -65,6 +66,14 @@ class _AuthPageState extends ConsumerState<AuthPage> {
         _error = err;
       }
     });
+    if (err == null) {
+      // Pull existing collection from server and apply locally
+      final remote = await ref.read(syncRepoProvider).pullAll();
+      if (remote.isNotEmpty && mounted) {
+        await ref.read(collectionRepoProvider).applyRemoteEntries(remote);
+        ref.invalidate(collectionVersionProvider);
+      }
+    }
   }
 
   @override
