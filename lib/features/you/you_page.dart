@@ -51,7 +51,9 @@ class YouPage extends ConsumerWidget {
           const SizedBox(height: 16),
 
           // ── Profile card ───────────────────────────────────────────────────
-          Container(
+          GestureDetector(
+            onTap: () => context.push('/profiles'),
+            child: Container(
             margin: const EdgeInsets.only(bottom: 16),
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
@@ -138,9 +140,16 @@ class YouPage extends ConsumerWidget {
                     ),
                   ),
                 ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.edit_outlined,
+                  size: 14,
+                  color: AppTheme.creamSoft.withValues(alpha: 0.4),
+                ),
               ],
             ),
           ),
+          ), // GestureDetector (profile card)
 
           // ── Progress card ──────────────────────────────────────────────────
           Container(
