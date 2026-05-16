@@ -1,7 +1,6 @@
 import 'package:country_flags/country_flags.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../core/country_codes.dart';
 import '../../core/theme/app_theme.dart';
@@ -113,18 +112,39 @@ class _LiveBadge extends StatelessWidget {
   }
 }
 
+// Locale-free helpers — no intl dependency needed
+String _hhmm(DateTime dt) =>
+    '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+
+String _ddmm(DateTime dt) =>
+    '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}';
+
+const _weekdays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+const _months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
 String _formatKickoff(DateTime utc) {
   final local = utc.toLocal();
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
   final matchDay = DateTime(local.year, local.month, local.day);
   final diff = matchDay.difference(today).inDays;
-
-  final time = DateFormat('HH:mm').format(local);
+  final time = _hhmm(local);
   if (diff == 0) return 'Hoje • $time';
   if (diff == 1) return 'Amanhã • $time';
   if (diff == -1) return 'Ontem • $time';
-  return '${DateFormat('dd/MM').format(local)} • $time';
+  return '${_ddmm(local)} • $time';
+}
+
+/// Group header key: "Qui, 11/06" style — no locale required
+String _groupKey(DateTime local) {
+  final wd = _weekdays[local.weekday - 1];
+  return '$wd, ${_ddmm(local)}';
+}
+
+/// "11 jun" for featured match labels
+String _shortDate(DateTime utc) {
+  final local = utc.toLocal();
+  return '${local.day} ${_months[local.month - 1]}';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -726,11 +746,10 @@ class _GroupedMatchList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Group by date
+    // Group by date — locale-free key, e.g. "Qui, 11/06"
     final byDate = <String, List<CopaMatch>>{};
     for (final m in matches) {
-      final local = m.kickoff.toLocal();
-      final key = DateFormat('EEEE, dd/MM', 'pt_BR').format(local);
+      final key = _groupKey(m.kickoff.toLocal());
       (byDate[key] ??= []).add(m);
     }
 
@@ -741,7 +760,7 @@ class _GroupedMatchList extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(0, 14, 0, 8),
             child: Text(
-              entry.key.substring(0, 1).toUpperCase() + entry.key.substring(1),
+              entry.key,
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.inkSoft),
             ),
           ),
@@ -760,7 +779,7 @@ class _FullMatchCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isLive = match.status == MatchStatus.live;
     final isDone = match.status == MatchStatus.finished;
-    final timeStr = DateFormat('HH:mm').format(match.kickoff.toLocal());
+    final timeStr = _hhmm(match.kickoff.toLocal());
     final scheme = Theme.of(context).colorScheme;
 
     return Card(
