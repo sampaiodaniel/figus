@@ -399,6 +399,34 @@ class WC2026Seed {
       ));
     }
 
+    // Legendary cards — 16 players × 4 rarities (Bronze, Prata, Ouro, Diamante)
+    const lgdPlayers = [
+      'Cristiano Ronaldo', 'Moisés Caicedo', 'Luis Díaz', 'Erling Haaland',
+      'Lionel Messi', 'Lamine Yamal', 'Raúl Jiménez', 'Kylian Mbapé',
+      'Vinícius Júnior', 'Jérémy Doku', 'Christian Pulisic', 'Mohamed Salah',
+      'Jude Bellingham', 'Achraf Hakimi', 'Florian Wirtz', 'Neymar Jr',
+    ];
+    const lgdRarityLabels = ['Bronze', 'Prata', 'Ouro', 'Diamante'];
+    const lgdRarityTypes = [
+      'legendary_bronze', 'legendary_prata', 'legendary_ouro', 'legendary_diamante'
+    ];
+    var lgdPos = 0;
+    for (var p = 0; p < lgdPlayers.length; p++) {
+      for (var r = 0; r < lgdRarityLabels.length; r++) {
+        list.add(SeedSticker(
+          number: 'LGD${(lgdPos + 1).toString().padLeft(2, '0')}',
+          nationCode: null,
+          type: lgdRarityTypes[r],
+          isFoil: false,
+          pageNumber: 300,
+          positionInPage: lgdPos,
+          label: lgdRarityLabels[r],
+          playerName: lgdPlayers[p],
+        ));
+        lgdPos++;
+      }
+    }
+
     // 48 nations × 20 stickers
     for (final nation in nations) {
       final pageNum = nation.orderInAlbum + 2;

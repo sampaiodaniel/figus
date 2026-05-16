@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../data/providers.dart';
 import '../../data/repos/album_repo.dart';
 import '../../domain/models/album_view_models.dart';
+import '../ads/banner_ad_widget.dart';
 import '../share/share_service.dart';
 import 'widgets/nation_panel.dart';
 
@@ -40,6 +41,11 @@ class _AlbumPageState extends ConsumerState<AlbumPage> {
       appBar: AppBar(
         title: const Text('Coleção'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.emoji_events_rounded),
+            tooltip: 'Copa 2026',
+            onPressed: () => context.push('/copa'),
+          ),
           IconButton(
             icon: const Icon(Icons.insights_rounded),
             tooltip: 'Progresso',
@@ -86,6 +92,7 @@ class _AlbumPageState extends ConsumerState<AlbumPage> {
             ),
           ),
           Expanded(child: _buildList(sectionsAsync)),
+          const BannerAdWidget(),
         ],
       ),
     );

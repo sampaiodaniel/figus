@@ -53,6 +53,9 @@ dependencies:
   # Capture widget tree as image for share cards
   screenshot: ^3.0.0
 
+  # Mobile ads (Android / iOS — no-op on web)
+  google_mobile_ads: ^5.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

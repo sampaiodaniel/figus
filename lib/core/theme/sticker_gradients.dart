@@ -71,6 +71,36 @@ class StickerGradients {
     );
   }
 
+  // ── Legendary rarity gradients ────────────────────────────────────────────
+  static const LinearGradient legendaryBronze = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFFCD8040), Color(0xFF7A3B0A)],
+  );
+  static const LinearGradient legendarySilver = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFFB8C8D8), Color(0xFF5A6A7A)],
+  );
+  static const LinearGradient legendaryGold = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFFFFCC00), Color(0xFFCC8800)],
+  );
+  static const LinearGradient legendaryDiamond = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF40CCFF), Color(0xFF8840FF)],
+  );
+
+  static LinearGradient forLegendary(String type) => switch (type) {
+        'legendary_bronze' => legendaryBronze,
+        'legendary_prata' => legendarySilver,
+        'legendary_ouro' => legendaryGold,
+        'legendary_diamante' => legendaryDiamond,
+        _ => foilShimmer,
+      };
+
   /// Foil/holographic shimmer for special stickers.
   static const LinearGradient foilShimmer = LinearGradient(
     begin: Alignment.topLeft,

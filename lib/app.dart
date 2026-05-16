@@ -82,7 +82,6 @@ class RootShell extends StatelessWidget {
   static const _navTabs = <_NavItem>[
     _NavItem('/', Icons.grid_view_rounded, 'Coleção'),
     _NavItem('/duplicates', Icons.copy_all_rounded, 'Repetidas'),
-    _NavItem('/copa', Icons.emoji_events_rounded, 'Copa'),
     _NavItem('/trades', Icons.swap_horiz_rounded, 'Trocas'),
     _NavItem('/you', Icons.person_rounded, 'Você'),
   ];

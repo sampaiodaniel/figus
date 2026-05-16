@@ -120,21 +120,80 @@ class _FlagThumb extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final iso = paniniToIso2[code];
+    if (iso != null) {
+      return Container(
+        width: 44,
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppTheme.slotSoft,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: CountryFlag.fromCountryCode(iso, shape: const RoundedRectangle(6), width: 36, height: 26),
+      );
+    }
+    return switch (code) {
+      'FWC' => _specialThumb(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF1F66FF), Color(0xFF7A5BFF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+          ),
+          child: const Icon(Icons.emoji_events_rounded, color: Colors.amber, size: 24),
+        ),
+      'FWC9+' => _specialThumb(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFFB8860B), Color(0xFF8B6914)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+          ),
+          child: const Icon(Icons.star_rounded, color: Colors.white, size: 22),
+        ),
+      'CC' => _specialThumb(
+          decoration: const BoxDecoration(
+            color: Color(0xFFCC0000),
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+          ),
+          child: const Text(
+            'CC',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15, letterSpacing: 1),
+          ),
+        ),
+      'LGD' => _specialThumb(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF40CCFF), Color(0xFF8840FF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+          ),
+          child: const Icon(Icons.stars_rounded, color: Colors.white, size: 22),
+        ),
+      _ => _specialThumb(
+          decoration: const BoxDecoration(
+            color: AppTheme.slotSoft,
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+          ),
+          child: Text(code, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+        ),
+    };
+  }
+
+  static Widget _specialThumb({required BoxDecoration decoration, required Widget child}) {
     return Container(
       width: 44,
       height: 44,
       alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: AppTheme.slotSoft,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: iso == null
-          ? Text(
-              code == 'FWC' ? '🏆' : (code == 'FWC9+' ? '⭐' : (code == 'CC' ? '🥤' : code)),
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
-            )
-          : CountryFlag.fromCountryCode(iso, shape: const RoundedRectangle(6), width: 36, height: 26),
+      decoration: decoration,
+      child: child,
     );
   }
 }
@@ -157,7 +216,7 @@ class _PaniniGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final byPosition = {for (final s in section.stickers) s.positionInPage: s};
-    final isNation = section.key != 'FWC' && section.key != 'FWC9+' && section.key != 'CC';
+    final isNation = section.key != 'FWC' && section.key != 'FWC9+' && section.key != 'CC' && section.key != 'LGD';
 
     return LayoutBuilder(builder: (ctx, c) {
       final cell = (c.maxWidth - 3 * _gap) / 4;

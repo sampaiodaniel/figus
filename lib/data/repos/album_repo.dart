@@ -81,7 +81,8 @@ class AlbumRepo {
     // Specials by pageNumber range:
     //   0        → FWC intro (FWC00–FWC8)
     //   100–199  → FWC9+ legends
-    //   200+     → CC (Coca-Cola)
+    //   200–299  → CC (Coca-Cola)
+    //   300+     → Lendários (LGD)
     final introSpecials = views
         .where((v) => v.nationCode == null && v.pageNumber == 0)
         .toList()
@@ -91,7 +92,11 @@ class AlbumRepo {
         .toList()
       ..sort((a, b) => a.positionInPage.compareTo(b.positionInPage));
     final ccSpecials = views
-        .where((v) => v.nationCode == null && v.pageNumber >= 200)
+        .where((v) => v.nationCode == null && v.pageNumber >= 200 && v.pageNumber < 300)
+        .toList()
+      ..sort((a, b) => a.positionInPage.compareTo(b.positionInPage));
+    final legendaryStickers = views
+        .where((v) => v.nationCode == null && v.pageNumber >= 300)
         .toList()
       ..sort((a, b) => a.positionInPage.compareTo(b.positionInPage));
 
@@ -153,6 +158,18 @@ class AlbumRepo {
         ownedCount: owned,
         totalCount: ccSpecials.length,
         stickers: ccSpecials,
+      ));
+    }
+
+    if (legendaryStickers.isNotEmpty) {
+      final owned = legendaryStickers.where((v) => v.status != StickerOwnership.missing).length;
+      sections.add(AlbumSection(
+        key: 'LGD',
+        title: 'LGD — Lendários',
+        flag: '💎',
+        ownedCount: owned,
+        totalCount: legendaryStickers.length,
+        stickers: legendaryStickers,
       ));
     }
 
