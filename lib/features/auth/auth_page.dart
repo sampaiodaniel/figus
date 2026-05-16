@@ -51,8 +51,10 @@ class _AuthPageState extends ConsumerState<AuthPage> {
 
   Future<void> _verifyOtp() async {
     final token = _otpCtrl.text.trim();
-    if (token.length != 6) {
-      setState(() => _error = 'O código tem 6 dígitos');
+    // Supabase OTP length is configurable (4-10 digits); just check it's
+    // a reasonable numeric string.
+    if (token.length < 4 || token.length > 10 || int.tryParse(token) == null) {
+      setState(() => _error = 'Digite o código numérico recebido por email');
       return;
     }
     setState(() { _loading = true; _error = null; });
@@ -138,13 +140,13 @@ class _AuthPageState extends ConsumerState<AuthPage> {
                       TextField(
                         controller: _otpCtrl,
                         keyboardType: TextInputType.number,
-                        maxLength: 6,
+                        maxLength: 10,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: 12),
+                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: 8),
                         textInputAction: TextInputAction.done,
                         onSubmitted: (_) => _verifyOtp(),
                         decoration: const InputDecoration(
-                          labelText: 'Código de 6 dígitos',
+                          labelText: 'Código recebido por email',
                           border: OutlineInputBorder(),
                           counterText: '',
                         ),
