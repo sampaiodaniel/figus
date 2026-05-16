@@ -74,19 +74,42 @@ class SyncRepo {
   }
 
   /// Verify OTP code. Returns error message or null on success.
+  ///
+  /// Tries OtpType.email first (standard OTP flow). If that fails with a
+  /// "token expired" error, retries with OtpType.signup — this is the path
+  /// for first-time users whose account was created in unconfirmed state.
+  /// The dual attempt makes the auth flow resilient to whichever email
+  /// template Supabase happens to send.
   Future<String?> verifyOtp(String email, String token) async {
-    try {
-      await _client!.auth.verifyOTP(
-        email: email,
-        token: token,
-        type: OtpType.email,
-      );
-      return null;
-    } on AuthException catch (e) {
-      return e.message;
-    } catch (e) {
-      return e.toString();
+    Object? lastError;
+    String? lastErrorCode;
+    for (final type in const [OtpType.email, OtpType.signup, OtpType.magiclink]) {
+      try {
+        await _client!.auth.verifyOTP(
+          email: email,
+          token: token,
+          type: type,
+        );
+        return null;
+      } on AuthException catch (e) {
+        lastError = e;
+        lastErrorCode = e.code;
+        debugPrint('[SyncRepo] verifyOtp type=$type failed: ${e.code} / ${e.message}');
+        // If error isn't related to the OTP type, no point trying others
+        if (e.code == 'invalid_credentials' ||
+            e.code == 'user_not_found') {
+          break;
+        }
+      } catch (e) {
+        lastError = e;
+        debugPrint('[SyncRepo] verifyOtp type=$type unknown error: $e');
+      }
     }
+    if (lastError is AuthException) {
+      final msg = (lastError as AuthException).message;
+      return lastErrorCode != null ? '$msg [$lastErrorCode]' : msg;
+    }
+    return lastError?.toString();
   }
 
   Future<void> signOut() async {
