@@ -84,6 +84,37 @@ class CollectionRepo {
         .write(StickersCompanion(playerName: Value(value)));
   }
 
+  /// Import a full Figuritas-format export.
+  ///
+  /// [faltantes] — sticker codes the user is missing (left untouched).
+  /// [repetidas] — sticker codes that are duplicates, mapped to extra count.
+  /// Every other sticker in the album is marked as owned.
+  ///
+  /// Returns {'owned': N, 'dupes': N}.
+  Future<Map<String, int>> bulkImportFiguritas({
+    required Set<String> faltantes,
+    required Map<String, int> repetidas,
+  }) async {
+    final pid = await _activeProfileId();
+    final all = await db.select(db.stickers).get();
+    var ownedCount = 0, dupesCount = 0;
+    await db.transaction(() async {
+      for (final s in all) {
+        final code = s.number;
+        if (faltantes.contains(code)) {
+          // missing — leave as-is
+        } else if (repetidas.containsKey(code)) {
+          await _upsert(pid, s.id, 'duplicate', repetidas[code]!);
+          dupesCount++;
+        } else {
+          await _upsert(pid, s.id, 'owned', 0);
+          ownedCount++;
+        }
+      }
+    });
+    return {'owned': ownedCount, 'dupes': dupesCount};
+  }
+
   /// Bulk-update player names from a `code,name` pair map, e.g.
   ///   {'BRA1': 'Alisson', 'BRA2': 'Marquinhos', ...}
   Future<int> bulkSetPlayerNames(Map<String, String> codeToName) async {

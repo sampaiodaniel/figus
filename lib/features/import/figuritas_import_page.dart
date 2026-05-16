@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../data/providers.dart';
 import '../scan/ocr_service.dart';
 import '../scan/review_detections_sheet.dart';
 
 /// Two import flows for bringing a sticker collection from any source:
 ///   1. Pick a screenshot → OCR extracts codes (mobile only).
-///   2. Paste a text list → regex parses every valid code.
+///   2. Paste a text list → auto-detects Figuritas format OR plain code list.
 class FiguritasImportPage extends ConsumerWidget {
   const FiguritasImportPage({super.key});
 
@@ -41,8 +42,9 @@ class FiguritasImportPage extends ConsumerWidget {
           const SizedBox(height: 12),
           _ImportTile(
             icon: Icons.text_fields_outlined,
-            title: 'Colar lista de códigos',
-            subtitle: 'Ex.: BRA1, BRA10, MEX5, FWC9 — separados por vírgula, espaço ou linha.',
+            title: 'Colar lista (Figuritas ou códigos)',
+            subtitle:
+                'Cole o texto exportado do Figuritas App, ou uma lista de códigos separados por vírgula (ex: BRA1, MEX5, FWC9).',
             enabled: true,
             onTap: () => _pasteList(context, ref),
           ),
@@ -78,53 +80,286 @@ class FiguritasImportPage extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Erro: $e')));
       }
     }
   }
 
   Future<void> _pasteList(BuildContext context, WidgetRef ref) async {
     final ctrl = TextEditingController();
-    final input = await showDialog<String>(
+    final input = await showModalBottomSheet<String>(
       context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: const Text('Cole sua lista'),
-        content: SizedBox(
-          width: 400,
-          child: TextField(
-            controller: ctrl,
-            autofocus: true,
-            maxLines: 8,
-            decoration: const InputDecoration(
-              hintText: 'BRA1, BRA10, MEX5\nFWC9, ARG3, ...',
-              border: OutlineInputBorder(),
+      isScrollControlled: true,
+      backgroundColor: AppTheme.ink3,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (bsCtx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          20, 12, 20,
+          MediaQuery.of(bsCtx).viewInsets.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.ink4,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
             ),
-          ),
+            const SizedBox(height: 18),
+            const Text(
+              'Cole sua lista',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Aceita o texto exportado do Figuritas App ou uma lista de códigos tipo BRA1, MEX5, FWC9.',
+              style: TextStyle(fontSize: 13, color: AppTheme.inkSoft),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: ctrl,
+              autofocus: true,
+              minLines: 5,
+              maxLines: 12,
+              style: const TextStyle(fontSize: 13, fontFamily: 'monospace'),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: AppTheme.inkDeep,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppTheme.ink4),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppTheme.ink4),
+                ),
+                hintText:
+                    'Cole aqui o export do Figuritas ou lista de códigos...',
+                hintStyle: const TextStyle(color: AppTheme.inkSoft),
+                contentPadding: const EdgeInsets.all(14),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(bsCtx),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: AppTheme.ink4),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text('Cancelar'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 2,
+                  child: FilledButton(
+                    onPressed: () => Navigator.pop(bsCtx, ctrl.text.trim()),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text('Detectar'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (input == null || input.isEmpty) return;
+    if (!context.mounted) return;
+
+    if (_isFiguritasFormat(input)) {
+      await _importFiguritasFormat(context, ref, input);
+    } else {
+      final detections = _parseTextToDetections(input);
+      if (detections.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nenhum código válido encontrado.')),
+        );
+        return;
+      }
+      await showReviewDetectionsSheet(context, ref, detections);
+    }
+  }
+
+  // ── Figuritas format ────────────────────────────────────────────────────────
+
+  static bool _isFiguritasFormat(String text) {
+    final lower = text.toLowerCase();
+    return lower.contains('faltante') || lower.contains('figurinhas app');
+  }
+
+  /// Returns (faltantesSet, repetidas map code→extraCount).
+  static (Set<String>, Map<String, int>) _parseFiguritasExport(String text) {
+    final faltantes = <String>{};
+    final repetidas = <String, int>{};
+
+    var inFaltantes = false;
+    var inRepetidas = false;
+
+    for (final rawLine in text.split('\n')) {
+      final line = rawLine.trim();
+      if (line.isEmpty) continue;
+
+      final lower = line.toLowerCase();
+
+      if (lower.contains('faltante')) {
+        inFaltantes = true;
+        inRepetidas = false;
+        continue;
+      }
+      if (lower.contains('repetida')) {
+        inFaltantes = false;
+        inRepetidas = true;
+        continue;
+      }
+      // Footer / irrelevant lines
+      if (lower.contains('baixe') ||
+          lower.contains('http') ||
+          lower.contains('figurinhas app')) {
+        continue;
+      }
+
+      if (!inFaltantes && !inRepetidas) continue;
+
+      // Extract team code: first sequence of ASCII letters (2-4 chars)
+      final codeMatch = RegExp(r'^([A-Za-z]{2,4})\b').firstMatch(line);
+      if (codeMatch == null) continue;
+      final teamCode = codeMatch.group(1)!.toUpperCase();
+
+      // Numbers come after ':'
+      final colonIdx = line.indexOf(':');
+      if (colonIdx < 0) continue;
+      final numbersPart = line.substring(colonIdx + 1);
+
+      for (final part in numbersPart.split(',')) {
+        final n = int.tryParse(part.trim());
+        if (n == null || n < 0) continue;
+        final code = n == 0 ? '${teamCode}00' : '$teamCode$n';
+        if (inFaltantes) {
+          faltantes.add(code);
+        } else {
+          repetidas[code] = (repetidas[code] ?? 0) + 1;
+        }
+      }
+    }
+
+    return (faltantes, repetidas);
+  }
+
+  Future<void> _importFiguritasFormat(
+    BuildContext context,
+    WidgetRef ref,
+    String text,
+  ) async {
+    final (faltantes, repetidas) = _parseFiguritasExport(text);
+
+    // Count how many stickers in the album will be owned/duped/missing
+    // We need the full sticker list for an accurate count — load it here
+    final db = ref.read(databaseProvider);
+    final allStickers = await db.select(db.stickers).get();
+    final ownedCount =
+        allStickers.where((s) => !faltantes.contains(s.number) && !repetidas.containsKey(s.number)).length;
+    final dupesCount = repetidas.length;
+    final missingCount = faltantes.length;
+
+    if (!context.mounted) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dCtx) => AlertDialog(
+        backgroundColor: AppTheme.ink3,
+        title: const Text(
+          'Importar do Figuritas',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Sua coleção atual será substituída pelos dados do Figuritas:',
+              style: TextStyle(color: AppTheme.creamSoft, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            _SummaryRow(
+              color: AppTheme.seed,
+              icon: Icons.check_circle_outline_rounded,
+              label: 'Tenho',
+              value: '$ownedCount figurinhas',
+            ),
+            const SizedBox(height: 8),
+            _SummaryRow(
+              color: AppTheme.pulp,
+              icon: Icons.copy_all_rounded,
+              label: 'Repetidas',
+              value: '$dupesCount figurinhas',
+            ),
+            const SizedBox(height: 8),
+            _SummaryRow(
+              color: AppTheme.inkSoft,
+              icon: Icons.radio_button_unchecked_rounded,
+              label: 'Faltam',
+              value: '$missingCount figurinhas',
+            ),
+          ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(dCtx, false),
+            child: const Text('Cancelar'),
+          ),
           FilledButton(
-            onPressed: () => Navigator.pop(dialogCtx, ctrl.text.trim()),
-            child: const Text('Detectar'),
+            onPressed: () => Navigator.pop(dCtx, true),
+            child: const Text('Importar'),
           ),
         ],
       ),
     );
-    if (input == null || input.isEmpty) return;
-    if (!context.mounted) return;
 
-    final detections = _parseTextToDetections(input);
-    if (detections.isEmpty) {
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      final result = await ref.read(collectionRepoProvider).bulkImportFiguritas(
+            faltantes: faltantes,
+            repetidas: repetidas,
+          );
+      ref.read(collectionVersionProvider.notifier).state++;
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nenhum código válido encontrado.')),
+        SnackBar(
+          content: Text(
+            '${result['owned']} tenho + ${result['dupes']} repetidas importadas ✓',
+          ),
+        ),
       );
-      return;
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao importar: $e')),
+      );
     }
-    await showReviewDetectionsSheet(context, ref, detections);
   }
 
+  // ── Plain code list ─────────────────────────────────────────────────────────
+
   List<StickerDetection> _parseTextToDetections(String text) {
-    final regex = RegExp(r'\b([A-Z]{3})\s*[-–]?\s*(\d{1,3})\b');
+    final regex = RegExp(r'\b([A-Z]{2,4})\s*[-–]?\s*(\d{1,3})\b');
     final upper = text.toUpperCase();
     final seen = <String>{};
     final out = <StickerDetection>[];
@@ -137,12 +372,50 @@ class FiguritasImportPage extends ConsumerWidget {
       } else {
         if (number < 1 || number > 20) continue;
       }
-      final code = (sigla == 'FWC' && number == 0) ? 'FWC00' : '$sigla$number';
+      final code =
+          (sigla == 'FWC' && number == 0) ? 'FWC00' : '$sigla$number';
       if (seen.add(code)) {
-        out.add(StickerDetection(code: code, confidence: 1.0, rawText: m.group(0)!));
+        out.add(
+            StickerDetection(code: code, confidence: 1.0, rawText: m.group(0)!));
       }
     }
     return out;
+  }
+}
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+class _SummaryRow extends StatelessWidget {
+  final Color color;
+  final IconData icon;
+  final String label;
+  final String value;
+  const _SummaryRow({
+    required this.color,
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: color, size: 18),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: TextStyle(
+              fontWeight: FontWeight.w700, color: color, fontSize: 14),
+        ),
+        const Spacer(),
+        Text(value,
+            style: const TextStyle(
+                color: AppTheme.cream,
+                fontWeight: FontWeight.w600,
+                fontSize: 14)),
+      ],
+    );
   }
 }
 
