@@ -39,7 +39,7 @@ class FigusApp extends ConsumerWidget {
     // Effective seed: preview overrides saved theme during 10s demo
     final savedSeed = ref.watch(themeSeedProvider);
     final previewSeed = ref.watch(previewThemeSeedProvider);
-    final effectiveSeed = (previewSeed ?? savedSeed).color;
+    final effectiveSeed = previewSeed ?? savedSeed;
 
     final router = GoRouter(
       initialLocation: '/',
@@ -87,9 +87,15 @@ class FigusApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Figus',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(overrideSeed: effectiveSeed),
-      darkTheme: AppTheme.dark(overrideSeed: effectiveSeed),
-      themeMode: ThemeMode.dark,
+      theme: AppTheme.light(
+        overrideSeed: effectiveSeed.color,
+        figusColors: effectiveSeed.figusColors,
+      ),
+      darkTheme: AppTheme.dark(
+        overrideSeed: effectiveSeed.color,
+        figusColors: effectiveSeed.figusColors,
+      ),
+      themeMode: effectiveSeed.isDark ? ThemeMode.dark : ThemeMode.light,
       routerConfig: router,
     );
   }

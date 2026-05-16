@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/figus_colors.dart';
 import '../../data/providers.dart';
 import '../pro/pro_service.dart';
 
@@ -14,6 +14,7 @@ class YouPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.fc;
     final profileAsync = ref.watch(profilesListProvider);
     final statsAsync = ref.watch(albumStatsProvider);
     final pro = ref.watch(proProvider);
@@ -31,17 +32,17 @@ class YouPage extends ConsumerWidget {
     final pct = total > 0 ? (owned / total * 100).round() : 0;
 
     return Scaffold(
-      backgroundColor: AppTheme.inkDeep,
+      backgroundColor: c.bg,
       appBar: AppBar(
         title: Text(
           'Você',
           style: GoogleFonts.inter(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: AppTheme.cream,
+            color: c.text,
           ),
         ),
-        backgroundColor: AppTheme.ink,
+        backgroundColor: c.cardAlt,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
       ),
@@ -51,114 +52,21 @@ class YouPage extends ConsumerWidget {
           const SizedBox(height: 16),
 
           // ── Profile card ───────────────────────────────────────────────────
-          GestureDetector(
+          _ProfileCard(
+            name: profileName,
+            isPro: pro.isPro,
             onTap: () => context.push('/profiles'),
-            child: Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: AppTheme.ink3,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: AppTheme.ink4),
-            ),
-            child: Row(
-              children: [
-                // Avatar
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: AppTheme.gold,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppTheme.gold.withValues(alpha: 0.20),
-                        blurRadius: 14,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    profileName.isNotEmpty
-                        ? profileName[0].toUpperCase()
-                        : '?',
-                    style: GoogleFonts.inter(
-                      color: AppTheme.inkDeep,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        profileName,
-                        style: GoogleFonts.instrumentSerif(
-                          fontStyle: FontStyle.italic,
-                          fontSize: 22,
-                          color: AppTheme.cream,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Copa 2026',
-                        style: GoogleFonts.jetBrainsMono(
-                          fontSize: 10,
-                          color: AppTheme.gold,
-                          letterSpacing: 0.06,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // PRO/FREE badge
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: pro.isPro
-                        ? AppTheme.gold.withValues(alpha: 0.15)
-                        : AppTheme.cream.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(4),
-                    border: pro.isPro
-                        ? Border.all(
-                            color: AppTheme.gold.withValues(alpha: 0.4))
-                        : null,
-                  ),
-                  child: Text(
-                    pro.isPro ? 'PRO' : 'FREE',
-                    style: GoogleFonts.jetBrainsMono(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      color: pro.isPro
-                          ? AppTheme.gold
-                          : AppTheme.cream.withValues(alpha: 0.7),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  Icons.edit_outlined,
-                  size: 14,
-                  color: AppTheme.creamSoft.withValues(alpha: 0.4),
-                ),
-              ],
-            ),
           ),
-          ), // GestureDetector (profile card)
+          const SizedBox(height: 12),
 
           // ── Progress card ──────────────────────────────────────────────────
           Container(
             margin: const EdgeInsets.only(bottom: 16),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppTheme.ink3,
+              color: c.card,
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: AppTheme.ink4),
+              border: Border.all(color: c.border),
             ),
             child: Column(
               children: [
@@ -180,7 +88,7 @@ class YouPage extends ConsumerWidget {
                         'Ver tudo →',
                         style: GoogleFonts.jetBrainsMono(
                           fontSize: 10,
-                          color: AppTheme.creamSoft,
+                          color: c.textMuted,
                         ),
                       ),
                     ),
@@ -189,7 +97,6 @@ class YouPage extends ConsumerWidget {
                 const SizedBox(height: 14),
                 Row(
                   children: [
-                    // Progress ring
                     Stack(
                       alignment: Alignment.center,
                       children: [
@@ -199,14 +106,14 @@ class YouPage extends ConsumerWidget {
                           child: CircularProgressIndicator(
                             value: total > 0 ? owned / total : 0,
                             strokeWidth: 6,
-                            backgroundColor: AppTheme.ink4,
+                            backgroundColor: c.border,
                             valueColor: const AlwaysStoppedAnimation<Color>(
                                 AppTheme.gold),
                           ),
                         ),
                         Text(
                           '$pct%',
-                          style: const TextStyle(
+                          style: GoogleFonts.inter(
                             fontSize: 13,
                             fontWeight: FontWeight.w800,
                             color: AppTheme.gold,
@@ -218,41 +125,27 @@ class YouPage extends ConsumerWidget {
                     Expanded(
                       child: Column(
                         children: [
-                          _StatRow(
-                            color: AppTheme.cream,
-                            label: 'TENHO',
-                            value: owned.toString(),
-                          ),
+                          _StatRow(color: c.text,        label: 'TENHO',     value: owned.toString()),
                           const SizedBox(height: 8),
-                          _StatRow(
-                            color: AppTheme.pulpSoft,
-                            label: 'FALTAM',
-                            value: missing.toString(),
-                          ),
+                          _StatRow(color: AppTheme.pulpSoft, label: 'FALTAM',    value: missing.toString()),
                           const SizedBox(height: 8),
-                          const _StatRow(
-                            color: AppTheme.gold,
-                            label: 'REPETIDAS',
-                            value: '—',
-                          ),
+                          _StatRow(color: AppTheme.gold,     label: 'REPETIDAS', value: '${stats?.duplicates ?? 0}'),
                         ],
                       ),
                     ),
                   ],
                 ),
-                const Divider(color: AppTheme.ink4, height: 24),
+                Divider(color: c.border, height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       '${stats?.foilOwned ?? 0} brilhantes',
-                      style: const TextStyle(
-                          fontSize: 11, color: AppTheme.creamSoft),
+                      style: TextStyle(fontSize: 11, color: c.textMuted),
                     ),
-                    const Text(
+                    Text(
                       'Sincronizado',
-                      style:
-                          TextStyle(fontSize: 11, color: AppTheme.creamSoft),
+                      style: TextStyle(fontSize: 11, color: c.textMuted),
                     ),
                   ],
                 ),
@@ -260,7 +153,7 @@ class YouPage extends ConsumerWidget {
             ),
           ),
 
-          // ── Figus Pro (destaque) ────────────────────────────────────────────
+          // ── Figus Pro ──────────────────────────────────────────────────────
           _ProCard(
             isPro: pro.isPro,
             onTap: () => context.push(pro.isPro ? '/themes' : '/upgrade'),
@@ -343,6 +236,120 @@ class YouPage extends ConsumerWidget {
   }
 }
 
+// ── _ProfileCard ──────────────────────────────────────────────────────────────
+
+class _ProfileCard extends StatelessWidget {
+  final String name;
+  final bool isPro;
+  final VoidCallback onTap;
+  const _ProfileCard({required this.name, required this.isPro, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.fc;
+    return Container(
+      decoration: BoxDecoration(
+        color: c.card,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: c.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                // Avatar
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: AppTheme.gold,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.gold.withValues(alpha: 0.20),
+                        blurRadius: 14,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    name.isNotEmpty ? name[0].toUpperCase() : '?',
+                    style: GoogleFonts.inter(
+                      color: AppTheme.inkDeep,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: GoogleFonts.instrumentSerif(
+                          fontStyle: FontStyle.italic,
+                          fontSize: 22,
+                          color: c.text,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Copa 2026',
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 10,
+                          color: AppTheme.gold,
+                          letterSpacing: 0.06,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // PRO/FREE badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isPro
+                        ? AppTheme.gold.withValues(alpha: 0.15)
+                        : c.text.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(4),
+                    border: isPro
+                        ? Border.all(color: AppTheme.gold.withValues(alpha: 0.4))
+                        : null,
+                  ),
+                  child: Text(
+                    isPro ? 'PRO' : 'FREE',
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      color: isPro
+                          ? AppTheme.gold
+                          : c.text.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.edit_outlined,
+                  size: 14,
+                  color: c.textMuted.withValues(alpha: 0.55),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ── _ProCard ──────────────────────────────────────────────────────────────────
 
 class _ProCard extends StatelessWidget {
@@ -374,7 +381,6 @@ class _ProCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Crown icon
             Container(
               width: 52,
               height: 52,
@@ -406,8 +412,8 @@ class _ProCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     isPro
-                        ? 'Ativo · Sem anúncios · 4 temas de cor exclusivos'
-                        : 'Sem anúncios · 4 temas de cor · sync entre devices',
+                        ? 'Ativo · Sem anúncios · Temas premium desbloqueados'
+                        : 'Remove anúncios · Temas premium · Sync multi-device',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.white.withValues(alpha: 0.85),
@@ -418,7 +424,6 @@ class _ProCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            // CTA badge
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
@@ -451,11 +456,12 @@ class _MenuGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.ink3,
+        color: c.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.ink4),
+        border: Border.all(color: c.border),
       ),
       clipBehavior: Clip.hardEdge,
       child: Column(children: children),
@@ -468,7 +474,6 @@ class _MenuGroup extends StatelessWidget {
 class _MenuRow extends StatelessWidget {
   final IconData icon;
   final String title;
-  final String? subtitle;
   final Color? iconColor;
   final bool muted;
   final VoidCallback? onTap;
@@ -476,7 +481,6 @@ class _MenuRow extends StatelessWidget {
   const _MenuRow({
     required this.icon,
     required this.title,
-    this.subtitle,
     this.iconColor,
     this.muted = false,
     this.onTap,
@@ -484,24 +488,19 @@ class _MenuRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveIconColor = iconColor ?? AppTheme.cream;
-    return GestureDetector(
+    final c = context.fc;
+    final effectiveIconColor = iconColor ?? c.text;
+    return InkWell(
       onTap: onTap,
-      behavior: HitTestBehavior.opaque,
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-        decoration: const BoxDecoration(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        decoration: BoxDecoration(
           border: Border(
-            bottom: BorderSide(
-              color: Color(0x662A231D), // ink4 at ~40%
-              width: 0.5,
-            ),
+            bottom: BorderSide(color: c.border.withValues(alpha: 0.6), width: 0.5),
           ),
         ),
         child: Row(
           children: [
-            // Icon container
             Container(
               width: 32,
               height: 32,
@@ -513,37 +512,21 @@ class _MenuRow extends StatelessWidget {
               child: Icon(icon, color: effectiveIconColor, size: 16),
             ),
             const SizedBox(width: 12),
-            // Title + subtitle
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: muted
-                          ? AppTheme.cream.withValues(alpha: 0.55)
-                          : AppTheme.cream,
-                    ),
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle!,
-                      style: const TextStyle(
-                          fontSize: 11, color: AppTheme.creamSoft),
-                    ),
-                  ],
-                ],
+              child: Text(
+                title,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: muted ? c.text.withValues(alpha: 0.45) : c.text,
+                ),
               ),
             ),
             const Spacer(),
             if (onTap != null)
               Icon(
                 Icons.chevron_right_rounded,
-                color: AppTheme.creamSoft.withValues(alpha: 0.35),
+                color: c.textMuted.withValues(alpha: 0.5),
                 size: 12,
               ),
           ],
@@ -568,15 +551,13 @@ class _StatRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     return Row(
       children: [
         Container(
           width: 5,
           height: 5,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -584,7 +565,7 @@ class _StatRow extends StatelessWidget {
             label,
             style: GoogleFonts.jetBrainsMono(
               fontSize: 10,
-              color: AppTheme.cream.withValues(alpha: 0.55),
+              color: c.text.withValues(alpha: 0.55),
               letterSpacing: 0.06,
               fontWeight: FontWeight.w500,
             ),

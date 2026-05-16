@@ -2,24 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/figus_colors.dart';
 
 class HelpPage extends StatelessWidget {
   const HelpPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     return Scaffold(
-      backgroundColor: AppTheme.inkDeep,
+      backgroundColor: c.bg,
       appBar: AppBar(
         title: Text(
           'Como usar',
           style: GoogleFonts.inter(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: AppTheme.cream,
+            color: c.text,
           ),
         ),
-        backgroundColor: AppTheme.ink,
+        backgroundColor: c.cardAlt,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
       ),
@@ -311,11 +313,12 @@ class _SectionState extends State<_Section> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.ink3,
+        color: c.card,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppTheme.ink4),
+        border: Border.all(color: c.border),
       ),
       clipBehavior: Clip.hardEdge,
       child: Column(
@@ -344,7 +347,7 @@ class _SectionState extends State<_Section> {
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: AppTheme.cream,
+                        color: c.text,
                       ),
                     ),
                   ),
@@ -352,7 +355,7 @@ class _SectionState extends State<_Section> {
                     _expanded
                         ? Icons.expand_less_rounded
                         : Icons.expand_more_rounded,
-                    color: AppTheme.creamSoft,
+                    color: c.textMuted,
                     size: 20,
                   ),
                 ],
@@ -363,13 +366,13 @@ class _SectionState extends State<_Section> {
           if (_expanded)
             Column(
               children: [
-                const Divider(height: 1, color: AppTheme.ink4),
+                Divider(height: 1, color: c.border),
                 for (int i = 0; i < widget.items.length; i++) ...[
                   _ItemTile(item: widget.items[i]),
                   if (i < widget.items.length - 1)
-                    const Divider(
+                    Divider(
                         height: 1,
-                        color: AppTheme.ink4,
+                        color: c.border,
                         indent: 16,
                         endIndent: 16),
                 ],
@@ -394,6 +397,7 @@ class _ItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -410,7 +414,7 @@ class _ItemTile extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.cream,
+                    color: c.text,
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -418,7 +422,7 @@ class _ItemTile extends StatelessWidget {
                   item.body,
                   style: GoogleFonts.inter(
                     fontSize: 13,
-                    color: AppTheme.creamSoft,
+                    color: c.textMuted,
                     height: 1.45,
                   ),
                 ),

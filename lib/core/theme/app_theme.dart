@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'figus_colors.dart';
+
 class AppTheme {
   // ── Brand palette ───────────────────────────────────────────────────────────
   static const gold     = Color(0xFFE5B14B); // primary accent
@@ -14,12 +16,12 @@ class AppTheme {
   static const flame    = Color(0xFFE85A3C);
 
   // ── Dark palette (ink tones) ────────────────────────────────────────────────
-  static const inkDeep  = Color(0xFF13100E); // scaffold bg (darkest)
-  static const ink      = Color(0xFF1E1916); // surface / card
-  static const ink3     = Color(0xFF2A231D); // elevated surface
-  static const ink4     = Color(0xFF3A322A); // borders / dividers
-  static const cream    = Color(0xFFF5EFE3); // primary text on dark
-  static const creamSoft= Color(0xFFBFAF9C); // secondary text on dark
+  static const inkDeep  = Color(0xFF13100E);
+  static const ink      = Color(0xFF1E1916);
+  static const ink3     = Color(0xFF2A231D);
+  static const ink4     = Color(0xFF3A322A);
+  static const cream    = Color(0xFFF5EFE3);
+  static const creamSoft= Color(0xFFBFAF9C);
 
   // ── Light palette (paper tones) ────────────────────────────────────────────
   static const paper    = Color(0xFFFBF7EC);
@@ -27,53 +29,56 @@ class AppTheme {
   static const darkText = Color(0xFF13100E);
   static const darkTextSoft = Color(0xFF5C4E43);
 
-  // ── Legacy aliases (many widgets reference these directly) ──────────────────
-  // On dark theme these values work well; light theme uses ColorScheme.
-  static const seed     = gold;            // was blue, now gold
-  static const inkSoft  = creamSoft;       // secondary text
-  static const slot     = ink4;            // borders
-  static const slotSoft = ink3;            // elevated surfaces / chip bg
+  // ── Legacy aliases ──────────────────────────────────────────────────────────
+  static const seed     = gold;
+  static const inkSoft  = creamSoft;
+  static const slot     = ink4;
+  static const slotSoft = ink3;
 
   // ── Theme builders ──────────────────────────────────────────────────────────
 
-  static ThemeData light({Color? overrideSeed}) {
+  static ThemeData light({Color? overrideSeed, FigusColors? figusColors}) {
     final s = overrideSeed ?? gold;
+    final fc = figusColors ?? FigusColors.warmLight;
     final scheme = ColorScheme.fromSeed(seedColor: s, brightness: Brightness.light)
         .copyWith(
-          surface: paper,
-          onSurface: darkText,
-          surfaceContainer: paper2,
+          surface:              fc.bg,
+          onSurface:            fc.text,
+          surfaceContainer:     fc.card,
+          surfaceContainerHigh: fc.cardAlt,
         );
-    return _base(scheme, isDark: false);
+    return _base(scheme, isDark: false, fc: fc);
   }
 
-  static ThemeData dark({Color? overrideSeed}) {
+  static ThemeData dark({Color? overrideSeed, FigusColors? figusColors}) {
     final s = overrideSeed ?? gold;
+    final fc = figusColors ?? FigusColors.dark;
     final scheme = ColorScheme.fromSeed(seedColor: s, brightness: Brightness.dark)
         .copyWith(
-          surface: inkDeep,
-          onSurface: cream,
-          surfaceContainer: ink,
-          surfaceContainerHigh: ink3,
-          secondary: pulp,
-          onSecondary: Colors.white,
+          surface:              fc.bg,
+          onSurface:            fc.text,
+          surfaceContainer:     fc.card,
+          surfaceContainerHigh: fc.cardAlt,
+          secondary:    pulp,
+          onSecondary:  Colors.white,
         );
-    return _base(scheme, isDark: true);
+    return _base(scheme, isDark: true, fc: fc);
   }
 
-  static ThemeData _base(ColorScheme scheme, {required bool isDark}) {
+  static ThemeData _base(ColorScheme scheme, {required bool isDark, required FigusColors fc}) {
     final text = GoogleFonts.interTextTheme();
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
-      scaffoldBackgroundColor: isDark ? inkDeep : paper,
+      extensions: [fc],
+      scaffoldBackgroundColor: fc.bg,
       textTheme: text.apply(
-        bodyColor: scheme.onSurface,
+        bodyColor:    scheme.onSurface,
         displayColor: scheme.onSurface,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: isDark ? ink : paper,
-        foregroundColor: scheme.onSurface,
+        backgroundColor:  fc.cardAlt,
+        foregroundColor:  scheme.onSurface,
         elevation: 0,
         centerTitle: false,
         surfaceTintColor: Colors.transparent,
@@ -85,23 +90,23 @@ class AppTheme {
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         type: BottomNavigationBarType.fixed,
-        backgroundColor: isDark ? ink : paper,
+        backgroundColor: fc.cardAlt,
         selectedItemColor: scheme.primary,
         unselectedItemColor: scheme.onSurfaceVariant,
         showUnselectedLabels: true,
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: isDark ? ink : paper,
+        backgroundColor: fc.cardAlt,
         indicatorColor: scheme.primary.withValues(alpha: 0.15),
         surfaceTintColor: Colors.transparent,
       ),
       cardTheme: CardThemeData(
-        color: isDark ? ink : paper2,
+        color: fc.card,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: isDark ? ink3 : paper2,
+        backgroundColor: fc.cardAlt,
         side: BorderSide.none,
         labelStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
       ),
@@ -115,7 +120,7 @@ class AppTheme {
         ),
       ),
       dividerTheme: DividerThemeData(
-        color: isDark ? ink4 : paper2,
+        color: fc.border,
         thickness: 1,
       ),
     );

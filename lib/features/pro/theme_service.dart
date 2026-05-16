@@ -2,17 +2,45 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/theme/figus_colors.dart';
+
 enum AppThemeSeed {
-  blue('Azul', Color(0xFF1F66FF), false),
-  gold('Dourado', Color(0xFFB8860B), true),
-  crimson('Vermelho', Color(0xFFCC1126), true),
-  emerald('Esmeralda', Color(0xFF007A5A), true),
-  violet('Roxo', Color(0xFF6B3FA0), true);
+  // free
+  blue('Azul', Color(0xFF1F66FF), false, true),
+  // pro — dark
+  gold('Dourado', Color(0xFFE5B14B), true, true),
+  crimson('Vermelho', Color(0xFFCC1126), true, true),
+  // pro — light
+  emerald('Copa', Color(0xFF1A7A4A), true, false),
+  violet('Papel', Color(0xFF6B3FA0), true, false);
 
   final String label;
   final Color color;
   final bool proOnly;
-  const AppThemeSeed(this.label, this.color, this.proOnly);
+
+  /// True → dark theme; false → light theme.
+  final bool isDark;
+
+  const AppThemeSeed(this.label, this.color, this.proOnly, this.isDark);
+
+  FigusColors get figusColors {
+    if (!isDark) {
+      return this == AppThemeSeed.violet
+          ? FigusColors.coolLight
+          : FigusColors.warmLight;
+    }
+    return FigusColors.dark;
+  }
+
+  String get description {
+    switch (this) {
+      case AppThemeSeed.blue:    return 'Clássico · modo escuro';
+      case AppThemeSeed.gold:    return 'Dourado quente · modo escuro';
+      case AppThemeSeed.crimson: return 'Vermelho vibrante · modo escuro';
+      case AppThemeSeed.emerald: return 'Copa verde · modo claro ☀️';
+      case AppThemeSeed.violet:  return 'Papel roxo · modo claro ☀️';
+    }
+  }
 }
 
 class ThemeSeedNotifier extends StateNotifier<AppThemeSeed> {

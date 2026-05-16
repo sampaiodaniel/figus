@@ -261,16 +261,22 @@ class _ThemeTile extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     )
-                  else if (locked)
+                  else if (locked) ...[
+                    Text(seed.description,
+                        style: const TextStyle(fontSize: 12, color: AppTheme.inkSoft)),
+                    const SizedBox(height: 2),
                     const Text('Toque para ver uma prévia',
-                        style: TextStyle(fontSize: 12, color: AppTheme.inkSoft))
-                  else if (isSelected)
-                    const Text('Ativo',
-                        style: TextStyle(
+                        style: TextStyle(fontSize: 11, color: AppTheme.inkSoft)),
+                  ] else if (isSelected)
+                    Text(seed.description,
+                        style: const TextStyle(
                           fontSize: 12,
                           color: AppTheme.inkSoft,
                           fontWeight: FontWeight.w600,
-                        )),
+                        ))
+                  else
+                    Text(seed.description,
+                        style: const TextStyle(fontSize: 12, color: AppTheme.inkSoft)),
                 ],
               ),
             ),
