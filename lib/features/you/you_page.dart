@@ -58,22 +58,19 @@ Future<void> _showSyncOptions(BuildContext context, WidgetRef ref, String email)
               final repo = ref.read(collectionRepoProvider);
               final pushed = await repo.pushAllLocal();
               final remote = await ref.read(syncRepoProvider).pullAll();
-              await repo.applyRemoteEntries(remote);
+              final applyStats = await repo.applyRemoteEntries(remote);
               ref.invalidate(collectionVersionProvider);
-              // Count how many of the pulled rows represent stickers the user
-              // actually has (owned + duplicate), so the snackbar matches what
-              // the user thinks of as "minha coleção".
-              final remoteMarked = remote.values.where((e) =>
-                  e.status == 'owned' || e.status == 'duplicate').length;
+              // ignore: avoid_print
+              print('[Sync] pushed=$pushed remoteRows=${remote.length} apply=$applyStats');
               messenger
                 ..clearSnackBars()
                 ..showSnackBar(SnackBar(
                   content: Text(
-                    pushed.markedStickers > 0
-                        ? 'Sincronizado · ${pushed.markedStickers} enviada(s), $remoteMarked recebida(s)'
-                        : 'Sincronizado · $remoteMarked figurinha(s) recebida(s)',
+                    'Sync · ${pushed.markedStickers} enviada(s), '
+                    '${applyStats.markedApplied} recebida(s)'
+                    '${applyStats.unmatched > 0 ? " · ${applyStats.unmatched} código(s) não reconhecido(s)" : ""}',
                   ),
-                  duration: const Duration(seconds: 4),
+                  duration: const Duration(seconds: 6),
                 ));
             },
           ),

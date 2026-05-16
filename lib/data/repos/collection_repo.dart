@@ -53,19 +53,44 @@ class CollectionRepo {
   }
 
   /// Apply remote entries pulled from Supabase without re-pushing them (avoids loop).
-  Future<void> applyRemoteEntries(
+  ///
+  /// Returns stats about what actually matched + got written, so the UI can
+  /// surface "X recebidas · Y ignoradas (códigos não reconhecidos)" instead
+  /// of pretending everything applied.
+  Future<({int applied, int unmatched, int markedApplied})> applyRemoteEntries(
       Map<String, ({String status, int dupCount})> remote) async {
-    if (remote.isEmpty) return;
+    if (remote.isEmpty) return (applied: 0, unmatched: 0, markedApplied: 0);
     final pid = await _activeProfileId();
     final all = await db.select(db.stickers).get();
     final byNumber = {for (final s in all) s.number: s};
+    var applied = 0;
+    var unmatched = 0;
+    var markedApplied = 0;
+    final unmatchedSamples = <String>[];
     await db.transaction(() async {
       for (final entry in remote.entries) {
         final sticker = byNumber[entry.key];
-        if (sticker == null) continue;
+        if (sticker == null) {
+          unmatched++;
+          if (unmatchedSamples.length < 5) unmatchedSamples.add(entry.key);
+          continue;
+        }
         await _localUpsert(pid, sticker.id, entry.value.status, entry.value.dupCount);
+        applied++;
+        if (entry.value.status == 'owned' || entry.value.status == 'duplicate') {
+          markedApplied++;
+        }
       }
     });
+    // ignore: avoid_print
+    print('[CollectionRepo] applyRemoteEntries '
+        'pid=$pid remote=${remote.length} applied=$applied unmatched=$unmatched '
+        'markedApplied=$markedApplied unmatchedSamples=$unmatchedSamples');
+    return (
+      applied: applied,
+      unmatched: unmatched,
+      markedApplied: markedApplied,
+    );
   }
 
   /// Result of a bulk push: how many rows actually represent things the user
