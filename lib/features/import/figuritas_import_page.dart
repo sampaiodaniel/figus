@@ -325,7 +325,7 @@ class FiguritasImportPage extends ConsumerWidget {
               color: AppTheme.pulp,
               icon: Icons.copy_all_rounded,
               label: 'Repetidas',
-              value: '$dupesCount figurinhas',
+              value: '$dupesCount cópias extras',
             ),
             const SizedBox(height: 8),
             _SummaryRow(
@@ -333,6 +333,12 @@ class FiguritasImportPage extends ConsumerWidget {
               icon: Icons.radio_button_unchecked_rounded,
               label: 'Faltam',
               value: '$missingCount figurinhas',
+            ),
+            const SizedBox(height: 12),
+            // Debug line — helps spot parser mismatches vs Figuritas display
+            Text(
+              'Parser: ${faltantes.length} faltantes · ${repetidas.length} tipos repetidos · ${repetidas.values.fold(0, (a, b) => a + b)} cópias extras',
+              style: const TextStyle(fontSize: 10, color: AppTheme.inkSoft),
             ),
           ],
         ),
