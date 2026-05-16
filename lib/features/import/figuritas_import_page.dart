@@ -335,11 +335,36 @@ class FiguritasImportPage extends ConsumerWidget {
               label: 'Faltam',
               value: '$missingCount figurinhas',
             ),
-            const SizedBox(height: 12),
-            // Debug line — helps spot parser mismatches vs Figuritas display
-            Text(
-              'Parser: ${faltantes.length} faltantes · ${repetidas.length} tipos repetidos · ${repetidas.values.fold(0, (a, b) => a + b)} cópias extras',
-              style: const TextStyle(fontSize: 10, color: AppTheme.inkSoft),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.pulp.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppTheme.pulp.withValues(alpha: 0.25)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_outline_rounded,
+                      size: 16, color: AppTheme.pulp),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Atenção: o Figuritas exporta cada figurinha repetida só '
+                      'uma vez no texto, sem informar a quantidade. Se você tem '
+                      '3+ cópias da mesma figurinha, marque manualmente o '
+                      'contador depois — abra a figurinha no álbum e toque pra '
+                      'incrementar.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppTheme.cream.withValues(alpha: 0.85),
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

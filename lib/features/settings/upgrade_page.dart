@@ -448,12 +448,11 @@ class _ComparisonTable extends StatelessWidget {
     ('Comparar coleção com amigo', true, true),
     ('Múltiplos perfis · ideal para família', true, true),
     ('Importar do Figuritas App', true, true),
-    ('Forjar repetidas em faltantes · 1/dia', true, true),
+    ('Sync entre dispositivos · mesmo perfil em 2 celulares', true, true),
     // ── Exclusivo Pro ────────────────────────────────────────────────────────
     ('Sem anúncios no app', false, true),
     ('Temas de cor exclusivos · modo claro e escuro', false, true),
-    ('Forjar repetidas ilimitado', false, true),
-    ('Sync entre dispositivos · mesmo perfil em 2 celulares', false, true),
+    ('Perfis adicionais ilimitados · renomear perfis', false, true),
     ('Troca por Bluetooth (em breve)', false, true),
   ];
 
