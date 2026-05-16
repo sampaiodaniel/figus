@@ -88,6 +88,7 @@ flutter:
   assets:
     - assets/icon/
     - assets/figus-logo-transparent.png
+    - assets/figus-logo-square.png
     - assets/figus-logo-dark.png
     - assets/figus-logo.png
     - assets/figus-icon-512.png

@@ -94,7 +94,7 @@ class _AuthPageState extends ConsumerState<AuthPage> {
         title: Row(
           children: [
             Image.asset(
-              'assets/figus-logo-transparent.png',
+              'assets/figus-logo-square.png',
               width: 32,
               height: 32,
               filterQuality: FilterQuality.medium,
@@ -142,7 +142,7 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Image.asset(
-          'assets/figus-logo-transparent.png',
+          'assets/figus-logo-square.png',
           width: 84,
           height: 84,
           filterQuality: FilterQuality.medium,
@@ -209,7 +209,7 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Image.asset(
-          'assets/figus-logo-transparent.png',
+          'assets/figus-logo-square.png',
           width: 64,
           height: 64,
           filterQuality: FilterQuality.medium,

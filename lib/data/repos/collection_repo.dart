@@ -69,10 +69,10 @@ class CollectionRepo {
   }
 
   /// Pushes every locally-known entry (owned/duplicate/missing) for the active
-  /// profile to Supabase. Used right after login to seed the cloud with whatever
-  /// the user had marked while still offline.
+  /// profile to Supabase in a single bulk-upsert call. Used right after login
+  /// to seed the cloud with whatever the user had marked while still offline.
   ///
-  /// Returns the number of entries pushed (best-effort; ignores per-row errors).
+  /// Returns the number of entries pushed (or 0 if not signed in / empty / error).
   Future<int> pushAllLocal() async {
     if (sync == null || !sync!.isSignedIn) return 0;
     final pid = await _activeProfileId();
@@ -82,14 +82,18 @@ class CollectionRepo {
     if (entries.isEmpty) return 0;
     final stickers = await db.select(db.stickers).get();
     final byId = {for (final s in stickers) s.id: s};
-    var pushed = 0;
+    final payload = <({String stickerNumber, String status, int dupCount})>[];
     for (final e in entries) {
       final sticker = byId[e.stickerId];
       if (sticker == null) continue;
-      await sync!.pushEntry(sticker.number, e.status, e.duplicateCount);
-      pushed++;
+      payload.add((
+        stickerNumber: sticker.number,
+        status: e.status,
+        dupCount: e.duplicateCount,
+      ));
     }
-    return pushed;
+    final ok = await sync!.pushEntriesBulk(payload);
+    return ok ? payload.length : 0;
   }
 
   Future<void> tapSticker(int stickerId) async {

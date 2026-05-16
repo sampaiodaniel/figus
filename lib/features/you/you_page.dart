@@ -20,7 +20,12 @@ Future<void> _showSyncOptions(BuildContext context, WidgetRef ref, String email)
         children: [
           ListTile(
             leading: const Icon(Icons.account_circle_rounded),
-            title: Text(email),
+            title: Text(
+              email,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
             subtitle: const Text('Conta conectada'),
           ),
           const Divider(height: 1),
@@ -29,20 +34,42 @@ Future<void> _showSyncOptions(BuildContext context, WidgetRef ref, String email)
             title: const Text('Sincronizar agora'),
             onTap: () async {
               Navigator.pop(sheetCtx);
+              // Immediate feedback so the user doesn't think the button was
+              // ignored while the bulk-upsert HTTP call runs.
+              messenger
+                ..clearSnackBars()
+                ..showSnackBar(const SnackBar(
+                  content: Row(
+                    children: [
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Text('Sincronizando...'),
+                    ],
+                  ),
+                  duration: Duration(minutes: 1),
+                ));
               final repo = ref.read(collectionRepoProvider);
-              // Push local first (catches entries marked before login),
-              // then pull to merge anything else on the server.
               final pushed = await repo.pushAllLocal();
               final remote = await ref.read(syncRepoProvider).pullAll();
               await repo.applyRemoteEntries(remote);
               ref.invalidate(collectionVersionProvider);
-              messenger.showSnackBar(
-                SnackBar(content: Text(
-                  pushed > 0
-                      ? 'Sincronizado · ${pushed} enviado(s), ${remote.length} recebido(s)'
-                      : 'Sincronizado · ${remote.length} figurinha(s)',
-                )),
-              );
+              messenger
+                ..clearSnackBars()
+                ..showSnackBar(SnackBar(
+                  content: Text(
+                    pushed > 0
+                        ? 'Sincronizado · $pushed enviado(s), ${remote.length} recebido(s)'
+                        : 'Sincronizado · ${remote.length} figurinha(s) recebida(s)',
+                  ),
+                  duration: const Duration(seconds: 4),
+                ));
             },
           ),
           ListTile(
@@ -96,7 +123,7 @@ class YouPage extends ConsumerWidget {
         title: Row(
           children: [
             Image.asset(
-              'assets/figus-logo-transparent.png',
+              'assets/figus-logo-square.png',
               width: 32,
               height: 32,
               filterQuality: FilterQuality.medium,
@@ -645,6 +672,8 @@ class _MenuRow extends StatelessWidget {
                 children: [
                   Text(
                     title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -655,13 +684,14 @@ class _MenuRow extends StatelessWidget {
                     const SizedBox(height: 1),
                     Text(
                       subtitle!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.inter(fontSize: 11, color: c.textMuted),
                     ),
                   ],
                 ],
               ),
             ),
-            const Spacer(),
             if (onTap != null)
               Icon(
                 Icons.chevron_right_rounded,

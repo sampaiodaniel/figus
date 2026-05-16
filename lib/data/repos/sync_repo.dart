@@ -37,6 +37,34 @@ class SyncRepo {
     }
   }
 
+  /// Bulk-push many entries in a single HTTP round-trip. Returns true on
+  /// success. Used by the initial-sync flow so we don't fire 400+ network
+  /// requests sequentially.
+  Future<bool> pushEntriesBulk(
+      List<({String stickerNumber, String status, int dupCount})> entries) async {
+    if (!isSignedIn || entries.isEmpty) return false;
+    final uid = userId!;
+    final now = DateTime.now().toUtc().toIso8601String();
+    try {
+      await _client!.from(_table).upsert(
+        entries
+            .map((e) => {
+                  'user_id': uid,
+                  'sticker_number': e.stickerNumber,
+                  'status': e.status,
+                  'duplicate_count': e.dupCount,
+                  'updated_at': now,
+                })
+            .toList(),
+        onConflict: 'user_id,sticker_number',
+      );
+      return true;
+    } catch (e) {
+      debugPrint('[SyncRepo] pushEntriesBulk error: $e');
+      return false;
+    }
+  }
+
   /// Pull all entries for the current user.
   /// Returns map of stickerNumber → (status, dupCount).
   Future<Map<String, ({String status, int dupCount})>> pullAll() async {
