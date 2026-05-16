@@ -92,13 +92,27 @@ class YouPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: c.bg,
       appBar: AppBar(
-        title: Text(
-          'Configurações',
-          style: GoogleFonts.inter(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: c.text,
-          ),
+        titleSpacing: 12,
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/figus-logo-transparent.png',
+              width: 32,
+              height: 32,
+              filterQuality: FilterQuality.medium,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Configurações',
+                style: GoogleFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: c.text,
+                ),
+              ),
+            ),
+          ],
         ),
         backgroundColor: c.cardAlt,
         surfaceTintColor: Colors.transparent,

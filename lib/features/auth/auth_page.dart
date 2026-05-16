@@ -105,8 +105,13 @@ class _AuthPageState extends ConsumerState<AuthPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 8),
-                    Icon(Icons.sync_rounded, size: 52, color: context.fc.accent),
-                    const SizedBox(height: 16),
+                    Image.asset(
+                      'assets/figus-logo-transparent.png',
+                      width: 96,
+                      height: 96,
+                      filterQuality: FilterQuality.medium,
+                    ),
+                    const SizedBox(height: 12),
                     const Text(
                       'Sync entre dispositivos',
                       textAlign: TextAlign.center,
