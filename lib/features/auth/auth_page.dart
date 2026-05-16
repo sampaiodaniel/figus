@@ -79,14 +79,23 @@ class _AuthPageState extends ConsumerState<AuthPage> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     return Scaffold(
-      appBar: AppBar(title: const Text('Entrar no Figus')),
+      backgroundColor: c.bg,
+      appBar: AppBar(
+        title: const Text('Entrar no Figus'),
+        backgroundColor: c.cardAlt,
+      ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: _step == _Step.done
-              ? _DoneView(onClose: () => Navigator.pop(context))
-              : Column(
+        child: Center(
+          // Constrain to mobile width so desktop browser doesn't stretch the form
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: _step == _Step.done
+                  ? _DoneView(onClose: () => Navigator.pop(context))
+                  : Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 8),
@@ -175,14 +184,16 @@ class _AuthPageState extends ConsumerState<AuthPage> {
                         child: const Text('Usar outro e-mail'),
                       ),
                     ],
-                    const Spacer(),
-                    Text(
-                      'Conta gratuita · sem senha · pode usar offline sem login',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 11, color: context.fc.textMuted),
+                        const Spacer(),
+                        Text(
+                          'Conta gratuita · sem senha · pode usar offline sem login',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 11, color: context.fc.textMuted),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+            ),
+          ),
         ),
       ),
     );
