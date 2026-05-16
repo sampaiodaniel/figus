@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/figus_colors.dart';
 import '../../data/providers.dart';
 import '../../data/repos/sync_repo.dart';
 
@@ -89,7 +90,7 @@ class _AuthPageState extends ConsumerState<AuthPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 8),
-                    const Icon(Icons.sync_rounded, size: 52, color: AppTheme.seed),
+                    Icon(Icons.sync_rounded, size: 52, color: context.fc.accent),
                     const SizedBox(height: 16),
                     const Text(
                       'Sync entre dispositivos',
@@ -97,11 +98,11 @@ class _AuthPageState extends ConsumerState<AuthPage> {
                       style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       'Entre com seu e-mail para sincronizar sua coleção em vários aparelhos. '
                       'Nenhuma senha necessária.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: AppTheme.inkSoft, height: 1.5),
+                      style: TextStyle(color: context.fc.textMuted, height: 1.5),
                     ),
                     const SizedBox(height: 32),
                     if (_step == _Step.email) ...[
@@ -122,7 +123,7 @@ class _AuthPageState extends ConsumerState<AuthPage> {
                       Text(
                         'Código enviado para ${_emailCtrl.text}',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(color: AppTheme.inkSoft),
+                        style: TextStyle(color: context.fc.textMuted),
                       ),
                       const SizedBox(height: 16),
                       TextField(
@@ -175,10 +176,10 @@ class _AuthPageState extends ConsumerState<AuthPage> {
                       ),
                     ],
                     const Spacer(),
-                    const Text(
+                    Text(
                       'Conta gratuita · sem senha · pode usar offline sem login',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 11, color: AppTheme.inkSoft),
+                      style: TextStyle(fontSize: 11, color: context.fc.textMuted),
                     ),
                   ],
                 ),
@@ -203,10 +204,10 @@ class _DoneView extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
         const SizedBox(height: 8),
-        const Text(
+        Text(
           'Sua coleção será sincronizada automaticamente\nentre todos os seus dispositivos.',
           textAlign: TextAlign.center,
-          style: TextStyle(color: AppTheme.inkSoft, height: 1.5),
+          style: TextStyle(color: context.fc.textMuted, height: 1.5),
         ),
         const SizedBox(height: 32),
         FilledButton(

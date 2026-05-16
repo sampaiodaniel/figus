@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/country_codes.dart';
-import '../../core/theme/app_theme.dart';
+import '../../core/theme/figus_colors.dart';
 import '../../data/providers.dart';
 import '../../data/seeds/wc2026_seed.dart';
 
@@ -55,7 +55,7 @@ class _FavoriteNationsPageState extends ConsumerState<FavoriteNationsPage> {
                   child: Text(
                     'Marque suas seleções de coração — figurinhas dessas seleções '
                     'sobem na lista de trocas sugeridas.',
-                    style: TextStyle(color: AppTheme.inkSoft.withValues(alpha: 0.9)),
+                    style: TextStyle(color: context.fc.textMuted.withValues(alpha: 0.9)),
                   ),
                 ),
                 for (final n in WC2026Seed.nations)
@@ -97,7 +97,7 @@ class _NationTile extends StatelessWidget {
       title: Text('$code · $name', style: const TextStyle(fontWeight: FontWeight.w600)),
       trailing: Icon(
         selected ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-        color: selected ? Colors.pinkAccent : AppTheme.inkSoft,
+        color: selected ? Colors.pinkAccent : context.fc.textMuted,
       ),
       onTap: onTap,
     );

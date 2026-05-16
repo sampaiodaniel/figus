@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/theme/app_theme.dart';
+import '../../core/theme/figus_colors.dart';
 import '../../data/providers.dart';
 
 /// Bulk import of player names from a CSV/TSV the user pastes:
@@ -41,7 +41,7 @@ class _PlayerNamesImportPageState extends ConsumerState<PlayerNamesImportPage> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: AppTheme.slotSoft.withValues(alpha: 0.5),
+                color: context.fc.cardAlt.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: const Text(
@@ -75,7 +75,7 @@ class _PlayerNamesImportPageState extends ConsumerState<PlayerNamesImportPage> {
             ),
             if (_summary != null) ...[
               const SizedBox(height: 10),
-              Text(_summary!, style: const TextStyle(color: AppTheme.seed)),
+              Text(_summary!, style: TextStyle(color: context.fc.accent)),
             ],
           ],
         ),
