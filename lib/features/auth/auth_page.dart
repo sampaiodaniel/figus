@@ -70,10 +70,14 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       }
     });
     if (err == null) {
-      // Pull existing collection from server and apply locally
+      // First push everything we have locally (in case user marked stickers
+      // before logging in), then pull to merge whatever else is on the
+      // server.
+      final repo = ref.read(collectionRepoProvider);
+      await repo.pushAllLocal();
       final remote = await ref.read(syncRepoProvider).pullAll();
       if (remote.isNotEmpty && mounted) {
-        await ref.read(collectionRepoProvider).applyRemoteEntries(remote);
+        await repo.applyRemoteEntries(remote);
         ref.invalidate(collectionVersionProvider);
       }
     }

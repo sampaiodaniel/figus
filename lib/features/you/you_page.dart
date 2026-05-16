@@ -29,11 +29,19 @@ Future<void> _showSyncOptions(BuildContext context, WidgetRef ref, String email)
             title: const Text('Sincronizar agora'),
             onTap: () async {
               Navigator.pop(sheetCtx);
+              final repo = ref.read(collectionRepoProvider);
+              // Push local first (catches entries marked before login),
+              // then pull to merge anything else on the server.
+              final pushed = await repo.pushAllLocal();
               final remote = await ref.read(syncRepoProvider).pullAll();
-              await ref.read(collectionRepoProvider).applyRemoteEntries(remote);
+              await repo.applyRemoteEntries(remote);
               ref.invalidate(collectionVersionProvider);
               messenger.showSnackBar(
-                const SnackBar(content: Text('Coleção sincronizada ✓')),
+                SnackBar(content: Text(
+                  pushed > 0
+                      ? 'Sincronizado · ${pushed} enviado(s), ${remote.length} recebido(s)'
+                      : 'Sincronizado · ${remote.length} figurinha(s)',
+                )),
               );
             },
           ),
