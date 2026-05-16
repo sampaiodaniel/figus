@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/country_codes.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/figus_colors.dart';
 import '../../data/providers.dart';
 import '../../data/repos/album_repo.dart';
 import '../../domain/models/album_view_models.dart';
@@ -110,21 +111,22 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       decoration: BoxDecoration(
-        color: AppTheme.seed.withValues(alpha: 0.08),
+        color: c.accent.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
-          const Icon(Icons.copy_all_rounded, color: AppTheme.seed),
+          Icon(Icons.copy_all_rounded, color: c.accent),
           const SizedBox(width: 12),
           Expanded(
             child: RichText(
               text: TextSpan(
-                style: const TextStyle(color: AppTheme.ink, fontSize: 14),
+                style: TextStyle(color: c.text, fontSize: 14),
                 children: [
                   TextSpan(
                     text: '$uniqueCount ',
@@ -158,6 +160,7 @@ class _NationGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     final iso = paniniToIso2[section.key];
     final name = _nameOnly(section.title);
     final totalCopies = section.stickers
@@ -166,9 +169,9 @@ class _NationGroup extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
-        color: AppTheme.ink,
+        color: c.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.ink4),
+        border: Border.all(color: c.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,15 +192,15 @@ class _NationGroup extends StatelessWidget {
                     height: 26,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: AppTheme.ink4,
+                      color: c.border,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       section.key.substring(0, section.key.length.clamp(0, 3)),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.w800,
-                        color: AppTheme.cream,
+                        color: c.text,
                       ),
                     ),
                   ),
@@ -208,7 +211,7 @@ class _NationGroup extends StatelessWidget {
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: AppTheme.cream,
+                      color: c.text,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -250,10 +253,11 @@ class _DuplicateChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     final num = sticker.number.replaceAll(RegExp(r'^[A-Z]+'), '');
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.seed.withValues(alpha: 0.10),
+        color: c.accent.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -265,17 +269,17 @@ class _DuplicateChip extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text('#$num',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w800,
                       fontSize: 15,
-                      color: AppTheme.seed,
+                      color: c.accent,
                     )),
                 const SizedBox(width: 8),
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: AppTheme.seed,
+                    color: c.accent,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -305,7 +309,7 @@ class _DuplicateChip extends StatelessWidget {
                 child: Icon(
                   Icons.remove_circle_outline_rounded,
                   size: 18,
-                  color: AppTheme.inkSoft.withValues(alpha: 0.7),
+                  color: c.textMuted.withValues(alpha: 0.7),
                 ),
               ),
             ),
@@ -320,20 +324,21 @@ class _EmptyState extends StatelessWidget {
   const _EmptyState();
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.all(32),
+    final c = context.fc;
+    return Padding(
+      padding: const EdgeInsets.all(32),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.inbox_rounded, size: 72, color: AppTheme.slot),
-          SizedBox(height: 16),
-          Text('Nenhuma repetida ainda',
+          Icon(Icons.inbox_rounded, size: 72, color: c.border),
+          const SizedBox(height: 16),
+          const Text('Nenhuma repetida ainda',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
             'Quando você abrir um pacote e tirar uma figurinha que já tem, ela vai aparecer aqui.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppTheme.inkSoft),
+            style: TextStyle(color: c.textMuted),
           ),
         ],
       ),

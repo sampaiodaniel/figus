@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/country_codes.dart';
-import '../../core/theme/app_theme.dart';
+import '../../core/theme/figus_colors.dart';
 import '../../data/providers.dart';
 import '../../data/repos/album_repo.dart';
 import '../../domain/models/album_view_models.dart';
@@ -19,6 +19,7 @@ class TradesPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dupesAsync = ref.watch(_duplicatesProvider);
     final missingAsync = ref.watch(_missingProvider);
+    final c = context.fc;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Trocas')),
@@ -33,8 +34,8 @@ class TradesPage extends ConsumerWidget {
               child: Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppTheme.seed, Color(0xFF7A5BFF)],
+                  gradient: LinearGradient(
+                    colors: [c.accent, c.accent.withValues(alpha: 0.7)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -117,11 +118,12 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Icon(icon, color: AppTheme.seed),
+          Icon(icon, color: c.accent),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -130,7 +132,7 @@ class _SectionHeader extends StatelessWidget {
                 Text(title,
                     style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
                 Text(subtitle,
-                    style: const TextStyle(fontSize: 12, color: AppTheme.inkSoft)),
+                    style: TextStyle(fontSize: 12, color: c.textMuted)),
               ],
             ),
           ),
@@ -143,10 +145,11 @@ class _SectionHeader extends StatelessWidget {
 class _ChipList extends StatelessWidget {
   final List<StickerView> items;
   final bool missing;
-  const _ChipList({required this.items, this.missing = false});
+  const _ChipList({required this.items});
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     return Wrap(
       spacing: 6,
       runSpacing: 6,
@@ -155,10 +158,10 @@ class _ChipList extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: missing ? AppTheme.slotSoft : AppTheme.seed.withValues(alpha: 0.15),
+              color: missing ? c.cardAlt : c.accent.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: missing ? AppTheme.slot : AppTheme.seed,
+                color: missing ? c.border : c.accent,
                 width: 1,
               ),
             ),
@@ -169,16 +172,16 @@ class _ChipList extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: missing ? AppTheme.inkSoft : AppTheme.seed,
+                      color: missing ? c.textMuted : c.accent,
                     )),
                 if (s.duplicateCount > 0)
                   Padding(
                     padding: const EdgeInsets.only(left: 6),
                     child: Text('×${s.duplicateCount}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: AppTheme.seed,
+                          color: c.accent,
                         )),
                   ),
               ],
@@ -188,7 +191,7 @@ class _ChipList extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             child: Text('+ ${items.length - 60}',
-                style: const TextStyle(color: AppTheme.inkSoft, fontWeight: FontWeight.w600)),
+                style: TextStyle(color: c.textMuted, fontWeight: FontWeight.w600)),
           ),
       ],
     );
@@ -200,9 +203,10 @@ class _EmptyMini extends StatelessWidget {
   const _EmptyMini({required this.text});
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Text(text, style: const TextStyle(color: AppTheme.inkSoft)),
+      child: Text(text, style: TextStyle(color: c.textMuted)),
     );
   }
 }
@@ -238,22 +242,26 @@ class _MissingSectionsState extends State<_MissingSections> {
   }
 
   Widget _buildHeader(AlbumSection section) {
+    final c = context.fc;
     final iso = paniniToIso2[section.key];
     final name = _nameOnly(section.title);
     final isOpen = _expanded.contains(section.key);
 
     return GestureDetector(
       onTap: () => setState(() {
-        if (isOpen) _expanded.remove(section.key);
-        else _expanded.add(section.key);
+        if (isOpen) {
+          _expanded.remove(section.key);
+        } else {
+          _expanded.add(section.key);
+        }
       }),
       child: Container(
         margin: const EdgeInsets.only(bottom: 2),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
         decoration: BoxDecoration(
-          color: AppTheme.ink,
+          color: c.card,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppTheme.ink4),
+          border: Border.all(color: c.border),
         ),
         child: Row(
           children: [
@@ -268,30 +276,30 @@ class _MissingSectionsState extends State<_MissingSections> {
                 height: 22,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: AppTheme.ink4,
+                  color: c.border,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   section.key.substring(0, section.key.length.clamp(0, 3)),
-                  style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: AppTheme.cream),
+                  style: TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: c.text),
                 ),
               ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 name,
-                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.cream),
+                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: c.text),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
             Text(
               '${section.totalCount} faltam',
-              style: GoogleFonts.jetBrainsMono(fontSize: 10, color: AppTheme.inkSoft),
+              style: GoogleFonts.jetBrainsMono(fontSize: 10, color: c.textMuted),
             ),
             const SizedBox(width: 6),
             Icon(
               isOpen ? Icons.expand_less_rounded : Icons.expand_more_rounded,
-              color: AppTheme.creamSoft,
+              color: c.textMuted,
               size: 16,
             ),
           ],
@@ -301,13 +309,14 @@ class _MissingSectionsState extends State<_MissingSections> {
   }
 
   Widget _buildChips(AlbumSection section) {
+    final c = context.fc;
     return Container(
       margin: const EdgeInsets.only(bottom: 4),
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
       decoration: BoxDecoration(
-        color: AppTheme.ink3,
+        color: c.cardAlt,
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(14)),
-        border: Border.all(color: AppTheme.ink4),
+        border: Border.all(color: c.border),
       ),
       child: Wrap(
         spacing: 6,
@@ -317,16 +326,16 @@ class _MissingSectionsState extends State<_MissingSections> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: AppTheme.slotSoft,
+                color: c.bg,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppTheme.slot, width: 1),
+                border: Border.all(color: c.border, width: 1),
               ),
               child: Text(
                 s.number,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: AppTheme.inkSoft,
+                  color: c.textMuted,
                 ),
               ),
             ),
