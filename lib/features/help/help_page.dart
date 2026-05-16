@@ -30,7 +30,7 @@ class HelpPage extends StatelessWidget {
         children: const [
           _Section(
             icon: Icons.grid_view_rounded,
-            iconColor: AppTheme.seed,
+            
             title: 'Coleção',
             items: [
               _Item(
@@ -100,7 +100,7 @@ class HelpPage extends StatelessWidget {
           SizedBox(height: 12),
           _Section(
             icon: Icons.swap_horiz_rounded,
-            iconColor: AppTheme.seed,
+            
             title: 'Trocas',
             items: [
               _Item(
@@ -132,7 +132,7 @@ class HelpPage extends StatelessWidget {
           SizedBox(height: 12),
           _Section(
             icon: Icons.upload_rounded,
-            iconColor: AppTheme.cream,
+            
             title: 'Importar coleção',
             items: [
               _Item(
@@ -158,7 +158,7 @@ class HelpPage extends StatelessWidget {
           SizedBox(height: 12),
           _Section(
             icon: Icons.emoji_events_rounded,
-            iconColor: AppTheme.gold,
+            
             title: 'Copa ao vivo',
             items: [
               _Item(
@@ -178,7 +178,7 @@ class HelpPage extends StatelessWidget {
           SizedBox(height: 12),
           _Section(
             icon: Icons.share_rounded,
-            iconColor: AppTheme.seed,
+            
             title: 'Compartilhar progresso',
             items: [
               _Item(
@@ -204,7 +204,7 @@ class HelpPage extends StatelessWidget {
           SizedBox(height: 12),
           _Section(
             icon: Icons.palette_outlined,
-            iconColor: AppTheme.gold,
+            
             title: 'Temas de cor  ★ Pro',
             items: [
               _Item(
@@ -230,7 +230,7 @@ class HelpPage extends StatelessWidget {
           SizedBox(height: 12),
           _Section(
             icon: Icons.people_rounded,
-            iconColor: AppTheme.creamSoft,
+            
             title: 'Perfis múltiplos',
             items: [
               _Item(
@@ -256,7 +256,7 @@ class HelpPage extends StatelessWidget {
           SizedBox(height: 12),
           _Section(
             icon: Icons.workspace_premium_rounded,
-            iconColor: AppTheme.gold,
+            
             title: 'Figus Pro',
             items: [
               _Item(
@@ -293,13 +293,13 @@ class HelpPage extends StatelessWidget {
 
 class _Section extends StatefulWidget {
   final IconData icon;
-  final Color iconColor;
+  final Color? iconColor;
   final String title;
   final List<_Item> items;
 
   const _Section({
     required this.icon,
-    required this.iconColor,
+    this.iconColor,
     required this.title,
     required this.items,
   });
@@ -334,11 +334,11 @@ class _SectionState extends State<_Section> {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: widget.iconColor.withValues(alpha: 0.12),
+                      color: (widget.iconColor ?? c.accent).withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     alignment: Alignment.center,
-                    child: Icon(widget.icon, color: widget.iconColor, size: 18),
+                    child: Icon(widget.icon, color: widget.iconColor ?? c.accent, size: 18),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
