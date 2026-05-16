@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -10,12 +12,14 @@ class ShareCard extends StatelessWidget {
   final AlbumStats stats;
   final String albumName;
   final String profileName;
+  final Uint8List? iconBytes;
 
   const ShareCard({
     super.key,
     required this.stats,
     required this.albumName,
     required this.profileName,
+    this.iconBytes,
   });
 
   @override
@@ -62,23 +66,26 @@ class ShareCard extends StatelessWidget {
                 // ── Logo ──────────────────────────────────────────────────
                 Row(
                   children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: AppTheme.gold,
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        'F',
-                        style: GoogleFonts.inter(
-                          fontSize: 52,
-                          fontWeight: FontWeight.w900,
-                          color: AppTheme.inkDeep,
-                          height: 1,
-                        ),
-                      ),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: iconBytes != null
+                          ? Image.memory(iconBytes!,
+                              width: 80, height: 80, fit: BoxFit.cover)
+                          : Container(
+                              width: 80,
+                              height: 80,
+                              color: AppTheme.gold,
+                              alignment: Alignment.center,
+                              child: Text(
+                                'F',
+                                style: GoogleFonts.inter(
+                                  fontSize: 52,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppTheme.inkDeep,
+                                  height: 1,
+                                ),
+                              ),
+                            ),
                     ),
                     const SizedBox(width: 22),
                     Text(

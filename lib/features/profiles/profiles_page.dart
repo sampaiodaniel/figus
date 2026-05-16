@@ -27,19 +27,30 @@ class ProfilesPage extends ConsumerWidget {
                         style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
                   ),
                   title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                  trailing: p.isActive
-                      ? const Chip(
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined, size: 18),
+                        tooltip: 'Renomear',
+                        onPressed: () => _renameProfile(context, ref, p.id, p.name),
+                      ),
+                      if (p.isActive)
+                        const Chip(
                           label: Text('Ativo'),
                           backgroundColor: Color(0x221F66FF),
                           side: BorderSide.none,
                         )
-                      : TextButton(
+                      else
+                        TextButton(
                           onPressed: () async {
                             await ref.read(profileRepoProvider).setActive(p.id);
                             ref.read(collectionVersionProvider.notifier).state++;
                           },
                           child: const Text('Ativar'),
                         ),
+                    ],
+                  ),
                 ),
               ),
             const SizedBox(height: 8),
@@ -75,27 +86,47 @@ class ProfilesPage extends ConsumerWidget {
   }
 
   Future<void> _addProfile(BuildContext context, WidgetRef ref) async {
-    final ctrl = TextEditingController();
-    final name = await showDialog<String>(
+    final name = await _nameDialog(context, title: 'Novo perfil', hint: 'Nome (ex.: Filho)');
+    if (name == null || name.isEmpty) return;
+    await ref.read(profileRepoProvider).create(name);
+    ref.read(collectionVersionProvider.notifier).state++;
+  }
+
+  Future<void> _renameProfile(
+      BuildContext context, WidgetRef ref, int id, String current) async {
+    final name = await _nameDialog(context,
+        title: 'Renomear perfil', hint: 'Novo nome', initial: current);
+    if (name == null || name.isEmpty) return;
+    await ref.read(profileRepoProvider).rename(id, name);
+    ref.read(collectionVersionProvider.notifier).state++;
+  }
+
+  Future<String?> _nameDialog(
+    BuildContext context, {
+    required String title,
+    required String hint,
+    String initial = '',
+  }) async {
+    final ctrl = TextEditingController(text: initial);
+    return showDialog<String>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        title: const Text('Novo perfil'),
+        title: Text(title),
         content: TextField(
           controller: ctrl,
           autofocus: true,
-          decoration: const InputDecoration(hintText: 'Nome (ex.: Filho)'),
+          decoration: InputDecoration(hintText: hint),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: const Text('Cancelar')),
           FilledButton(
             onPressed: () => Navigator.pop(dialogCtx, ctrl.text.trim()),
-            child: const Text('Criar'),
+            child: const Text('Salvar'),
           ),
         ],
       ),
     );
-    if (name == null || name.isEmpty) return;
-    await ref.read(profileRepoProvider).create(name);
-    ref.read(collectionVersionProvider.notifier).state++;
   }
 }

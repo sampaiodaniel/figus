@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:share_plus/share_plus.dart';
 
 import '../../domain/models/album_view_models.dart';
@@ -19,8 +20,21 @@ class ShareService {
     required String profileName,
   }) async {
     try {
+      // Pre-load icon bytes so Image.memory works inside the off-screen tree.
+      Uint8List? iconBytes;
+      try {
+        final data = await rootBundle.load('assets/figus-icon-512.png');
+        iconBytes = data.buffer.asUint8List();
+      } catch (_) {
+        // asset unavailable — card falls back to the 'F' letter
+      }
+
       final pngBytes = await _captureWidget(
-        ShareCard(stats: stats, albumName: albumName, profileName: profileName),
+        ShareCard(
+            stats: stats,
+            albumName: albumName,
+            profileName: profileName,
+            iconBytes: iconBytes),
         const Size(1080, 1080),
       );
 
