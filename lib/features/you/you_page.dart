@@ -38,7 +38,15 @@ class YouPage extends ConsumerWidget {
             foilTotal: stats?.foilTotal,
             onProfilesTap: () => context.push('/profiles'),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+
+          // Pro banner — top prominence (trial countdown or upgrade CTA)
+          if (pro.isTrial)
+            _TrialBanner(daysLeft: pro.trialDaysLeft, onTap: () => context.push('/upgrade'))
+          else if (!pro.isPro)
+            _ProBanner(onTap: () => context.push('/upgrade')),
+          if (!pro.isPro) const SizedBox(height: 16),
+
           _GroupCard(
             title: 'Seu álbum',
             tiles: [
@@ -89,13 +97,6 @@ class YouPage extends ConsumerWidget {
           const SizedBox(height: 16),
           // Sync / auth section
           _SyncCard(sync: sync),
-          const SizedBox(height: 16),
-
-          // Pro status tile (trial countdown or upgrade banner)
-          if (pro.isTrial)
-            _TrialBanner(daysLeft: pro.trialDaysLeft, onTap: () => context.push('/upgrade'))
-          else if (!pro.isPro)
-            _ProBanner(onTap: () => context.push('/upgrade')),
           const SizedBox(height: 16),
           _GroupCard(
             title: 'Sobre o Figus',
@@ -281,40 +282,93 @@ class _ProBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [AppTheme.seed, Color(0xFF7A5BFF)],
+            colors: [Color(0xFF1A0A3C), Color(0xFF2E1A6E), AppTheme.seed],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.seed.withValues(alpha: 0.4),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
-        child: const Row(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 32),
-            SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Figus Pro — a partir de R\$ 6,90/mês',
+            Row(
+              children: [
+                const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 26),
+                const SizedBox(width: 10),
+                const Text('FIGUS PRO',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                    )),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text('7 dias grátis',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
                       )),
-                  SizedBox(height: 2),
-                  Text('Sem anúncios · temas · sync · mais barato que Figuritas',
-                      style: TextStyle(color: Colors.white70, fontSize: 13)),
-                ],
-              ),
+                ),
+              ],
             ),
-            Icon(Icons.chevron_right_rounded, color: Colors.white),
+            const SizedBox(height: 12),
+            const Text('Sem anúncios.\nMais recursos. Mais Copa.',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  height: 1.2,
+                )),
+            const SizedBox(height: 8),
+            const Text(
+              'Temas · OCR ilimitado · Sync entre aparelhos',
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'A partir de R\$ 6,90/mês — Figuritas cobra R\$ 9,90',
+                    style: TextStyle(color: Colors.white60, fontSize: 12),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text('Assinar',
+                      style: TextStyle(
+                        color: AppTheme.seed,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      )),
+                ),
+              ],
+            ),
           ],
         ),
       ),

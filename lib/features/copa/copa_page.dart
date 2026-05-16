@@ -621,7 +621,8 @@ class _MatchesTab extends ConsumerStatefulWidget {
 }
 
 class _MatchesTabState extends ConsumerState<_MatchesTab> {
-  _DateFilter _filter = _DateFilter.today;
+  // Default to "all" — Copa hasn't started yet, Hoje/Amanhã/Semana would be empty
+  _DateFilter _filter = _DateFilter.all;
 
   List<CopaMatch> _filtered(List<CopaMatch> all) {
     final now = DateTime.now();
@@ -646,7 +647,7 @@ class _MatchesTabState extends ConsumerState<_MatchesTab> {
             return diff >= 0 && diff < 7;
           })
           .toList(),
-      _DateFilter.all => all,
+      _DateFilter.all => List<CopaMatch>.from(all), // copy so sort doesn't mutate source
     };
   }
 
@@ -693,14 +694,22 @@ class _MatchesTabState extends ConsumerState<_MatchesTab> {
         const SizedBox(height: 8),
         Expanded(
           child: filtered.isEmpty
-              ? const Center(
+              ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.sports_soccer_rounded, size: 48, color: AppTheme.slot),
-                      SizedBox(height: 12),
-                      Text('Nenhum jogo neste período',
-                          style: TextStyle(color: AppTheme.inkSoft)),
+                      const Icon(Icons.sports_soccer_rounded, size: 48, color: AppTheme.slot),
+                      const SizedBox(height: 12),
+                      const Text('Nenhum jogo neste período',
+                          style: TextStyle(color: AppTheme.inkSoft, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text(
+                        'A Copa começa em 11 de junho de 2026',
+                        style: TextStyle(
+                          color: AppTheme.inkSoft.withValues(alpha: 0.6),
+                          fontSize: 12,
+                        ),
+                      ),
                     ],
                   ),
                 )
