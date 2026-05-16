@@ -42,8 +42,7 @@ class CopaPage extends StatelessWidget {
 class _Team {
   final String code;
   final String name;
-  final bool isPlayoff;
-  const _Team(this.code, this.name, {this.isPlayoff = false});
+  const _Team(this.code, this.name);
 }
 
 class _Group {
@@ -57,11 +56,11 @@ const _groups = <_Group>[
     _Team('MEX', 'México'),
     _Team('RSA', 'África do Sul'),
     _Team('KOR', 'Coreia do Sul'),
-    _Team('EPD', 'Playoff Europa D', isPlayoff: true),
+    _Team('CZE', 'Tchéquia'),
   ]),
   _Group('B', [
     _Team('CAN', 'Canadá'),
-    _Team('EPA', 'Playoff Europa A', isPlayoff: true),
+    _Team('BIH', 'Bósnia e Herzegovina'),
     _Team('QAT', 'Catar'),
     _Team('SUI', 'Suíça'),
   ]),
@@ -75,7 +74,7 @@ const _groups = <_Group>[
     _Team('USA', 'EUA'),
     _Team('PAR', 'Paraguai'),
     _Team('AUS', 'Austrália'),
-    _Team('EPC', 'Playoff Europa C', isPlayoff: true),
+    _Team('TUR', 'Turquia'),
   ]),
   _Group('E', [
     _Team('GER', 'Alemanha'),
@@ -86,7 +85,7 @@ const _groups = <_Group>[
   _Group('F', [
     _Team('NED', 'Holanda'),
     _Team('JPN', 'Japão'),
-    _Team('EPB', 'Playoff Europa B', isPlayoff: true),
+    _Team('SWE', 'Suécia'),
     _Team('TUN', 'Tunísia'),
   ]),
   _Group('G', [
@@ -104,7 +103,7 @@ const _groups = <_Group>[
   _Group('I', [
     _Team('FRA', 'França'),
     _Team('SEN', 'Senegal'),
-    _Team('IC2', 'Playoff FIFA 2', isPlayoff: true),
+    _Team('IRQ', 'Iraque'),
     _Team('NOR', 'Noruega'),
   ]),
   _Group('J', [
@@ -115,7 +114,7 @@ const _groups = <_Group>[
   ]),
   _Group('K', [
     _Team('POR', 'Portugal'),
-    _Team('IC1', 'Playoff FIFA 1', isPlayoff: true),
+    _Team('COD', 'Rep. Dem. do Congo'),
     _Team('UZB', 'Uzbequistão'),
     _Team('COL', 'Colômbia'),
   ]),
@@ -230,7 +229,7 @@ class _TeamRow extends StatelessWidget {
         SizedBox(
           width: 36,
           height: 26,
-          child: team.isPlayoff || iso == null
+          child: iso == null
               ? Container(
                   decoration: BoxDecoration(
                     color: AppTheme.slotSoft,
@@ -248,25 +247,9 @@ class _TeamRow extends StatelessWidget {
         Expanded(
           child: Text(
             team.name,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: team.isPlayoff ? AppTheme.inkSoft : scheme.onSurface,
-            ),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: scheme.onSurface),
           ),
         ),
-        if (team.isPlayoff)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: AppTheme.slotSoft,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: const Text(
-              'A definir',
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.inkSoft),
-            ),
-          ),
       ],
     );
   }

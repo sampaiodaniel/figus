@@ -57,8 +57,8 @@ class YouPage extends ConsumerWidget {
             tiles: [
               _Tile(
                 icon: Icons.people_alt_rounded,
-                title: 'Cruzar figurinhas com amigo',
-                subtitle: 'Sugestões automáticas de quem dá o quê',
+                title: 'Comparar com amigo',
+                subtitle: 'Sugestões automáticas de troca',
                 onTap: () => context.push('/compare'),
               ),
               const _Tile(
@@ -117,9 +117,6 @@ class YouPage extends ConsumerWidget {
             _HowRow(
                 icon: Icons.touch_app_rounded,
                 text: 'Pressione e segure → remove uma cópia por vez'),
-            _HowRow(
-                icon: Icons.whatshot_rounded,
-                text: 'Forjar: 5 repetidas → 1 que falta'),
             _HowRow(
                 icon: Icons.people_alt_rounded,
                 text: 'Trocas: compartilhe seu inventário, o amigo cola no app e vê sugestões automáticas'),

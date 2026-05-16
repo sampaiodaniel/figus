@@ -156,7 +156,7 @@ class _Hero extends StatelessWidget {
           ),
           SizedBox(height: 6),
           Text(
-            'Cruzo minhas repetidas + caça com as do amigo. '
+            'Comparo suas repetidas com as do amigo. '
             '1×1 mesmo tipo é prioridade; brilhante vale 2 normais.',
             style: TextStyle(color: Colors.white, height: 1.3),
           ),

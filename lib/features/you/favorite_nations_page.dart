@@ -28,10 +28,16 @@ class _FavoriteNationsPageState extends ConsumerState<FavoriteNationsPage> {
   }
 
   Future<void> _toggle(String code) async {
-    final repo = ref.read(profileRepoProvider);
-    await repo.toggleFavoriteNation(code);
-    final updated = await repo.favoriteNations();
-    if (mounted) setState(() => _favorites = updated);
+    // Optimistic update so the UI reflects the change immediately.
+    final current = Set<String>.from(_favorites ?? {});
+    if (current.contains(code)) {
+      current.remove(code);
+    } else {
+      current.add(code);
+    }
+    if (mounted) setState(() => _favorites = current);
+    // Persist — await ensures the write completes before anything else.
+    await ref.read(profileRepoProvider).setFavoriteNations(current);
   }
 
   @override
