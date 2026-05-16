@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
 import 'features/album/album_page.dart';
 import 'features/album/nation_detail_page.dart';
+import 'features/copa/copa_page.dart';
 import 'features/duplicates/duplicates_page.dart';
 import 'features/import/figuritas_import_page.dart';
 import 'features/onboarding/onboarding_page.dart';
@@ -44,6 +45,7 @@ class FigusApp extends ConsumerWidget {
           routes: [
             GoRoute(path: '/', builder: (_, __) => const AlbumPage()),
             GoRoute(path: '/duplicates', builder: (_, __) => const DuplicatesPage()),
+            GoRoute(path: '/copa', builder: (_, __) => const CopaPage()),
             GoRoute(path: '/trades', builder: (_, __) => const TradesPage()),
             GoRoute(path: '/you', builder: (_, __) => const YouPage()),
           ],
@@ -80,6 +82,7 @@ class RootShell extends StatelessWidget {
   static const _navTabs = <_NavItem>[
     _NavItem('/', Icons.grid_view_rounded, 'Coleção'),
     _NavItem('/duplicates', Icons.copy_all_rounded, 'Repetidas'),
+    _NavItem('/copa', Icons.emoji_events_rounded, 'Copa'),
     _NavItem('/trades', Icons.swap_horiz_rounded, 'Trocas'),
     _NavItem('/you', Icons.person_rounded, 'Você'),
   ];
