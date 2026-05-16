@@ -101,7 +101,7 @@ class ProNotifier extends StateNotifier<ProState> {
 
   Future<bool> startTrial() async {
     if (state.hasUsedTrial || state.isActive) return false;
-    final ends = DateTime.now().add(const Duration(days: 7));
+    final ends = DateTime.now().add(const Duration(days: 3));
     final p = await SharedPreferences.getInstance();
     await p.setString(_keyTrialEnds, ends.toIso8601String());
     await p.setBool(_keyHasUsedTrial, true);

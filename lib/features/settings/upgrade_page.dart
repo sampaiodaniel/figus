@@ -7,37 +7,43 @@ import '../pro/pro_service.dart';
 
 // ── Plan definitions ──────────────────────────────────────────────────────────
 
-enum _Plan { monthly, annual }
+enum _Plan { monthly, semiannual, annual }
 
 extension _PlanDetails on _Plan {
   String get label => switch (this) {
-        _Plan.monthly => 'Mensal',
-        _Plan.annual  => 'Anual',
+        _Plan.monthly     => 'Mensal',
+        _Plan.semiannual  => 'Semestral',
+        _Plan.annual      => 'Anual',
       };
 
   String get price => switch (this) {
-        _Plan.monthly => 'R\$ 4,90',
-        _Plan.annual  => 'R\$ 9,90',
+        _Plan.monthly     => 'R\$ 6,90',
+        _Plan.semiannual  => 'R\$ 39',
+        _Plan.annual      => 'R\$ 50',
       };
 
   String get period => switch (this) {
-        _Plan.monthly => '/mês',
-        _Plan.annual  => '/ano',
+        _Plan.monthly     => '/mês',
+        _Plan.semiannual  => '/6 meses',
+        _Plan.annual      => '/ano',
       };
 
   String get perMonth => switch (this) {
-        _Plan.monthly => 'R\$ 4,90/mês',
-        _Plan.annual  => 'R\$ 0,82/mês • economiza 83%',
+        _Plan.monthly     => 'R\$ 6,90/mês',
+        _Plan.semiannual  => 'R\$ 6,50/mês • economiza 6%',
+        _Plan.annual      => 'R\$ 4,17/mês • economiza 40%',
       };
 
   String? get badge => switch (this) {
-        _Plan.monthly => null,
-        _Plan.annual  => '★ Melhor valor',
+        _Plan.monthly     => null,
+        _Plan.semiannual  => null,
+        _Plan.annual      => '★ Melhor valor',
       };
 
   String? get hook => switch (this) {
-        _Plan.monthly => null,
-        _Plan.annual  => 'Figus o ano inteiro por menos que um café',
+        _Plan.monthly     => null,
+        _Plan.semiannual  => null,
+        _Plan.annual      => 'Figus o ano inteiro por menos que um café',
       };
 }
 
@@ -131,7 +137,7 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Figuritas cobra R\$ 9,90/mês. Nós custamos R\$ 4,90.',
+                    'Mais recursos, sem distrações — a partir de R\$ 6,90/mês.',
                     style: TextStyle(
                       color: AppTheme.creamSoft,
                       fontSize: 14,
@@ -194,7 +200,7 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
                       width: double.infinity,
                       child: FilledButton.icon(
                         icon: const Icon(Icons.lock_open_rounded),
-                        label: const Text('Experimentar 7 dias grátis'),
+                        label: const Text('Experimentar 3 dias grátis'),
                         style: FilledButton.styleFrom(
                           backgroundColor: AppTheme.field,
                           foregroundColor: Colors.white,
@@ -205,7 +211,7 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text('Pro ativado! 7 dias grátis.'),
+                                content: const Text('Pro ativado! 3 dias grátis.'),
                                 backgroundColor: AppTheme.field,
                               ),
                             );
@@ -283,7 +289,7 @@ class _UpgradePageState extends ConsumerState<UpgradePage> {
         content: Text(
           'A cobrança do plano ${_selected.label} (${_selected.price}) será ativada '
           'quando o Figus entrar na Play Store / App Store.\n\n'
-          'Use os 7 dias grátis para testar tudo!',
+          'Use os 3 dias grátis para testar tudo!',
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK')),
