@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/figus_colors.dart';
 import '../../data/providers.dart';
+import '../pro/paywall_sheet.dart';
+import '../pro/pro_service.dart';
 
 class ProfilesPage extends ConsumerWidget {
   const ProfilesPage({super.key});
@@ -10,6 +13,9 @@ class ProfilesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncProfiles = ref.watch(profilesListProvider);
+    final pro = ref.watch(proProvider);
+    final isPro = pro.isActive;
+    final c = context.fc;
     return Scaffold(
       appBar: AppBar(title: const Text('Perfis')),
       body: asyncProfiles.when(
@@ -31,9 +37,15 @@ class ProfilesPage extends ConsumerWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.edit_outlined, size: 18),
-                        tooltip: 'Renomear',
-                        onPressed: () => _renameProfile(context, ref, p.id, p.name),
+                        icon: Icon(
+                          isPro ? Icons.edit_outlined : Icons.lock_outline_rounded,
+                          size: 18,
+                          color: isPro ? null : c.textMuted,
+                        ),
+                        tooltip: isPro ? 'Renomear' : 'Renomear (Pro)',
+                        onPressed: isPro
+                            ? () => _renameProfile(context, ref, p.id, p.name)
+                            : () => showPaywall(context),
                       ),
                       if (p.isActive)
                         const Chip(
@@ -54,31 +66,41 @@ class ProfilesPage extends ConsumerWidget {
                 ),
               ),
             const SizedBox(height: 8),
-            FilledButton.icon(
-              icon: const Icon(Icons.person_add_alt_1_rounded),
-              label: const Text('Novo perfil'),
-              onPressed: () => _addProfile(context, ref),
-            ),
+            // First profile is free; additional profiles require Pro.
+            Builder(builder: (_) {
+              final canAddFree = profiles.isEmpty;
+              final locked = !isPro && !canAddFree;
+              return FilledButton.icon(
+                icon: Icon(locked ? Icons.lock_rounded : Icons.person_add_alt_1_rounded),
+                label: Text(locked ? 'Novo perfil (Pro)' : 'Novo perfil'),
+                onPressed: locked
+                    ? () => showPaywall(context)
+                    : () => _addProfile(context, ref),
+              );
+            }),
             const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppTheme.slotSoft,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.cloud_off_outlined, color: AppTheme.inkSoft),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Sync multi-device chega em breve. Você poderá fazer login e acessar o mesmo perfil em vários celulares.',
-                      style: TextStyle(color: AppTheme.inkSoft),
+            if (!isPro)
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: c.cardAlt,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: c.border),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.workspace_premium_rounded, color: c.accent, size: 22),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Perfis extras e renomear são Pro. O 1º perfil é sempre grátis. '
+                        'Sync na nuvem segue grátis pra todo mundo.',
+                        style: TextStyle(color: c.textMuted, fontSize: 13, height: 1.4),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
           ],
         ),
       ),
