@@ -79,7 +79,10 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       final remote = await ref.read(syncRepoProvider).pullAll();
       if (remote.isNotEmpty && mounted) {
         await repo.applyRemoteEntries(remote);
-        ref.invalidate(collectionVersionProvider);
+        // Use the increment-bump pattern so autoDispose stat providers refresh.
+        ref.read(collectionVersionProvider.notifier).state++;
+        ref.invalidate(albumStatsProvider);
+        ref.invalidate(albumSectionsProvider);
       }
     }
   }

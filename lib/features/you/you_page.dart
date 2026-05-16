@@ -63,7 +63,12 @@ Future<void> _showSyncOptions(BuildContext context, WidgetRef ref, String email)
               final repo = ref.read(collectionRepoProvider);
               final remote = await ref.read(syncRepoProvider).pullAll();
               final applyStats = await repo.applyRemoteEntries(remote);
-              ref.invalidate(collectionVersionProvider);
+              // Bump the version (same pattern used by tapSticker / import) so
+              // all autoDispose stat/section providers re-fetch. Invalidate
+              // directly too just to make sure cached AsyncValues clear.
+              ref.read(collectionVersionProvider.notifier).state++;
+              ref.invalidate(albumStatsProvider);
+              ref.invalidate(albumSectionsProvider);
               // ignore: avoid_print
               print('[Sync] remoteRows=${remote.length} apply=$applyStats');
               messenger
