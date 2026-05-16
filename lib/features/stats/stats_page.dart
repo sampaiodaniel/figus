@@ -272,6 +272,64 @@ class _StatsBody extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 20),
+
+          // ── Temporal stats ────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Text(
+              'ATIVIDADE',
+              style: GoogleFonts.jetBrainsMono(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.gold,
+                letterSpacing: 0.1,
+              ),
+            ),
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: _StatTile(
+                  icon: Icons.trending_up_rounded,
+                  iconColor: AppTheme.seed,
+                  label: 'ESTA SEMANA',
+                  value: '+${stats.collectedThisWeek}',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _StatTile(
+                  icon: Icons.local_fire_department_rounded,
+                  iconColor: AppTheme.flame,
+                  label: 'SEQUÊNCIA',
+                  value: '${stats.streak}d',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _StatTile(
+                  icon: Icons.calendar_today_rounded,
+                  iconColor: AppTheme.pulpSoft,
+                  label: 'DIAS ATIVOS',
+                  value: '${stats.activeDays}',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _StatTile(
+                  icon: Icons.hourglass_bottom_rounded,
+                  iconColor: AppTheme.goldSoft,
+                  label: 'COLECIONANDO',
+                  value: '${stats.daysCollecting}d',
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

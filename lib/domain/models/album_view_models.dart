@@ -87,6 +87,10 @@ class AlbumStats {
   final int duplicates;
   final int foilOwned;
   final int foilTotal;
+  final int collectedThisWeek;
+  final int activeDays;
+  final int daysCollecting;
+  final int streak;
 
   const AlbumStats({
     required this.total,
@@ -95,6 +99,10 @@ class AlbumStats {
     required this.duplicates,
     required this.foilOwned,
     required this.foilTotal,
+    this.collectedThisWeek = 0,
+    this.activeDays = 0,
+    this.daysCollecting = 0,
+    this.streak = 0,
   });
 
   double get percentComplete => total == 0 ? 0 : owned / total;

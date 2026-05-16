@@ -197,13 +197,18 @@ class TradeMatcher {
     }
   }
 
+  // Expand map to flat list, highest-duplicate codes first.
+  // Stickers with more copies are prioritised for 1×1 pairing so the user
+  // gets rid of their biggest pile first.
   static List<String> _expand(Map<String, int> m) {
+    final entries = m.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
     final out = <String>[];
-    m.forEach((k, v) {
-      for (var i = 0; i < v; i++) {
-        out.add(k);
+    for (final e in entries) {
+      for (var i = 0; i < e.value; i++) {
+        out.add(e.key);
       }
-    });
+    }
     return out;
   }
 
@@ -235,6 +240,15 @@ class TradeMatcher {
     for (final c in receive) {
       final st = friend.stickersByCode[c] ?? me.stickersByCode[c];
       if (st?.isFoil ?? false) score += 10;
+    }
+    // Bonus for giving away highly-duplicated stickers (burning big piles is a priority).
+    for (final c in give) {
+      final myCount = me.dupesByCode[c] ?? 0;
+      if (myCount >= 3) {
+        score += 15;
+      } else if (myCount >= 2) {
+        score += 8;
+      }
     }
     // -5 per foil I give away (mild penalty so they don't drain to commons).
     for (final c in give) {

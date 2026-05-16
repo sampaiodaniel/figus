@@ -86,30 +86,43 @@ class CollectionRepo {
 
   /// Import a full Figuritas-format export.
   ///
-  /// [faltantes] — sticker codes the user is missing (left untouched).
+  /// [faltantes] — sticker codes the user is missing.
   /// [repetidas] — sticker codes that are duplicates, mapped to extra count.
-  /// Every other sticker in the album is marked as owned.
+  /// Only stickers whose code prefix (e.g. "BRA", "FWC") appears in the export
+  /// are touched — this prevents LGD/CC-only stickers from being wrongly marked
+  /// owned when the Figuritas export doesn't cover those sections.
   ///
-  /// Returns {'owned': N, 'dupes': N}.
+  /// Returns {'owned': N, 'dupes': N} (owned = exactly-once; dupes = extra copies total).
   Future<Map<String, int>> bulkImportFiguritas({
     required Set<String> faltantes,
     required Map<String, int> repetidas,
   }) async {
     final pid = await _activeProfileId();
     final all = await db.select(db.stickers).get();
+
+    String prefix(String code) =>
+        RegExp(r'^[A-Za-z]+').firstMatch(code)?.group(0)?.toUpperCase() ?? code;
+
+    final knownPrefixes = <String>{
+      ...faltantes.map(prefix),
+      ...repetidas.keys.map(prefix),
+    };
+
     var ownedCount = 0, dupesCount = 0;
     await db.transaction(() async {
       for (final s in all) {
         final code = s.number;
         if (faltantes.contains(code)) {
-          // missing — leave as-is
+          await _upsert(pid, s.id, 'missing', 0);
         } else if (repetidas.containsKey(code)) {
-          await _upsert(pid, s.id, 'duplicate', repetidas[code]!);
-          dupesCount++;
-        } else {
+          final extras = repetidas[code]!;
+          await _upsert(pid, s.id, 'duplicate', extras);
+          dupesCount += extras;
+        } else if (knownPrefixes.contains(prefix(code))) {
           await _upsert(pid, s.id, 'owned', 0);
           ownedCount++;
         }
+        // Unknown prefix (LGD, CC when not in export) — leave untouched
       }
     });
     return {'owned': ownedCount, 'dupes': dupesCount};

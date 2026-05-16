@@ -201,6 +201,46 @@ class AlbumRepo {
       if (c.status == 'duplicate') duplicates += c.duplicateCount;
     }
 
+    // Temporal stats — only owned/duplicate entries have meaningful timestamps
+    final activeRows = collectionRows
+        .where((c) => c.status == 'owned' || c.status == 'duplicate')
+        .toList();
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final weekAgo = today.subtract(const Duration(days: 7));
+
+    final collectedThisWeek =
+        activeRows.where((c) => !c.updatedAt.isBefore(weekAgo)).length;
+
+    String _dayKey(DateTime d) =>
+        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+    final activeDateStrings =
+        activeRows.map((c) => _dayKey(c.updatedAt)).toSet();
+    final activeDays = activeDateStrings.length;
+
+    int daysCollecting = 0;
+    if (activeRows.isNotEmpty) {
+      final first = activeRows
+          .map((c) => c.updatedAt)
+          .reduce((a, b) => a.isBefore(b) ? a : b);
+      daysCollecting =
+          today.difference(DateTime(first.year, first.month, first.day)).inDays + 1;
+    }
+
+    int streak = 0;
+    if (activeDateStrings.isNotEmpty) {
+      var checkDay = today;
+      if (!activeDateStrings.contains(_dayKey(checkDay))) {
+        checkDay = today.subtract(const Duration(days: 1));
+      }
+      while (activeDateStrings.contains(_dayKey(checkDay))) {
+        streak++;
+        checkDay = checkDay.subtract(const Duration(days: 1));
+      }
+    }
+
     return AlbumStats(
       total: stickerRows.length,
       owned: owned,
@@ -208,6 +248,10 @@ class AlbumRepo {
       duplicates: duplicates,
       foilOwned: foilOwned,
       foilTotal: foilTotal,
+      collectedThisWeek: collectedThisWeek,
+      activeDays: activeDays,
+      daysCollecting: daysCollecting,
+      streak: streak,
     );
   }
 }

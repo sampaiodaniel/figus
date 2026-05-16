@@ -247,13 +247,19 @@ class FiguritasImportPage extends ConsumerWidget {
       final numbersPart = line.substring(colonIdx + 1);
 
       for (final part in numbersPart.split(',')) {
-        final n = int.tryParse(part.trim());
+        final trimmed = part.trim();
+        // Handle "N", "N x2", "Nx2", "N(x2)", "N×2" — Figuritas sometimes
+        // encodes quantity when you have multiple copies of the same sticker.
+        final m = RegExp(r'^(\d+)(?:\s*[x×(]\s*(\d+))?').firstMatch(trimmed);
+        if (m == null) continue;
+        final n = int.tryParse(m.group(1)!);
+        final count = int.tryParse(m.group(2) ?? '1') ?? 1;
         if (n == null || n < 0) continue;
         final code = n == 0 ? '${teamCode}00' : '$teamCode$n';
         if (inFaltantes) {
           faltantes.add(code);
         } else {
-          repetidas[code] = (repetidas[code] ?? 0) + 1;
+          repetidas[code] = (repetidas[code] ?? 0) + count;
         }
       }
     }
@@ -268,13 +274,25 @@ class FiguritasImportPage extends ConsumerWidget {
   ) async {
     final (faltantes, repetidas) = _parseFiguritasExport(text);
 
-    // Count how many stickers in the album will be owned/duped/missing
-    // We need the full sticker list for an accurate count — load it here
+    // Count how many stickers will be owned/duped/missing after import.
+    // Only stickers whose prefix appears in the export are touched.
     final db = ref.read(databaseProvider);
     final allStickers = await db.select(db.stickers).get();
-    final ownedCount =
-        allStickers.where((s) => !faltantes.contains(s.number) && !repetidas.containsKey(s.number)).length;
-    final dupesCount = repetidas.length;
+
+    String _prefix(String code) =>
+        RegExp(r'^[A-Za-z]+').firstMatch(code)?.group(0)?.toUpperCase() ?? code;
+    final knownPrefixes = <String>{
+      ...faltantes.map(_prefix),
+      ...repetidas.keys.map(_prefix),
+    };
+
+    // "Tenho" = unique stickers owned at least once (matches Figuritas display)
+    final ownedCount = allStickers.where((s) {
+      final pfx = _prefix(s.number);
+      return knownPrefixes.contains(pfx) && !faltantes.contains(s.number);
+    }).length;
+    // "Repetidas" = total extra copies (sum of counts, not unique types)
+    final dupesCount = repetidas.values.fold(0, (a, b) => a + b);
     final missingCount = faltantes.length;
 
     if (!context.mounted) return;
