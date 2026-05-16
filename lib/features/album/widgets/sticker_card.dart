@@ -33,12 +33,15 @@ class StickerCard extends StatelessWidget {
     final foil = sticker.isFoil;
 
     final isLegendary = sticker.type.startsWith('legendary_');
+    final isCrest = sticker.type == 'crest';
     final gradient = owned
         ? (isLegendary
             ? StickerGradients.forLegendary(sticker.type)
-            : foil
-                ? StickerGradients.foilShimmer
-                : StickerGradients.forNation(sticker.nationCode ?? 'FWC'))
+            : isCrest
+                ? StickerGradients.forCrest(sticker.nationCode ?? 'FWC')
+                : foil
+                    ? StickerGradients.foilShimmer
+                    : StickerGradients.forNation(sticker.nationCode ?? 'FWC'))
         : null;
 
     final headerText = isLegendary
@@ -211,9 +214,11 @@ class StickerBanner extends StatelessWidget {
     final gradient = owned
         ? (sticker.type.startsWith('legendary_')
             ? StickerGradients.forLegendary(sticker.type)
-            : foil
-                ? StickerGradients.foilShimmer
-                : StickerGradients.forNation(sticker.nationCode ?? 'FWC'))
+            : sticker.type == 'crest'
+                ? StickerGradients.forCrest(sticker.nationCode ?? 'FWC')
+                : foil
+                    ? StickerGradients.foilShimmer
+                    : StickerGradients.forNation(sticker.nationCode ?? 'FWC'))
         : null;
 
     final numericPart = sticker.number.replaceAll(RegExp(r'^[A-Z]+'), '');

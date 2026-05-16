@@ -71,6 +71,21 @@ class StickerGradients {
     );
   }
 
+  /// Crest sticker: silver metallic with the team's primary color in the center.
+  static LinearGradient forCrest(String nationCode) {
+    final teamColor = (_nationColors[nationCode] ?? _nationColors['FWC']!)[0];
+    return LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        const Color(0xFFD0D6E4), // light silver
+        teamColor,               // team primary color in center
+        const Color(0xFF848C9C), // darker silver
+      ],
+      stops: const [0.0, 0.5, 1.0],
+    );
+  }
+
   // ── Legendary rarity gradients ────────────────────────────────────────────
   static const LinearGradient legendaryBronze = LinearGradient(
     begin: Alignment.topLeft,
