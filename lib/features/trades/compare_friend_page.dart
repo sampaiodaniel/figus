@@ -79,29 +79,93 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
 
   Future<void> _pasteInventory() async {
     final ctrl = TextEditingController();
-    final result = await showDialog<String>(
+    final result = await showModalBottomSheet<String>(
       context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: const Text('Inventário do amigo'),
-        content: SizedBox(
-          width: 500,
-          child: TextField(
-            controller: ctrl,
-            autofocus: true,
-            maxLines: 10,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              hintText: 'Cole aqui o JSON enviado pelo amigo',
-            ),
-          ),
+      isScrollControlled: true,
+      backgroundColor: AppTheme.ink3,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (bsCtx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          20, 12, 20,
+          MediaQuery.of(bsCtx).viewInsets.bottom + 24,
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancelar')),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogCtx, ctrl.text.trim()),
-            child: const Text('Comparar'),
-          ),
-        ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.ink4,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            const Text(
+              'Inventário do amigo',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Peça pro amigo compartilhar o inventário (botão ↗) e cole aqui.',
+              style: TextStyle(fontSize: 13, color: AppTheme.inkSoft),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: ctrl,
+              autofocus: true,
+              minLines: 5,
+              maxLines: 10,
+              style: const TextStyle(fontSize: 13, fontFamily: 'monospace'),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: AppTheme.inkDeep,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppTheme.ink4),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppTheme.ink4),
+                ),
+                hintText: 'Cole o JSON aqui...',
+                hintStyle: const TextStyle(color: AppTheme.inkSoft),
+                contentPadding: const EdgeInsets.all(14),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(bsCtx),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: AppTheme.ink4),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text('Cancelar'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 2,
+                  child: FilledButton(
+                    onPressed: () => Navigator.pop(bsCtx, ctrl.text.trim()),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text('Comparar'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
     if (result == null || result.isEmpty) return;

@@ -249,6 +249,10 @@ class YouPage extends ConsumerWidget {
             ),
           ),
 
+          // ── Figus Pro (destaque) ────────────────────────────────────────────
+          _ProCard(isPro: pro.isPro, onTap: () => context.push('/upgrade')),
+          const SizedBox(height: 16),
+
           // ── Menu group 1 ───────────────────────────────────────────────────
           _MenuGroup(
             children: [
@@ -281,19 +285,9 @@ class YouPage extends ConsumerWidget {
           _MenuGroup(
             children: [
               _MenuRow(
-                icon: Icons.workspace_premium_rounded,
-                title: 'Figus Pro',
-                subtitle: pro.isPro
-                    ? 'Ativo'
-                    : 'Sem anúncios · R\$4,90/mês',
-                iconColor: AppTheme.gold,
-                onTap: () => context.push('/upgrade'),
-              ),
-              _MenuRow(
                 icon: Icons.share_rounded,
                 title: 'Compartilhar Figus',
                 onTap: () {
-                  // Share sheet
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Em breve!')),
                   );
@@ -326,6 +320,106 @@ class YouPage extends ConsumerWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── _ProCard ──────────────────────────────────────────────────────────────────
+
+class _ProCard extends StatelessWidget {
+  final bool isPro;
+  final VoidCallback onTap;
+  const _ProCard({required this.isPro, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF8B6914), Color(0xFFE5B14B), Color(0xFF7A5B1A)],
+            stops: [0.0, 0.55, 1.0],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.gold.withValues(alpha: 0.25),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Crown icon
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.18),
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: const Icon(
+                Icons.workspace_premium_rounded,
+                color: Colors.white,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isPro ? 'FIGUS PRO · ATIVO' : 'FIGUS PRO',
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    isPro
+                        ? 'Obrigado pelo apoio! Sem anúncios · temas exclusivos'
+                        : 'Sem anúncios · temas exclusivos · exportar coleção',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.85),
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            // CTA badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: isPro
+                    ? Colors.white.withValues(alpha: 0.15)
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                isPro ? '✓ Ativo' : 'R\$9,90',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: isPro ? Colors.white : AppTheme.inkDeep,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

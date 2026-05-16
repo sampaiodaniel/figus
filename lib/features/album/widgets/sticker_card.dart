@@ -75,6 +75,7 @@ class StickerCard extends StatelessWidget {
             _MissingCard(
               headerText: headerText,
               numericPart: numericPart,
+              displayName: sticker.displayName,
             ),
           if (isDupe)
             Positioned(
@@ -120,49 +121,86 @@ class StickerCard extends StatelessWidget {
 class _MissingCard extends StatelessWidget {
   final String headerText;
   final String numericPart;
-  const _MissingCard({required this.headerText, required this.numericPart});
+  final String? displayName;
+  const _MissingCard({
+    required this.headerText,
+    required this.numericPart,
+    this.displayName,
+  });
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (ctx, c) {
       final w = c.maxWidth;
+      final h = c.maxHeight;
       final numFs = (w * 0.32).clamp(16.0, 26.0);
-      final labelFs = (w * 0.11).clamp(8.0, 11.0);
-      return Container(
-        decoration: BoxDecoration(
-          color: AppTheme.inkDeep,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppTheme.ink4,
-            width: 1.5,
+      final labelFs = (w * 0.10).clamp(8.0, 11.0);
+      final footerH = (h * 0.30).clamp(24.0, 40.0);
+
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppTheme.inkDeep,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppTheme.ink4, width: 1.5),
           ),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              headerText,
-              style: TextStyle(
-                fontSize: labelFs,
-                letterSpacing: 0.5,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.ink4,
+          child: Column(
+            children: [
+              // Top section — number
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(6, 7, 6, 4),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        headerText,
+                        style: TextStyle(
+                          fontSize: labelFs,
+                          letterSpacing: 0.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.ink4,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        '#$numericPart',
+                        style: TextStyle(
+                          fontSize: numFs,
+                          fontWeight: FontWeight.w900,
+                          color: AppTheme.ink4,
+                          height: 1.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              overflow: TextOverflow.ellipsis,
-            ),
-            Text(
-              '#$numericPart',
-              style: TextStyle(
-                fontSize: numFs,
-                fontWeight: FontWeight.w900,
-                color: AppTheme.ink4,
-                height: 1.0,
+              // Footer — player name (dark, muted)
+              SizedBox(
+                height: footerH,
+                child: Container(
+                  color: AppTheme.ink3,
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+                  alignment: Alignment.center,
+                  child: Text(
+                    displayName ?? headerText,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: labelFs,
+                      height: 1.15,
+                      color: AppTheme.inkSoft,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
               ),
-            ),
-            SizedBox(height: labelFs),
-          ],
+            ],
+          ),
         ),
       );
     });

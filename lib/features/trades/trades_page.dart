@@ -1,7 +1,10 @@
+import 'package:country_flags/country_flags.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
+import '../../core/country_codes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/providers.dart';
 import '../../data/repos/album_repo.dart';
@@ -95,9 +98,9 @@ class TradesPage extends ConsumerWidget {
                 child: Center(child: CircularProgressIndicator()),
               ),
               error: (e, _) => Text('Erro: $e'),
-              data: (list) => list.isEmpty
+              data: (sections) => sections.isEmpty
                   ? const _EmptyMini(text: 'Coleção completa! 🎉')
-                  : _ChipList(items: list, missing: true),
+                  : _MissingSections(sections: sections),
             ),
           ],
         ),
@@ -204,6 +207,135 @@ class _EmptyMini extends StatelessWidget {
   }
 }
 
+/// Grouped "Caçando" list — one collapsible section per nation, with real flag.
+class _MissingSections extends StatefulWidget {
+  final List<AlbumSection> sections;
+  const _MissingSections({required this.sections});
+  @override
+  State<_MissingSections> createState() => _MissingSectionsState();
+}
+
+class _MissingSectionsState extends State<_MissingSections> {
+  final Set<String> _expanded = {};
+
+  static String _nameOnly(String title) {
+    final idx = title.indexOf('-');
+    return idx < 0 ? title : title.substring(idx + 1).trim();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final section in widget.sections) ...[
+          _buildHeader(section),
+          if (_expanded.contains(section.key)) _buildChips(section),
+          const SizedBox(height: 4),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildHeader(AlbumSection section) {
+    final iso = paniniToIso2[section.key];
+    final name = _nameOnly(section.title);
+    final isOpen = _expanded.contains(section.key);
+
+    return GestureDetector(
+      onTap: () => setState(() {
+        if (isOpen) _expanded.remove(section.key);
+        else _expanded.add(section.key);
+      }),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        decoration: BoxDecoration(
+          color: AppTheme.ink,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppTheme.ink4),
+        ),
+        child: Row(
+          children: [
+            if (iso != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: CountryFlag.fromCountryCode(iso, width: 30, height: 22),
+              )
+            else
+              Container(
+                width: 30,
+                height: 22,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppTheme.ink4,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  section.key.substring(0, section.key.length.clamp(0, 3)),
+                  style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: AppTheme.cream),
+                ),
+              ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                name,
+                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.cream),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Text(
+              '${section.totalCount} faltam',
+              style: GoogleFonts.jetBrainsMono(fontSize: 10, color: AppTheme.inkSoft),
+            ),
+            const SizedBox(width: 6),
+            Icon(
+              isOpen ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+              color: AppTheme.creamSoft,
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChips(AlbumSection section) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      decoration: BoxDecoration(
+        color: AppTheme.ink3,
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(14)),
+        border: Border.all(color: AppTheme.ink4),
+      ),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: [
+          for (final s in section.stickers)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.slotSoft,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppTheme.slot, width: 1),
+              ),
+              child: Text(
+                s.number,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.inkSoft,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 final _duplicatesProvider = FutureProvider.autoDispose<List<StickerView>>((ref) async {
   ref.watch(collectionVersionProvider);
   final repo = ref.watch(albumRepoProvider);
@@ -211,9 +343,8 @@ final _duplicatesProvider = FutureProvider.autoDispose<List<StickerView>>((ref) 
   return sections.expand((s) => s.stickers).toList();
 });
 
-final _missingProvider = FutureProvider.autoDispose<List<StickerView>>((ref) async {
+final _missingProvider = FutureProvider.autoDispose<List<AlbumSection>>((ref) async {
   ref.watch(collectionVersionProvider);
   final repo = ref.watch(albumRepoProvider);
-  final sections = await repo.loadSections(filter: AlbumFilter.missing);
-  return sections.expand((s) => s.stickers).toList();
+  return repo.loadSections(filter: AlbumFilter.missing);
 });

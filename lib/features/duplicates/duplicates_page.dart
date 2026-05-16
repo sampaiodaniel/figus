@@ -1,7 +1,10 @@
+import 'package:country_flags/country_flags.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 
+import '../../core/country_codes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/providers.dart';
 import '../../data/repos/album_repo.dart';
@@ -134,31 +137,83 @@ class _NationGroup extends StatelessWidget {
   final void Function(StickerView) onRemoveOne;
   const _NationGroup({required this.section, required this.onRemoveOne});
 
+  static String _nameOnly(String title) {
+    final idx = title.indexOf('-');
+    return idx < 0 ? title : title.substring(idx + 1).trim();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    final iso = paniniToIso2[section.key];
+    final name = _nameOnly(section.title);
+    final totalCopies = section.stickers
+        .fold<int>(0, (sum, s) => sum + s.duplicateCount);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(
+        color: AppTheme.ink,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.ink4),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header — same style as NationPanel
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+            child: Row(
               children: [
-                if (section.flag != null)
-                  Text(section.flag!, style: const TextStyle(fontSize: 20)),
-                const SizedBox(width: 8),
+                if (iso != null)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: CountryFlag.fromCountryCode(iso, width: 36, height: 26),
+                  )
+                else
+                  Container(
+                    width: 36,
+                    height: 26,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppTheme.ink4,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      section.key.substring(0, section.key.length.clamp(0, 3)),
+                      style: const TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.cream,
+                      ),
+                    ),
+                  ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    section.title,
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                    name,
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.cream,
+                    ),
                     overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Text(
+                  '$totalCopies cópias',
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 11,
+                    color: AppTheme.pulpSoft,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            Wrap(
+          ),
+          // Chips
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+            child: Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
@@ -166,8 +221,8 @@ class _NationGroup extends StatelessWidget {
                   _DuplicateChip(sticker: s, onRemoveOne: () => onRemoveOne(s)),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
