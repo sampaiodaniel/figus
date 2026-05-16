@@ -634,138 +634,128 @@ class _MatchRow extends StatelessWidget {
 
 enum _DateFilter { today, tomorrow, week, all }
 
-class _MatchesTab extends ConsumerStatefulWidget {
+class _MatchesTab extends StatefulWidget {
   const _MatchesTab();
   @override
-  ConsumerState<_MatchesTab> createState() => _MatchesTabState();
+  State<_MatchesTab> createState() => _MatchesTabState();
 }
 
-class _MatchesTabState extends ConsumerState<_MatchesTab> {
-  // Default to "all" — Copa hasn't started yet, Hoje/Amanhã/Semana would be empty
+class _MatchesTabState extends State<_MatchesTab> {
   _DateFilter _filter = _DateFilter.all;
 
-  List<CopaMatch> _filtered(List<CopaMatch> all) {
+  List<CopaMatch> _filtered() {
+    final source = List<CopaMatch>.from(WC2026Matches.all)
+      ..sort((a, b) => a.kickoff.compareTo(b.kickoff));
+    if (_filter == _DateFilter.all) return source;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    return switch (_filter) {
-      _DateFilter.today => all
-          .where((m) {
-            final d = m.kickoff.toLocal();
-            return DateTime(d.year, d.month, d.day) == today;
-          })
-          .toList(),
-      _DateFilter.tomorrow => all
-          .where((m) {
-            final d = m.kickoff.toLocal();
-            return DateTime(d.year, d.month, d.day) == today.add(const Duration(days: 1));
-          })
-          .toList(),
-      _DateFilter.week => all
-          .where((m) {
-            final d = m.kickoff.toLocal();
-            final diff = DateTime(d.year, d.month, d.day).difference(today).inDays;
-            return diff >= 0 && diff < 7;
-          })
-          .toList(),
-      _DateFilter.all => List<CopaMatch>.from(all), // copy so sort doesn't mutate source
-    };
+    return source.where((m) {
+      final d = m.kickoff.toLocal();
+      final day = DateTime(d.year, d.month, d.day);
+      return switch (_filter) {
+        _DateFilter.today => day == today,
+        _DateFilter.tomorrow => day == today.add(const Duration(days: 1)),
+        _DateFilter.week => day.difference(today).inDays >= 0 &&
+            day.difference(today).inDays < 7,
+        _DateFilter.all => true,
+      };
+    }).toList();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final matchesAsync = ref.watch(copaMatchesProvider);
-    final allMatches = matchesAsync.valueOrNull ?? WC2026Matches.all;
-    final filtered = _filtered(allMatches)
-      ..sort((a, b) => a.kickoff.compareTo(b.kickoff));
-
-    return Column(
-      children: [
-        // Filter bar
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-          child: Row(
-            children: [
-              for (final (f, label) in [
-                (_DateFilter.today, 'Hoje'),
-                (_DateFilter.tomorrow, 'Amanhã'),
-                (_DateFilter.week, 'Esta semana'),
-                (_DateFilter.all, 'Todos'),
-              ])
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: FilterChip(
-                    selected: _filter == f,
-                    label: Text(label),
-                    onSelected: (_) => setState(() => _filter = f),
-                    labelStyle: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: _filter == f ? Colors.white : AppTheme.inkSoft,
-                    ),
-                    selectedColor: Theme.of(context).colorScheme.primary,
-                    backgroundColor: AppTheme.slotSoft,
-                    showCheckmark: false,
-                    side: BorderSide.none,
-                  ),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Expanded(
-          child: filtered.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.sports_soccer_rounded, size: 48, color: AppTheme.slot),
-                      const SizedBox(height: 12),
-                      const Text('Nenhum jogo neste período',
-                          style: TextStyle(color: AppTheme.inkSoft, fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 4),
-                      Text(
-                        'A Copa começa em 11 de junho de 2026',
-                        style: TextStyle(
-                          color: AppTheme.inkSoft.withValues(alpha: 0.6),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : _GroupedMatchList(matches: filtered),
-        ),
-      ],
-    );
-  }
-}
-
-class _GroupedMatchList extends StatelessWidget {
-  final List<CopaMatch> matches;
-  const _GroupedMatchList({required this.matches});
-
-  @override
-  Widget build(BuildContext context) {
-    // Group by date — locale-free key, e.g. "Qui, 11/06"
-    final byDate = <String, List<CopaMatch>>{};
+  // Build flat list of widgets: date headers + match cards
+  List<Widget> _buildItems(List<CopaMatch> matches, BuildContext context) {
+    final items = <Widget>[];
+    String? lastKey;
     for (final m in matches) {
       final key = _groupKey(m.kickoff.toLocal());
-      (byDate[key] ??= []).add(m);
+      if (key != lastKey) {
+        lastKey = key;
+        items.add(Padding(
+          padding: const EdgeInsets.fromLTRB(0, 16, 0, 8),
+          child: Text(key,
+              style: const TextStyle(
+                fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.inkSoft)),
+        ));
+      }
+      items.add(_FullMatchCard(match: m));
     }
+    return items;
+  }
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
-      children: [
-        for (final entry in byDate.entries) ...[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(0, 14, 0, 8),
-            child: Text(
-              entry.key,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.inkSoft),
+  @override
+  Widget build(BuildContext context) {
+    final filtered = _filtered();
+    final scheme = Theme.of(context).colorScheme;
+
+    final filterBar = Padding(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            for (final (f, label) in [
+              (_DateFilter.today, 'Hoje'),
+              (_DateFilter.tomorrow, 'Amanhã'),
+              (_DateFilter.week, 'Esta semana'),
+              (_DateFilter.all, 'Todos'),
+            ])
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: FilterChip(
+                  selected: _filter == f,
+                  label: Text(label),
+                  onSelected: (_) => setState(() => _filter = f),
+                  labelStyle: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: _filter == f ? Colors.white : AppTheme.inkSoft,
+                  ),
+                  selectedColor: scheme.primary,
+                  backgroundColor: AppTheme.slotSoft,
+                  showCheckmark: false,
+                  side: BorderSide.none,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+
+    if (filtered.isEmpty) {
+      return Column(children: [
+        filterBar,
+        const Expanded(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.sports_soccer_rounded, size: 48, color: AppTheme.slot),
+                SizedBox(height: 12),
+                Text('Nenhum jogo neste período',
+                    style: TextStyle(color: AppTheme.inkSoft, fontWeight: FontWeight.w600)),
+                SizedBox(height: 4),
+                Text('A Copa começa em 11 de junho de 2026',
+                    style: TextStyle(color: AppTheme.inkSoft, fontSize: 12)),
+              ],
             ),
           ),
-          for (final m in entry.value) _FullMatchCard(match: m),
-        ],
+        ),
+      ]);
+    }
+
+    final items = _buildItems(filtered, context);
+
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(child: filterBar),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 32),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (_, i) => items[i],
+              childCount: items.length,
+            ),
+          ),
+        ),
       ],
     );
   }
