@@ -79,7 +79,6 @@ class FigusApp extends ConsumerWidget {
         GoRoute(path: '/donate', builder: (_, __) => const _SimplePage(title: 'Apoiar o dev', body: 'Obrigado! Em breve.')),
         GoRoute(path: '/how-to', builder: (_, __) => const HelpPage()),
         GoRoute(path: '/help', builder: (_, __) => const HelpPage()),
-        GoRoute(path: '/settings', builder: (_, __) => const _SimplePage(title: 'Configurações', body: 'Em breve.')),
       ],
     );
 
@@ -112,7 +111,7 @@ class RootShell extends StatelessWidget {
     _NavItem('/duplicates', Icons.copy_all_rounded, 'Repetidas'),
     _NavItem('/trades', Icons.swap_horiz_rounded, 'Trocas'),
     _NavItem('/copa', Icons.emoji_events_rounded, 'Copa'),
-    _NavItem('/you', Icons.person_rounded, 'Você'),
+    _NavItem('/you', Icons.settings_rounded, 'Configurações'),
   ];
 
   @override

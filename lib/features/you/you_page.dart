@@ -85,7 +85,7 @@ class YouPage extends ConsumerWidget {
       backgroundColor: c.bg,
       appBar: AppBar(
         title: Text(
-          'Você',
+          'Configurações',
           style: GoogleFonts.inter(
             fontSize: 20,
             fontWeight: FontWeight.w700,
@@ -304,13 +304,8 @@ class YouPage extends ConsumerWidget {
 
           // ── Menu group 3 ───────────────────────────────────────────────────
           _MenuGroup(
-            children: [
+            children: const [
               _MenuRow(
-                icon: Icons.settings_outlined,
-                title: 'Configurações',
-                onTap: () => context.push('/settings'),
-              ),
-              const _MenuRow(
                 icon: Icons.info_outline_rounded,
                 title: 'Sobre · v 2.6.0',
                 muted: true,
