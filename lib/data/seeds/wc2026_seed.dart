@@ -374,38 +374,32 @@ class WC2026Seed {
       ));
     }
 
-    // Coca-Cola section (CC) — 14 stickers (4 blocks of 3 + 1 block of 2).
-    // CC1 = intro logo, CC2–CC13 = 12 players, CC14 = closing sticker.
-    const ccPlayers = <String?>[
-      null,                  // CC1  — intro (no player)
-      'Lamine Yamal',        // CC2
-      'Joshua Kimmich',      // CC3
-      'Virgil van Dijk',     // CC4
-      'Antonee Robinson',    // CC5
-      'Alphonso Davies',     // CC6
-      'Lautaro Martínez',    // CC7
-      'Harry Kane',          // CC8
-      'Edson Álvarez',       // CC9
-      'Weston McKennie',     // CC10
-      'Jefferson Lerma',     // CC11
-      'Santiago Giménez',    // CC12
-      'Gabriel Magalhães',   // CC13
-      null,                  // CC14 — closing (no player)
-    ];
-    const ccLabels = <String>[
-      'Coca-Cola × FIFA WC 2026',
-      '', '', '', '', '', '', '', '', '', '', '', '',
-      'Copa do Mundo FIFA 2026',
+    // Coca-Cola section (CC) — 14 player stickers.
+    const ccPlayers = <String>[
+      'Lamine Yamal',       // CC1  — España
+      'Joshua Kimmich',     // CC2  — Alemania
+      'Harry Kane',         // CC3  — Inglaterra
+      'Santiago Giménez',   // CC4  — México
+      'Josko Gvardiol',     // CC5  — Croacia
+      'Federico Valverde',  // CC6  — Uruguay
+      'Jefferson Lerma',    // CC7  — Colombia
+      'Enner Valencia',     // CC8  — Ecuador
+      'Gabriel Magalhães',  // CC9  — Brasil
+      'Virgil van Dijk',    // CC10 — Países Bajos
+      'Alphonso Davies',    // CC11 — Canada
+      'Emiliano Martínez',  // CC12 — Argentina
+      'Raúl Jiménez',       // CC13 — México
+      'Lautaro Martínez',   // CC14 — Argentina
     ];
     for (var i = 0; i < ccPlayers.length; i++) {
       list.add(SeedSticker(
         number: 'CC${i + 1}',
         nationCode: null,
-        type: ccPlayers[i] != null ? 'player' : 'intro',
+        type: 'player',
         isFoil: false,
         pageNumber: 200,
         positionInPage: i,
-        label: ccLabels[i],
+        label: '',
         playerName: ccPlayers[i],
       ));
     }

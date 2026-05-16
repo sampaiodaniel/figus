@@ -128,27 +128,21 @@ class AppDatabase extends _$AppDatabase {
             }
           }
           if (from < 7) {
-            // Update CC stickers with real player names and correct labels.
-            const ccPlayers = <String?>[
-              null, 'Lamine Yamal', 'Joshua Kimmich', 'Virgil van Dijk',
-              'Antonee Robinson', 'Alphonso Davies', 'Lautaro Martínez',
-              'Harry Kane', 'Edson Álvarez', 'Weston McKennie',
-              'Jefferson Lerma', 'Santiago Giménez', 'Gabriel Magalhães', null,
-            ];
-            const ccLabels = <String>[
-              'Coca-Cola × FIFA WC 2026', '', '', '', '', '', '', '', '', '', '', '', '',
-              'Copa do Mundo FIFA 2026',
+            // Update CC stickers with correct player names.
+            const ccPlayers = <String>[
+              'Lamine Yamal', 'Joshua Kimmich', 'Harry Kane', 'Santiago Giménez',
+              'Josko Gvardiol', 'Federico Valverde', 'Jefferson Lerma', 'Enner Valencia',
+              'Gabriel Magalhães', 'Virgil van Dijk', 'Alphonso Davies',
+              'Emiliano Martínez', 'Raúl Jiménez', 'Lautaro Martínez',
             ];
             for (var i = 0; i < ccPlayers.length; i++) {
-              final num = 'CC${i + 1}';
-              final player = ccPlayers[i];
-              final label = ccLabels[i];
               await customUpdate(
-                'UPDATE stickers SET player_name = ?, label = ? WHERE number = ?',
+                'UPDATE stickers SET player_name = ?, label = ?, type = ? WHERE number = ?',
                 variables: [
-                  player != null ? Variable.withString(player) : const Variable(null),
-                  Variable.withString(label),
-                  Variable.withString(num),
+                  Variable.withString(ccPlayers[i]),
+                  Variable.withString(''),
+                  Variable.withString('player'),
+                  Variable.withString('CC${i + 1}'),
                 ],
                 updates: {stickers},
               );
