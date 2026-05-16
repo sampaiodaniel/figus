@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/theme/app_theme.dart';
+import '../../core/theme/figus_colors.dart';
 import '../../data/providers.dart';
 import '../pro/paywall_sheet.dart';
 import '../pro/pro_service.dart';
@@ -201,7 +201,7 @@ class _ScanIntro extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.camera_alt_rounded, size: 80, color: AppTheme.seed),
+          Icon(Icons.camera_alt_rounded, size: 80, color: context.fc.accent),
           const SizedBox(height: 24),
           const Text(
             'Scan da página inteira',
@@ -209,12 +209,12 @@ class _ScanIntro extends StatelessWidget {
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'Tire uma foto da página do álbum físico — o app reconhece os números '
             'das figurinhas e marca automaticamente as que estão coladas.\n\n'
             'Sempre pede confirmação antes de salvar (nada é marcado em silêncio).',
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppTheme.inkSoft),
+            style: TextStyle(color: context.fc.textMuted),
           ),
           const SizedBox(height: 24),
           // OCR scan quota indicator
@@ -224,7 +224,7 @@ class _ScanIntro extends StatelessWidget {
               decoration: BoxDecoration(
                 color: scansRemaining == 0
                     ? const Color(0xFFFFEBEB)
-                    : AppTheme.slotSoft,
+                    : context.fc.cardAlt,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -233,7 +233,7 @@ class _ScanIntro extends StatelessWidget {
                   Icon(
                     scansRemaining == 0 ? Icons.warning_rounded : Icons.document_scanner_rounded,
                     size: 16,
-                    color: scansRemaining == 0 ? Colors.red : AppTheme.inkSoft,
+                    color: scansRemaining == 0 ? Colors.red : context.fc.textMuted,
                   ),
                   const SizedBox(width: 8),
                   Text(
@@ -243,7 +243,7 @@ class _ScanIntro extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: scansRemaining == 0 ? Colors.red : AppTheme.inkSoft,
+                      color: scansRemaining == 0 ? Colors.red : context.fc.textMuted,
                     ),
                   ),
                 ],
@@ -282,7 +282,7 @@ class _OcrUnsupportedView extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.info_outline_rounded, size: 64, color: AppTheme.inkSoft),
+          Icon(Icons.info_outline_rounded, size: 64, color: context.fc.textMuted),
           const SizedBox(height: 16),
           const Text(
             'Scan por câmera só funciona no celular',
@@ -290,10 +290,10 @@ class _OcrUnsupportedView extends StatelessWidget {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Você está rodando a versão web. Instale o APK no Android pra usar OCR.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppTheme.inkSoft),
+            style: TextStyle(color: context.fc.textMuted),
           ),
           const SizedBox(height: 24),
           OutlinedButton(

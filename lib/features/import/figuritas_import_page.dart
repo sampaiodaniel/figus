@@ -26,9 +26,9 @@ class FiguritasImportPage extends ConsumerWidget {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Sempre mostramos um preview antes de salvar.',
-            style: TextStyle(color: AppTheme.inkSoft),
+            style: TextStyle(color: context.fc.textMuted),
           ),
           const SizedBox(height: 24),
           _ImportTile(
@@ -89,10 +89,11 @@ class FiguritasImportPage extends ConsumerWidget {
 
   Future<void> _pasteList(BuildContext context, WidgetRef ref) async {
     final ctrl = TextEditingController();
+    final c = context.fc;
     final input = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppTheme.ink3,
+      backgroundColor: c.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -110,7 +111,7 @@ class FiguritasImportPage extends ConsumerWidget {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppTheme.ink4,
+                  color: c.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -121,9 +122,9 @@ class FiguritasImportPage extends ConsumerWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 6),
-            const Text(
+            Text(
               'Aceita o texto exportado do Figuritas App ou uma lista de códigos tipo BRA1, MEX5, FWC9.',
-              style: TextStyle(fontSize: 13, color: AppTheme.inkSoft),
+              style: TextStyle(fontSize: 13, color: c.textMuted),
             ),
             const SizedBox(height: 14),
             TextField(
@@ -134,18 +135,18 @@ class FiguritasImportPage extends ConsumerWidget {
               style: const TextStyle(fontSize: 13, fontFamily: 'monospace'),
               decoration: InputDecoration(
                 filled: true,
-                fillColor: AppTheme.inkDeep,
+                fillColor: c.bg,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppTheme.ink4),
+                  borderSide: BorderSide(color: c.border),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppTheme.ink4),
+                  borderSide: BorderSide(color: c.border),
                 ),
                 hintText:
                     'Cole aqui o export do Figuritas ou lista de códigos...',
-                hintStyle: const TextStyle(color: AppTheme.inkSoft),
+                hintStyle: TextStyle(color: c.textMuted),
                 contentPadding: const EdgeInsets.all(14),
               ),
             ),
@@ -156,7 +157,7 @@ class FiguritasImportPage extends ConsumerWidget {
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(bsCtx),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppTheme.ink4),
+                      side: BorderSide(color: c.border),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                     child: const Text('Cancelar'),
@@ -298,10 +299,11 @@ class FiguritasImportPage extends ConsumerWidget {
 
     if (!context.mounted) return;
 
+    final fc = context.fc;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dCtx) => AlertDialog(
-        backgroundColor: AppTheme.ink3,
+        backgroundColor: fc.card,
         title: const Text(
           'Importar do Figuritas',
           style: TextStyle(fontWeight: FontWeight.w800),
@@ -310,13 +312,13 @@ class FiguritasImportPage extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Sua coleção atual será substituída pelos dados do Figuritas:',
-              style: TextStyle(color: AppTheme.creamSoft, fontSize: 13),
+              style: TextStyle(color: fc.textMuted, fontSize: 13),
             ),
             const SizedBox(height: 16),
             _SummaryRow(
-              color: context.fc.accent,
+              color: fc.accent,
               icon: Icons.check_circle_outline_rounded,
               label: 'Tenho',
               value: '$ownedCount figurinhas',
@@ -330,7 +332,7 @@ class FiguritasImportPage extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             _SummaryRow(
-              color: AppTheme.inkSoft,
+              color: fc.textMuted,
               icon: Icons.radio_button_unchecked_rounded,
               label: 'Faltam',
               value: '$missingCount figurinhas',
@@ -358,7 +360,7 @@ class FiguritasImportPage extends ConsumerWidget {
                       'incrementar.',
                       style: TextStyle(
                         fontSize: 11,
-                        color: AppTheme.cream.withValues(alpha: 0.85),
+                        color: fc.text.withValues(alpha: 0.85),
                         height: 1.35,
                       ),
                     ),
@@ -460,8 +462,8 @@ class _SummaryRow extends StatelessWidget {
         ),
         const Spacer(),
         Text(value,
-            style: const TextStyle(
-                color: AppTheme.cream,
+            style: TextStyle(
+                color: context.fc.text,
                 fontWeight: FontWeight.w600,
                 fontSize: 14)),
       ],

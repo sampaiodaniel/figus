@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/theme/app_theme.dart';
+import '../../core/theme/figus_colors.dart';
 import '../../data/providers.dart';
 import 'ocr_service.dart';
 
@@ -50,7 +50,7 @@ class _ReviewDetectionsSheetState extends State<_ReviewDetectionsSheet> {
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
             const SizedBox(height: 4),
             Text('Toque pra desmarcar as que estão erradas',
-                style: TextStyle(color: AppTheme.inkSoft, fontSize: 13)),
+                style: TextStyle(color: context.fc.textMuted, fontSize: 13)),
             const SizedBox(height: 12),
             Expanded(
               child: ListView.builder(
@@ -65,7 +65,7 @@ class _ReviewDetectionsSheetState extends State<_ReviewDetectionsSheet> {
                     title: Text(d.code,
                         style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
                     subtitle: Text('"${d.rawText}"',
-                        style: TextStyle(color: AppTheme.inkSoft, fontSize: 12)),
+                        style: TextStyle(color: context.fc.textMuted, fontSize: 12)),
                     controlAffinity: ListTileControlAffinity.leading,
                   );
                 },
