@@ -83,8 +83,8 @@ class NationPanel extends StatelessWidget {
                               'pág. ${WC2026Seed.albumPageByCode[section.key]}',
                               style: const TextStyle(
                                 fontSize: 11,
-                                color: AppTheme.inkSoft,
-                                fontWeight: FontWeight.w500,
+                                color: AppTheme.ink,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
