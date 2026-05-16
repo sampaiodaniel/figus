@@ -67,23 +67,36 @@ class SyncRepo {
 
   /// Pull all entries for the current user.
   /// Returns map of stickerNumber → (status, dupCount).
+  ///
+  /// Paginates internally to bypass Supabase's default 1000-row cap, so
+  /// users with 1000+ collection entries get everything back instead of
+  /// silently losing the tail.
   Future<Map<String, ({String status, int dupCount})>> pullAll() async {
     if (!isSignedIn) return {};
+    const pageSize = 1000;
+    final result = <String, ({String status, int dupCount})>{};
     try {
-      final rows = await _client!
-          .from(_table)
-          .select('sticker_number,status,duplicate_count')
-          .eq('user_id', userId!);
-      return {
-        for (final r in rows)
-          r['sticker_number'] as String: (
+      var offset = 0;
+      while (true) {
+        final rows = await _client!
+            .from(_table)
+            .select('sticker_number,status,duplicate_count')
+            .eq('user_id', userId!)
+            .range(offset, offset + pageSize - 1);
+        if (rows.isEmpty) break;
+        for (final r in rows) {
+          result[r['sticker_number'] as String] = (
             status: r['status'] as String,
             dupCount: (r['duplicate_count'] as num).toInt(),
-          ),
-      };
+          );
+        }
+        if (rows.length < pageSize) break;
+        offset += pageSize;
+      }
+      return result;
     } catch (e) {
       debugPrint('[SyncRepo] pullAll error: $e');
-      return {};
+      return result;
     }
   }
 

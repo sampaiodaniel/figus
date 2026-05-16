@@ -68,21 +68,25 @@ class CollectionRepo {
     });
   }
 
-  /// Pushes every locally-known entry (owned/duplicate/missing) for the active
-  /// profile to Supabase in a single bulk-upsert call. Used right after login
-  /// to seed the cloud with whatever the user had marked while still offline.
+  /// Result of a bulk push: how many rows actually represent things the user
+  /// has (owned + duplicates) vs the raw row count we pushed (including
+  /// missing markers needed for sync correctness).
   ///
-  /// Returns the number of entries pushed (or 0 if not signed in / empty / error).
-  Future<int> pushAllLocal() async {
-    if (sync == null || !sync!.isSignedIn) return 0;
+  /// We pass both back so the UI can show user-friendly numbers while the
+  /// repo still pushes the full set needed for cross-device consistency.
+  Future<({int totalRows, int markedStickers})> pushAllLocal() async {
+    if (sync == null || !sync!.isSignedIn) {
+      return (totalRows: 0, markedStickers: 0);
+    }
     final pid = await _activeProfileId();
     final entries = await (db.select(db.collections)
           ..where((c) => c.profileId.equals(pid)))
         .get();
-    if (entries.isEmpty) return 0;
+    if (entries.isEmpty) return (totalRows: 0, markedStickers: 0);
     final stickers = await db.select(db.stickers).get();
     final byId = {for (final s in stickers) s.id: s};
     final payload = <({String stickerNumber, String status, int dupCount})>[];
+    var marked = 0;
     for (final e in entries) {
       final sticker = byId[e.stickerId];
       if (sticker == null) continue;
@@ -91,9 +95,13 @@ class CollectionRepo {
         status: e.status,
         dupCount: e.duplicateCount,
       ));
+      if (e.status == 'owned' || e.status == 'duplicate') marked++;
     }
     final ok = await sync!.pushEntriesBulk(payload);
-    return ok ? payload.length : 0;
+    return (
+      totalRows: ok ? payload.length : 0,
+      markedStickers: ok ? marked : 0,
+    );
   }
 
   Future<void> tapSticker(int stickerId) async {

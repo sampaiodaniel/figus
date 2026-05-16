@@ -60,13 +60,18 @@ Future<void> _showSyncOptions(BuildContext context, WidgetRef ref, String email)
               final remote = await ref.read(syncRepoProvider).pullAll();
               await repo.applyRemoteEntries(remote);
               ref.invalidate(collectionVersionProvider);
+              // Count how many of the pulled rows represent stickers the user
+              // actually has (owned + duplicate), so the snackbar matches what
+              // the user thinks of as "minha coleção".
+              final remoteMarked = remote.values.where((e) =>
+                  e.status == 'owned' || e.status == 'duplicate').length;
               messenger
                 ..clearSnackBars()
                 ..showSnackBar(SnackBar(
                   content: Text(
-                    pushed > 0
-                        ? 'Sincronizado · $pushed enviado(s), ${remote.length} recebido(s)'
-                        : 'Sincronizado · ${remote.length} figurinha(s) recebida(s)',
+                    pushed.markedStickers > 0
+                        ? 'Sincronizado · ${pushed.markedStickers} enviada(s), $remoteMarked recebida(s)'
+                        : 'Sincronizado · $remoteMarked figurinha(s) recebida(s)',
                   ),
                   duration: const Duration(seconds: 4),
                 ));
