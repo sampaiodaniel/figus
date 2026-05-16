@@ -43,7 +43,8 @@ class StickerCard extends StatelessWidget {
 
     final headerText = isLegendary
         ? sticker.type.substring('legendary_'.length).toUpperCase()
-        : (sticker.nationCode ?? 'FWC');
+        : sticker.nationCode ??
+            (sticker.number.startsWith('CC') ? 'CC' : 'FWC');
     final numericPart = sticker.number.replaceAll(RegExp(r'^[A-Z]+'), '');
 
     final stack = Stack(

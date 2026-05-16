@@ -375,31 +375,38 @@ class WC2026Seed {
     }
 
     // Coca-Cola section (CC) — 14 stickers (4 blocks of 3 + 1 block of 2).
-    const ccLabels = [
-      'Coca-Cola × FIFA WC 2026',
-      'Celebração',
-      'Torcedores',
-      'Momentos',
-      'Estádios',
-      'Gols históricos',
-      'Heróis da Copa',
-      'Troféu',
-      'Próxima Copa',
-      'Fan Zone',
-      'Família',
-      'Copo Colecionável',
-      'Mascote',
-      'Brinde',
+    // CC1 = intro logo, CC2–CC13 = 12 players, CC14 = closing sticker.
+    const ccPlayers = <String?>[
+      null,                  // CC1  — intro (no player)
+      'Lamine Yamal',        // CC2
+      'Joshua Kimmich',      // CC3
+      'Virgil van Dijk',     // CC4
+      'Antonee Robinson',    // CC5
+      'Alphonso Davies',     // CC6
+      'Lautaro Martínez',    // CC7
+      'Harry Kane',          // CC8
+      'Edson Álvarez',       // CC9
+      'Weston McKennie',     // CC10
+      'Jefferson Lerma',     // CC11
+      'Santiago Giménez',    // CC12
+      'Gabriel Magalhães',   // CC13
+      null,                  // CC14 — closing (no player)
     ];
-    for (var i = 0; i < ccLabels.length; i++) {
+    const ccLabels = <String>[
+      'Coca-Cola × FIFA WC 2026',
+      '', '', '', '', '', '', '', '', '', '', '', '',
+      'Copa do Mundo FIFA 2026',
+    ];
+    for (var i = 0; i < ccPlayers.length; i++) {
       list.add(SeedSticker(
         number: 'CC${i + 1}',
         nationCode: null,
-        type: 'intro',
+        type: ccPlayers[i] != null ? 'player' : 'intro',
         isFoil: false,
-        pageNumber: 200, // after FWC9+ (100) — always last section
+        pageNumber: 200,
         positionInPage: i,
         label: ccLabels[i],
+        playerName: ccPlayers[i],
       ));
     }
 

@@ -12,7 +12,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -125,6 +125,33 @@ class AppDatabase extends _$AppDatabase {
                   ));
                 }
               }
+            }
+          }
+          if (from < 7) {
+            // Update CC stickers with real player names and correct labels.
+            const ccPlayers = <String?>[
+              null, 'Lamine Yamal', 'Joshua Kimmich', 'Virgil van Dijk',
+              'Antonee Robinson', 'Alphonso Davies', 'Lautaro Martínez',
+              'Harry Kane', 'Edson Álvarez', 'Weston McKennie',
+              'Jefferson Lerma', 'Santiago Giménez', 'Gabriel Magalhães', null,
+            ];
+            const ccLabels = <String>[
+              'Coca-Cola × FIFA WC 2026', '', '', '', '', '', '', '', '', '', '', '', '',
+              'Copa do Mundo FIFA 2026',
+            ];
+            for (var i = 0; i < ccPlayers.length; i++) {
+              final num = 'CC${i + 1}';
+              final player = ccPlayers[i];
+              final label = ccLabels[i];
+              await customUpdate(
+                'UPDATE stickers SET player_name = ?, label = ? WHERE number = ?',
+                variables: [
+                  player != null ? Variable.withString(player) : const Variable(null),
+                  Variable.withString(label),
+                  Variable.withString(num),
+                ],
+                updates: {stickers},
+              );
             }
           }
         },
