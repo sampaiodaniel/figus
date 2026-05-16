@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/country_codes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/providers.dart';
-import '../../data/repos/album_repo.dart';
+import '../../data/seeds/wc2026_matches_seed.dart';
 import '../../domain/models/album_view_models.dart';
 import 'widgets/sticker_card.dart';
 
@@ -43,6 +43,14 @@ class _NationDetailPageState extends ConsumerState<NationDetailPage> {
     super.dispose();
   }
 
+  // Derive group letter for this team
+  String? get _groupLetter {
+    for (final entry in WC2026Matches.groupTeams.entries) {
+      if (entry.value.contains(widget.code)) return entry.key;
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final asyncSection = ref.watch(_nationSectionProvider(widget.code));
@@ -50,26 +58,24 @@ class _NationDetailPageState extends ConsumerState<NationDetailPage> {
       _cached = asyncSection.value;
     }
     final section = asyncSection.value ?? _cached;
+    final group = _groupLetter;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.code),
+        title: Text(section?.title.split(' - ').last ?? widget.code),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => context.pop(),
+          onPressed: () => Navigator.canPop(context) ? Navigator.pop(context) : context.pop(),
         ),
-        actions: [
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
           if (section != null && section.totalCount > 0)
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: Center(
-                child: Text('${section.ownedCount}/${section.totalCount}',
-                    style: const TextStyle(fontWeight: FontWeight.w700)),
-              ),
-            ),
+            _StatsHeader(section: section, group: group),
+          Expanded(child: _buildBody(asyncSection, section)),
         ],
       ),
-      body: _buildBody(asyncSection, section),
     );
   }
 
@@ -97,6 +103,131 @@ class _NationDetailPageState extends ConsumerState<NationDetailPage> {
   }
 
 }
+
+// ── Stats header ──────────────────────────────────────────────────────────────
+
+class _StatsHeader extends StatelessWidget {
+  final AlbumSection section;
+  final String? group;
+  const _StatsHeader({required this.section, required this.group});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final owned = section.ownedCount;
+    final total = section.totalCount;
+    final missing = total - owned;
+    final duplicates = section.stickers
+        .where((s) => s.status == StickerOwnership.duplicate)
+        .fold(0, (sum, s) => sum + s.duplicateCount);
+    final pct = total > 0 ? (owned / total * 100).round() : 0;
+
+    final iso = paniniToIso2[section.key];
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      decoration: BoxDecoration(
+        color: scheme.primary.withValues(alpha: 0.08),
+        border: Border(bottom: BorderSide(color: scheme.primary.withValues(alpha: 0.15))),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Flag
+          if (iso != null)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: CountryFlag.fromCountryCode(iso, width: 48, height: 34),
+            )
+          else
+            Container(
+              width: 48, height: 34,
+              decoration: BoxDecoration(
+                color: AppTheme.slotSoft,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              alignment: Alignment.center,
+              child: Text(section.key,
+                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
+            ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (group != null)
+                  Text('GRUPO $group  ·  $total figurinhas',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: scheme.primary,
+                        letterSpacing: 0.4,
+                      )),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    _Stat(label: 'TENHO', value: '$owned',
+                        color: scheme.primary),
+                    const SizedBox(width: 16),
+                    _Stat(label: 'FALTAM', value: '$missing',
+                        color: AppTheme.inkSoft),
+                    const SizedBox(width: 16),
+                    _Stat(label: 'REPETIDAS', value: '$duplicates',
+                        color: const Color(0xFF1F66FF)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Percent circle
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              SizedBox(
+                width: 48, height: 48,
+                child: CircularProgressIndicator(
+                  value: pct / 100,
+                  strokeWidth: 4,
+                  backgroundColor: AppTheme.slotSoft,
+                  valueColor: AlwaysStoppedAnimation<Color>(scheme.primary),
+                ),
+              ),
+              Text('$pct%',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: scheme.primary,
+                  )),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Stat extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  const _Stat({required this.label, required this.value, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(value,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: color)),
+        Text(label,
+            style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600,
+                color: AppTheme.inkSoft, letterSpacing: 0.4)),
+      ],
+    );
+  }
+}
+
+// ── Panini layout ─────────────────────────────────────────────────────────────
 
 class _PaniniLayout extends StatelessWidget {
   final AlbumSection section;

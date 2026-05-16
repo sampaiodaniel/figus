@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../data/models/copa_models.dart';
 import '../../data/repos/matches_repo.dart';
 import '../../data/seeds/wc2026_matches_seed.dart';
+import '../album/nation_detail_page.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Root Copa page
@@ -436,6 +437,27 @@ class GroupDetailPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // ── Team tiles — tap to see stickers ──────────────────────
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Text('SELEÇÕES',
+                style: TextStyle(
+                  fontSize: 11,
+                  letterSpacing: 0.8,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.inkSoft.withValues(alpha: 0.7),
+                )),
+          ),
+          Row(
+            children: [
+              for (final team in teams) ...[
+                if (teams.indexOf(team) > 0) const SizedBox(width: 8),
+                Expanded(child: _TeamTile(team: team)),
+              ],
+            ],
+          ),
+          const SizedBox(height: 20),
+
           // Full standings table
           Card(
             margin: EdgeInsets.zero,
@@ -452,7 +474,6 @@ class GroupDetailPage extends StatelessWidget {
                         color: Theme.of(context).colorScheme.primary,
                       )),
                   const SizedBox(height: 10),
-                  // Table header
                   _StandingHeader(),
                   const Divider(height: 12),
                   for (var i = 0; i < standings.length; i++)
@@ -474,6 +495,49 @@ class GroupDetailPage extends StatelessWidget {
             for (final m in matches) _MatchRow(match: m),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _TeamTile extends StatelessWidget {
+  final CopaTeam team;
+  const _TeamTile({required this.team});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute<void>(
+          builder: (_) => NationDetailPage(code: team.code),
+        ),
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          color: AppTheme.slotSoft,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _TeamFlag(code: team.code, size: 36),
+            const SizedBox(height: 6),
+            Text(
+              team.code,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              team.name,
+              style: const TextStyle(fontSize: 9, color: AppTheme.inkSoft),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
