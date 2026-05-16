@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/figus_colors.dart';
 import '../../domain/models/album_view_models.dart';
 
 /// Visual card (1080×1080) used for WhatsApp / social sharing.
@@ -25,21 +26,24 @@ class ShareCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pct = (stats.percentComplete * 100).round();
+    final fc = context.fc;
+    final scheme = Theme.of(context).colorScheme;
+    final onAccent = scheme.onPrimary;
 
     return Container(
       width: 1080,
       height: 1080,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF0E0B09), Color(0xFF1E1916), Color(0xFF2A1F10)],
-          stops: [0.0, 0.55, 1.0],
+          colors: [fc.bg, fc.card, fc.cardAlt],
+          stops: const [0.0, 0.55, 1.0],
         ),
       ),
       child: Stack(
         children: [
-          // Subtle gold glow top-right
+          // Subtle accent glow top-right
           Positioned(
             top: -120,
             right: -120,
@@ -50,8 +54,8 @@ class ShareCard extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppTheme.gold.withValues(alpha: 0.14),
-                    AppTheme.gold.withValues(alpha: 0.0),
+                    fc.accent.withValues(alpha: 0.18),
+                    fc.accent.withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -74,14 +78,14 @@ class ShareCard extends StatelessWidget {
                           : Container(
                               width: 80,
                               height: 80,
-                              color: AppTheme.gold,
+                              color: fc.accent,
                               alignment: Alignment.center,
                               child: Text(
                                 'F',
                                 style: GoogleFonts.inter(
                                   fontSize: 52,
                                   fontWeight: FontWeight.w900,
-                                  color: AppTheme.inkDeep,
+                                  color: onAccent,
                                   height: 1,
                                 ),
                               ),
@@ -93,7 +97,7 @@ class ShareCard extends StatelessWidget {
                       style: GoogleFonts.jetBrainsMono(
                         fontSize: 52,
                         fontWeight: FontWeight.w800,
-                        color: AppTheme.gold,
+                        color: fc.accent,
                         letterSpacing: 4,
                       ),
                     ),
@@ -108,7 +112,7 @@ class ShareCard extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 38,
                     fontWeight: FontWeight.w800,
-                    color: AppTheme.cream,
+                    color: fc.text,
                     height: 1.1,
                   ),
                 ),
@@ -118,7 +122,7 @@ class ShareCard extends StatelessWidget {
                   style: GoogleFonts.instrumentSerif(
                     fontSize: 30,
                     fontStyle: FontStyle.italic,
-                    color: AppTheme.creamSoft,
+                    color: fc.textMuted,
                   ),
                 ),
 
@@ -130,10 +134,10 @@ class ShareCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 48, vertical: 40),
                   decoration: BoxDecoration(
-                    color: AppTheme.ink3,
+                    color: fc.card,
                     borderRadius: BorderRadius.circular(32),
                     border: Border.all(
-                        color: AppTheme.gold.withValues(alpha: 0.30),
+                        color: fc.accent.withValues(alpha: 0.30),
                         width: 1.5),
                   ),
                   child: Row(
@@ -144,7 +148,7 @@ class ShareCard extends StatelessWidget {
                         style: GoogleFonts.inter(
                           fontSize: 160,
                           fontWeight: FontWeight.w900,
-                          color: AppTheme.gold,
+                          color: fc.accent,
                           height: 0.9,
                         ),
                       ),
@@ -155,7 +159,7 @@ class ShareCard extends StatelessWidget {
                           style: GoogleFonts.inter(
                             fontSize: 64,
                             fontWeight: FontWeight.w800,
-                            color: AppTheme.gold.withValues(alpha: 0.7),
+                            color: fc.accent.withValues(alpha: 0.7),
                           ),
                         ),
                       ),
@@ -168,7 +172,7 @@ class ShareCard extends StatelessWidget {
                             style: GoogleFonts.inter(
                               fontSize: 38,
                               fontWeight: FontWeight.w600,
-                              color: AppTheme.creamSoft,
+                              color: fc.textMuted,
                               height: 1.2,
                             ),
                           ),
@@ -187,7 +191,7 @@ class ShareCard extends StatelessWidget {
                         child: _StatBox(
                             label: 'TENHO',
                             value: '${stats.owned}',
-                            color: AppTheme.cream)),
+                            color: fc.text)),
                     const SizedBox(width: 16),
                     Expanded(
                         child: _StatBox(
@@ -203,14 +207,14 @@ class ShareCard extends StatelessWidget {
                         child: _StatBox(
                             label: 'REPETIDAS',
                             value: '${stats.duplicates}',
-                            color: AppTheme.creamSoft)),
+                            color: fc.textMuted)),
                     const SizedBox(width: 16),
                     Expanded(
                         child: _StatBox(
                             label: 'BRILHANTES',
                             value:
                                 '${stats.foilOwned}/${stats.foilTotal}',
-                            color: AppTheme.gold)),
+                            color: fc.accent)),
                   ],
                 ),
 
@@ -223,19 +227,19 @@ class ShareCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 28, vertical: 16),
                       decoration: BoxDecoration(
-                        color: AppTheme.gold,
+                        color: fc.accent,
                         borderRadius: BorderRadius.circular(50),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.swap_horiz_rounded,
-                              color: AppTheme.inkDeep, size: 32),
+                              color: onAccent, size: 32),
                           const SizedBox(width: 10),
                           Text(
                             'Vamos trocar?',
                             style: GoogleFonts.inter(
-                              color: AppTheme.inkDeep,
+                              color: onAccent,
                               fontSize: 30,
                               fontWeight: FontWeight.w800,
                             ),
@@ -248,7 +252,7 @@ class ShareCard extends StatelessWidget {
                       'figus.app',
                       style: GoogleFonts.jetBrainsMono(
                         fontSize: 24,
-                        color: AppTheme.creamSoft.withValues(alpha: 0.6),
+                        color: fc.textMuted.withValues(alpha: 0.7),
                       ),
                     ),
                   ],
