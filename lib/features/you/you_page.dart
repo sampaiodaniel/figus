@@ -35,7 +35,7 @@ Future<void> _showSyncOptions(BuildContext context, WidgetRef ref, String email)
             onTap: () async {
               Navigator.pop(sheetCtx);
               // Immediate feedback so the user doesn't think the button was
-              // ignored while the bulk-upsert HTTP call runs.
+              // ignored while the network round-trip runs.
               messenger
                 ..clearSnackBars()
                 ..showSnackBar(const SnackBar(
@@ -55,25 +55,25 @@ Future<void> _showSyncOptions(BuildContext context, WidgetRef ref, String email)
                   ),
                   duration: Duration(minutes: 1),
                 ));
+              // PULL-ONLY: each sticker tap already auto-pushes to the cloud
+              // via _upsert in CollectionRepo. Doing a push-then-pull here
+              // would overwrite a newer cloud state with stale local data
+              // whenever this device hadn't refreshed in a while.
+              // Initial backfill of pre-login marks happens in AuthPage._verifyOtp.
               final repo = ref.read(collectionRepoProvider);
-              final pushed = await repo.pushAllLocal();
               final remote = await ref.read(syncRepoProvider).pullAll();
               final applyStats = await repo.applyRemoteEntries(remote);
               ref.invalidate(collectionVersionProvider);
               // ignore: avoid_print
-              print('[Sync] pushed=$pushed remoteRows=${remote.length} apply=$applyStats');
-              final sentPart =
-                  '${pushed.markedStickers} álbum + ${pushed.extraCopies} rep';
-              final recvPart =
-                  '${applyStats.markedApplied} álbum + ${applyStats.extrasApplied} rep';
+              print('[Sync] remoteRows=${remote.length} apply=$applyStats');
               messenger
                 ..clearSnackBars()
                 ..showSnackBar(SnackBar(
                   content: Text(
-                    'Sync · enviadas: $sentPart · recebidas: $recvPart'
+                    'Sincronizado · ${applyStats.markedApplied} álbum + ${applyStats.extrasApplied} repetidas'
                     '${applyStats.unmatched > 0 ? " · ${applyStats.unmatched} código(s) não reconhecido(s)" : ""}',
                   ),
-                  duration: const Duration(seconds: 6),
+                  duration: const Duration(seconds: 5),
                 ));
             },
           ),
