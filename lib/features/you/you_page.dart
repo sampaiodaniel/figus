@@ -419,7 +419,7 @@ class _ProCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
-                isPro ? '✓ Ativo' : 'R\$9,90',
+                isPro ? '✓ Ativo' : 'R\$6,90',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
