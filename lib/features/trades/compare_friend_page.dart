@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/figus_colors.dart';
 import '../../data/providers.dart';
 import 'inventory_codec.dart';
 import 'trade_matcher.dart';
@@ -59,7 +60,7 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
                 _offers!.isEmpty
                     ? 'Nenhuma troca direta disponível agora.'
                     : '${_offers!.length} troca(s) sugerida(s)',
-                style: const TextStyle(color: AppTheme.inkSoft),
+                style: TextStyle(color: context.fc.textMuted),
               ),
               const SizedBox(height: 8),
               for (final o in _offers!) _OfferCard(offer: o),
@@ -79,10 +80,11 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
 
   Future<void> _pasteInventory() async {
     final ctrl = TextEditingController();
+    final c = context.fc;
     final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppTheme.ink3,
+      backgroundColor: c.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -100,7 +102,7 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppTheme.ink4,
+                  color: c.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -111,9 +113,9 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 6),
-            const Text(
+            Text(
               'Peça pro amigo compartilhar o inventário (botão ↗) e cole aqui.',
-              style: TextStyle(fontSize: 13, color: AppTheme.inkSoft),
+              style: TextStyle(fontSize: 13, color: c.textMuted),
             ),
             const SizedBox(height: 14),
             TextField(
@@ -124,17 +126,17 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
               style: const TextStyle(fontSize: 13, fontFamily: 'monospace'),
               decoration: InputDecoration(
                 filled: true,
-                fillColor: AppTheme.inkDeep,
+                fillColor: c.bg,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppTheme.ink4),
+                  borderSide: BorderSide(color: c.border),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppTheme.ink4),
+                  borderSide: BorderSide(color: c.border),
                 ),
                 hintText: 'Cole o JSON aqui...',
-                hintStyle: const TextStyle(color: AppTheme.inkSoft),
+                hintStyle: TextStyle(color: c.textMuted),
                 contentPadding: const EdgeInsets.all(14),
               ),
             ),
@@ -145,7 +147,7 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(bsCtx),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppTheme.ink4),
+                      side: BorderSide(color: c.border),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                     child: const Text('Cancelar'),
@@ -197,11 +199,12 @@ class _Hero extends StatelessWidget {
   const _Hero();
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppTheme.seed, Color(0xFF7A5BFF)],
+        gradient: LinearGradient(
+          colors: [c.accent, c.accent.withValues(alpha: 0.7)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -248,7 +251,7 @@ class _OfferCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: offer.kind == 'same' ? AppTheme.seed : Colors.orange,
+                    color: offer.kind == 'same' ? context.fc.accent : Colors.orange,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -262,7 +265,7 @@ class _OfferCard extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text('score ${offer.score.toStringAsFixed(0)}',
-                    style: const TextStyle(fontSize: 11, color: AppTheme.inkSoft)),
+                    style: TextStyle(fontSize: 11, color: context.fc.textMuted)),
               ],
             ),
             const SizedBox(height: 10),
@@ -307,7 +310,7 @@ class _Row extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: AppTheme.slotSoft,
+                    color: context.fc.cardAlt,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(

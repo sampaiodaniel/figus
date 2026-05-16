@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/figus_colors.dart';
 import 'paywall_sheet.dart';
 import 'pro_service.dart';
 import 'theme_service.dart';
@@ -88,12 +89,12 @@ class _ThemePickerPageState extends ConsumerState<ThemePickerPage> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.timer_rounded, size: 16, color: AppTheme.inkSoft),
+                        Icon(Icons.timer_rounded, size: 16, color: context.fc.textMuted),
                         const SizedBox(width: 4),
                         Text('$_previewSecsLeft s',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.w700,
-                              color: AppTheme.inkSoft,
+                              color: context.fc.textMuted,
                             )),
                         const SizedBox(width: 10),
                         TextButton(
@@ -244,7 +245,7 @@ class _ThemeTile extends StatelessWidget {
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
                               color: locked
-                                  ? AppTheme.inkSoft
+                                  ? context.fc.textMuted
                                   : const Color(0xFFB8860B),
                             ),
                           ),
@@ -263,20 +264,20 @@ class _ThemeTile extends StatelessWidget {
                     )
                   else if (locked) ...[
                     Text(seed.description,
-                        style: const TextStyle(fontSize: 12, color: AppTheme.inkSoft)),
+                        style: TextStyle(fontSize: 12, color: context.fc.textMuted)),
                     const SizedBox(height: 2),
-                    const Text('Toque para ver uma prévia',
-                        style: TextStyle(fontSize: 11, color: AppTheme.inkSoft)),
+                    Text('Toque para ver uma prévia',
+                        style: TextStyle(fontSize: 11, color: context.fc.textMuted)),
                   ] else if (isSelected)
                     Text(seed.description,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppTheme.inkSoft,
+                          color: context.fc.textMuted,
                           fontWeight: FontWeight.w600,
                         ))
                   else
                     Text(seed.description,
-                        style: const TextStyle(fontSize: 12, color: AppTheme.inkSoft)),
+                        style: TextStyle(fontSize: 12, color: context.fc.textMuted)),
                 ],
               ),
             ),
