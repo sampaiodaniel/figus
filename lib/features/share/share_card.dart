@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../domain/models/album_view_models.dart';
@@ -19,6 +20,8 @@ class ShareCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final pct = (stats.percentComplete * 100).round();
+
     return Container(
       width: 1080,
       height: 1080,
@@ -26,112 +29,223 @@ class ShareCard extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1F66FF), Color(0xFF7A5BFF)],
+          colors: [Color(0xFF0E0B09), Color(0xFF1E1916), Color(0xFF2A1F10)],
+          stops: [0.0, 0.55, 1.0],
         ),
       ),
-      padding: const EdgeInsets.all(80),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Row(
-            children: [
-              Container(
-                width: 90,
-                height: 90,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Center(
-                  child: Text('F',
-                      style: TextStyle(
-                        fontSize: 60,
-                        fontWeight: FontWeight.w900,
-                        color: AppTheme.seed,
-                      )),
+          // Subtle gold glow top-right
+          Positioned(
+            top: -120,
+            right: -120,
+            child: Container(
+              width: 480,
+              height: 480,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppTheme.gold.withValues(alpha: 0.14),
+                    AppTheme.gold.withValues(alpha: 0.0),
+                  ],
                 ),
               ),
-              const SizedBox(width: 24),
-              const Text('Figus',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 60,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -1,
-                  )),
-            ],
-          ),
-          const SizedBox(height: 60),
-          Text(albumName,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 44,
-                fontWeight: FontWeight.w800,
-                height: 1.1,
-              )),
-          const SizedBox(height: 8),
-          Text('por $profileName',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.85),
-                fontSize: 28,
-              )),
-          const SizedBox(height: 60),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(28),
             ),
-            child: Row(
+          ),
+
+          Padding(
+            padding: const EdgeInsets.all(80),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${(stats.percentComplete * 100).toStringAsFixed(0)}%',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 120,
-                      fontWeight: FontWeight.w900,
-                      height: 1,
-                    )),
-                const SizedBox(width: 24),
-                const Expanded(
-                  child: Text('completo',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 38,
-                        fontWeight: FontWeight.w600,
-                      )),
+                // ── Logo ──────────────────────────────────────────────────
+                Row(
+                  children: [
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: AppTheme.gold,
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        'F',
+                        style: GoogleFonts.inter(
+                          fontSize: 52,
+                          fontWeight: FontWeight.w900,
+                          color: AppTheme.inkDeep,
+                          height: 1,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 22),
+                    Text(
+                      'FIGUS',
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 52,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.gold,
+                        letterSpacing: 4,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 40),
-          Wrap(
-            spacing: 16,
-            runSpacing: 16,
-            children: [
-              _StatChip(label: 'Tenho', value: '${stats.owned}'),
-              _StatChip(label: 'Faltam', value: '${stats.missing}'),
-              _StatChip(label: 'Repetidas', value: '${stats.duplicates}'),
-              _StatChip(label: 'Brilhantes', value: '${stats.foilOwned}/${stats.foilTotal}'),
-            ],
-          ),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(50),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.swap_horiz_rounded, color: AppTheme.seed),
-                SizedBox(width: 8),
-                Text('Vamos trocar?',
-                    style: TextStyle(
-                      color: AppTheme.seed,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                    )),
+
+                const SizedBox(height: 56),
+
+                // ── Album name + profile ──────────────────────────────────
+                Text(
+                  albumName,
+                  style: GoogleFonts.inter(
+                    fontSize: 38,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.cream,
+                    height: 1.1,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'por $profileName',
+                  style: GoogleFonts.instrumentSerif(
+                    fontSize: 30,
+                    fontStyle: FontStyle.italic,
+                    color: AppTheme.creamSoft,
+                  ),
+                ),
+
+                const SizedBox(height: 56),
+
+                // ── Big percentage ────────────────────────────────────────
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 48, vertical: 40),
+                  decoration: BoxDecoration(
+                    color: AppTheme.ink3,
+                    borderRadius: BorderRadius.circular(32),
+                    border: Border.all(
+                        color: AppTheme.gold.withValues(alpha: 0.30),
+                        width: 1.5),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '$pct',
+                        style: GoogleFonts.inter(
+                          fontSize: 160,
+                          fontWeight: FontWeight.w900,
+                          color: AppTheme.gold,
+                          height: 0.9,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 18, left: 8),
+                        child: Text(
+                          '%',
+                          style: GoogleFonts.inter(
+                            fontSize: 64,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.gold.withValues(alpha: 0.7),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 28),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Text(
+                            'completo',
+                            style: GoogleFonts.inter(
+                              fontSize: 38,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.creamSoft,
+                              height: 1.2,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
+                // ── Stats 2×2 grid ────────────────────────────────────────
+                Row(
+                  children: [
+                    Expanded(
+                        child: _StatBox(
+                            label: 'TENHO',
+                            value: '${stats.owned}',
+                            color: AppTheme.cream)),
+                    const SizedBox(width: 16),
+                    Expanded(
+                        child: _StatBox(
+                            label: 'FALTAM',
+                            value: '${stats.missing}',
+                            color: AppTheme.pulpSoft)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                        child: _StatBox(
+                            label: 'REPETIDAS',
+                            value: '${stats.duplicates}',
+                            color: AppTheme.creamSoft)),
+                    const SizedBox(width: 16),
+                    Expanded(
+                        child: _StatBox(
+                            label: 'BRILHANTES',
+                            value:
+                                '${stats.foilOwned}/${stats.foilTotal}',
+                            color: AppTheme.gold)),
+                  ],
+                ),
+
+                const Spacer(),
+
+                // ── Footer CTA ────────────────────────────────────────────
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 28, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: AppTheme.gold,
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.swap_horiz_rounded,
+                              color: AppTheme.inkDeep, size: 32),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Vamos trocar?',
+                            style: GoogleFonts.inter(
+                              color: AppTheme.inkDeep,
+                              fontSize: 30,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      'figus.app',
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 24,
+                        color: AppTheme.creamSoft.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -141,35 +255,45 @@ class ShareCard extends StatelessWidget {
   }
 }
 
-class _StatChip extends StatelessWidget {
+class _StatBox extends StatelessWidget {
   final String label;
   final String value;
-  const _StatChip({required this.label, required this.value});
+  final Color color;
+  const _StatBox(
+      {required this.label, required this.value, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.18),
+        color: color.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(20),
+        border:
+            Border.all(color: color.withValues(alpha: 0.22), width: 1),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 36,
-                fontWeight: FontWeight.w900,
-              )),
-          const SizedBox(width: 10),
-          Text(label,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.85),
-                fontSize: 24,
-                fontWeight: FontWeight.w500,
-              )),
+          Text(
+            label,
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: color.withValues(alpha: 0.7),
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              fontSize: 52,
+              fontWeight: FontWeight.w900,
+              color: color,
+              height: 1,
+            ),
+          ),
         ],
       ),
     );

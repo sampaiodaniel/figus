@@ -56,6 +56,20 @@ class DuplicatesPage extends ConsumerWidget {
                       HapticFeedback.lightImpact();
                       await ref.read(collectionRepoProvider).removeSticker(sticker.id);
                       ref.read(collectionVersionProvider.notifier).state++;
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context)
+                        ..clearSnackBars()
+                        ..showSnackBar(SnackBar(
+                          content: Text('${sticker.number} removida'),
+                          duration: const Duration(seconds: 4),
+                          action: SnackBarAction(
+                            label: 'Desfazer',
+                            onPressed: () async {
+                              await ref.read(collectionRepoProvider).tapSticker(sticker.id);
+                              ref.read(collectionVersionProvider.notifier).state++;
+                            },
+                          ),
+                        ));
                     },
                   ),
                 ),
@@ -237,45 +251,66 @@ class _DuplicateChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final num = sticker.number.replaceAll(RegExp(r'^[A-Z]+'), '');
-    return Material(
-      color: AppTheme.seed.withValues(alpha: 0.10),
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        onTap: onRemoveOne,
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.seed.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 8, 10, 8),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('#$num',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('#$num',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                      color: AppTheme.seed,
+                    )),
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
                     color: AppTheme.seed,
-                  )),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppTheme.seed,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '×${sticker.duplicateCount}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '×${sticker.duplicateCount}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 4),
-              Icon(Icons.remove_circle_outline_rounded,
-                  size: 18, color: AppTheme.inkSoft.withValues(alpha: 0.7)),
-            ],
+              ],
+            ),
           ),
-        ),
+          // Explicit remove button — only this triggers removal
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                onRemoveOne();
+              },
+              borderRadius: const BorderRadius.horizontal(
+                  right: Radius.circular(20)),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(4, 8, 10, 8),
+                child: Icon(
+                  Icons.remove_circle_outline_rounded,
+                  size: 18,
+                  color: AppTheme.inkSoft.withValues(alpha: 0.7),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
