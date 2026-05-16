@@ -339,7 +339,7 @@ class _ProfileCard extends StatelessWidget {
                   child: Text(
                     name.isNotEmpty ? name[0].toUpperCase() : '?',
                     style: GoogleFonts.inter(
-                      color: AppTheme.inkDeep,
+                      color: Theme.of(context).colorScheme.onPrimary,
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
                     ),

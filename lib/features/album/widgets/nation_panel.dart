@@ -264,17 +264,20 @@ class _SpecialThumb extends StatelessWidget {
           child:
               const Icon(Icons.stars_rounded, color: Colors.white, size: 18),
         ),
-      _ => _thumb(
-          decoration: const BoxDecoration(
-            color: AppTheme.ink4,
-            borderRadius: BorderRadius.all(Radius.circular(4)),
-          ),
-          child: Text(code,
-              style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.cream)),
-        ),
+      _ => Builder(builder: (ctx) {
+          final c = ctx.fc;
+          return _thumb(
+            decoration: BoxDecoration(
+              color: c.border,
+              borderRadius: const BorderRadius.all(Radius.circular(4)),
+            ),
+            child: Text(code,
+                style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: c.text)),
+          );
+        }),
     };
   }
 
@@ -510,7 +513,7 @@ class _PageDivider extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 letterSpacing: 1.4,
-                color: AppTheme.inkSoft.withValues(alpha: 0.7),
+                color: context.fc.textMuted.withValues(alpha: 0.7),
                 fontWeight: FontWeight.w700,
               )),
         ),

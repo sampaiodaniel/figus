@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
-import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/figus_colors.dart';
 import '../../../domain/models/album_view_models.dart';
 import 'sticker_card.dart';
 
@@ -52,7 +52,7 @@ class _NationSectionWidgetState extends State<NationSectionWidget> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppTheme.slotSoft,
+                      color: context.fc.cardAlt,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
