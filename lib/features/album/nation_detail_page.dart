@@ -88,85 +88,14 @@ class _NationDetailPageState extends ConsumerState<NationDetailPage> {
         ref.read(collectionVersionProvider.notifier).state++;
       },
       onLongPress: (st) async {
+        if (st.status == StickerOwnership.missing) return;
         HapticFeedback.mediumImpact();
-        await _showQuickActions(st);
+        await ref.read(collectionRepoProvider).removeSticker(st.id);
+        ref.read(collectionVersionProvider.notifier).state++;
       },
     );
   }
 
-  Future<void> _showQuickActions(StickerView st) async {
-    final action = await showModalBottomSheet<String>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetCtx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Text(
-                st.displayName == null ? st.number : '${st.number} · ${st.displayName}',
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
-              ),
-            ),
-            if (st.status != StickerOwnership.missing)
-              ListTile(
-                dense: true,
-                leading: const Icon(Icons.remove_circle_outline_rounded),
-                title: const Text('Remover 1 cópia'),
-                onTap: () => Navigator.pop(sheetCtx, 'remove'),
-              ),
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.edit_rounded),
-              title: Text(st.playerName == null ? 'Definir nome' : 'Editar nome'),
-              onTap: () => Navigator.pop(sheetCtx, 'name'),
-            ),
-            const SizedBox(height: 4),
-          ],
-        ),
-      ),
-    );
-    if (action == null || !mounted) return;
-    switch (action) {
-      case 'remove':
-        await ref.read(collectionRepoProvider).removeSticker(st.id);
-        break;
-      case 'name':
-        await _editName(st);
-        break;
-    }
-    ref.read(collectionVersionProvider.notifier).state++;
-  }
-
-  Future<void> _editName(StickerView st) async {
-    final ctrl = TextEditingController(text: st.playerName ?? '');
-    final name = await showDialog<String?>(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: Text('Nome — ${st.number}'),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          decoration: const InputDecoration(hintText: 'ex.: Alisson'),
-        ),
-        actions: [
-          if (st.playerName != null)
-            TextButton(
-              onPressed: () => Navigator.pop(dialogCtx, ''),
-              child: const Text('Apagar'),
-            ),
-          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancelar')),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogCtx, ctrl.text.trim()),
-            child: const Text('Salvar'),
-          ),
-        ],
-      ),
-    );
-    if (name == null) return;
-    await ref.read(collectionRepoProvider).setPlayerName(st.id, name.isEmpty ? null : name);
-  }
 }
 
 class _PaniniLayout extends StatelessWidget {

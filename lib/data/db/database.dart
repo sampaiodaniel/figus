@@ -12,7 +12,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -127,8 +127,9 @@ class AppDatabase extends _$AppDatabase {
               }
             }
           }
-          if (from < 7) {
-            // Update CC stickers with correct player names.
+          if (from < 8) {
+            // Fix CC order: CC1=Lamine Yamal … CC14=Lautaro Martínez.
+            // Runs for anyone at v5/v6/v7 (v7 had wrong order in first deploy).
             const ccPlayers = <String>[
               'Lamine Yamal', 'Joshua Kimmich', 'Harry Kane', 'Santiago Giménez',
               'Josko Gvardiol', 'Federico Valverde', 'Jefferson Lerma', 'Enner Valencia',
