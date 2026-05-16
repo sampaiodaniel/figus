@@ -17,7 +17,7 @@ class OnboardingPage extends ConsumerStatefulWidget {
 class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   final _ctrl = PageController();
   int _index = 0;
-  static const _total = 4;
+  static const _total = 3;
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +64,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                       _Slide0(),
                       _Slide1(),
                       _Slide2(),
-                      _Slide3(),
                     ],
                   ),
                 ),
@@ -480,102 +479,3 @@ class _TradePill extends StatelessWidget {
   }
 }
 
-// ── Slide 3 — Favoritas ──────────────────────────────────────────────────────
-
-class _Slide3 extends StatelessWidget {
-  const _Slide3();
-
-  static const _sky = Color(0xFF3F8FE0);
-  static const _flame = Color(0xFFE85A3C);
-
-  static const _countries = [
-    ('BRA', AppTheme.gold),
-    ('ARG', _sky),
-    ('FRA', _sky),
-    ('ESP', _flame),
-    ('GER', AppTheme.creamSoft),
-    ('ENG', _flame),
-    ('POR', AppTheme.field),
-    ('NED', _flame),
-    ('USA', _sky),
-    ('MEX', AppTheme.field),
-    ('URU', _sky),
-    ('BEL', _flame),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(32, 0, 32, 24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          GridView.count(
-            shrinkWrap: true,
-            crossAxisCount: 4,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-            childAspectRatio: 1.3,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              for (final (code, color) in _countries)
-                _CountryChip(
-                  code: code,
-                  color: color,
-                  selected: code == 'BRA' || code == 'ARG',
-                ),
-            ],
-          ),
-          const SizedBox(height: 32),
-          Text(
-            'Escolha suas\nfavoritas.',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.instrumentSerif(
-              fontSize: 32,
-              fontStyle: FontStyle.italic,
-              color: AppTheme.cream,
-              height: 1.1,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Prioridade nas alertas de jogos e nas sugestões de troca.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppTheme.creamSoft, fontSize: 15, height: 1.4),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CountryChip extends StatelessWidget {
-  final String code;
-  final Color color;
-  final bool selected;
-  const _CountryChip(
-      {required this.code, required this.color, required this.selected});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: selected ? color.withValues(alpha: 0.2) : AppTheme.ink,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: selected ? color : AppTheme.ink4,
-          width: selected ? 1.5 : 1,
-        ),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        code,
-        style: GoogleFonts.jetBrainsMono(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: selected ? color : AppTheme.creamSoft,
-        ),
-      ),
-    );
-  }
-}
