@@ -31,6 +31,11 @@ jobs:
 
       - run: flutter build web --release --base-href /figus/
 
+      # flutter build web --release does not compile web workers or include sqlite3.wasm
+      # drift requires both for its WasmDatabase (IndexedDB/OPFS backed SQLite on web)
+      - name: Compile drift web worker
+        run: dart compile js -O4 web/drift_worker.dart -o build/web/drift_worker.dart.js
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: build/web
