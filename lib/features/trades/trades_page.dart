@@ -145,7 +145,7 @@ class _SectionHeader extends StatelessWidget {
 class _ChipList extends StatelessWidget {
   final List<StickerView> items;
   final bool missing;
-  const _ChipList({required this.items});
+  const _ChipList({required this.items, this.missing = false});
 
   @override
   Widget build(BuildContext context) {

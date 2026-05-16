@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/country_codes.dart';
-import '../../core/theme/app_theme.dart';
+import '../../core/theme/figus_colors.dart';
 import '../../data/models/copa_models.dart';
 import '../../data/repos/matches_repo.dart';
 import '../../data/seeds/wc2026_matches_seed.dart';
@@ -79,7 +79,7 @@ class _TeamFlag extends StatelessWidget {
       return Container(
         width: size, height: size * 0.7,
         decoration: BoxDecoration(
-          color: AppTheme.slotSoft,
+          color: context.fc.cardAlt,
           borderRadius: BorderRadius.circular(3),
         ),
         alignment: Alignment.center,
@@ -121,7 +121,6 @@ String _ddmm(DateTime dt) =>
     '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}';
 
 const _weekdays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-const _months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 
 String _formatKickoff(DateTime utc) {
   final local = utc.toLocal();
@@ -140,12 +139,6 @@ String _formatKickoff(DateTime utc) {
 String _groupKey(DateTime local) {
   final wd = _weekdays[local.weekday - 1];
   return '$wd, ${_ddmm(local)}';
-}
-
-/// "11 jun" for featured match labels
-String _shortDate(DateTime utc) {
-  final local = utc.toLocal();
-  return '${local.day} ${_months[local.month - 1]}';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -212,19 +205,20 @@ class _FeaturedMatch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppTheme.ink, AppTheme.ink3, Color(0xFF2A1F10)],
+        gradient: LinearGradient(
+          colors: [c.card, c.cardAlt],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppTheme.gold.withValues(alpha: 0.35), width: 1.5),
+        border: Border.all(color: c.accent.withValues(alpha: 0.35), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.gold.withValues(alpha: 0.12),
+            color: c.accent.withValues(alpha: 0.12),
             blurRadius: 20,
             offset: const Offset(0, 6),
           ),
@@ -237,14 +231,14 @@ class _FeaturedMatch extends StatelessWidget {
             children: [
               Text(
                 match.displayRound,
-                style: const TextStyle(
-                    color: AppTheme.creamSoft, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8),
+                style: TextStyle(
+                    color: c.textMuted, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8),
               ),
               const Spacer(),
               if (isLive) _LiveBadge(minute: match.liveMinute)
               else Text(
                 _formatKickoff(match.kickoff),
-                style: const TextStyle(color: AppTheme.creamSoft, fontSize: 11, fontWeight: FontWeight.w600),
+                style: TextStyle(color: c.textMuted, fontSize: 11, fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -257,24 +251,24 @@ class _FeaturedMatch extends StatelessWidget {
                     _TeamFlag(code: match.home.code, size: 48),
                     const SizedBox(height: 6),
                     Text(match.home.code,
-                        style: const TextStyle(
-                          color: AppTheme.cream, fontWeight: FontWeight.w800, fontSize: 16)),
+                        style: TextStyle(
+                          color: c.text, fontWeight: FontWeight.w800, fontSize: 16)),
                   ],
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: AppTheme.gold.withValues(alpha: 0.15),
+                  color: c.accent.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppTheme.gold.withValues(alpha: 0.3)),
+                  border: Border.all(color: c.accent.withValues(alpha: 0.3)),
                 ),
                 child: Text(
                   isLive || match.status == MatchStatus.finished
                       ? '${match.homeScore ?? 0}  –  ${match.awayScore ?? 0}'
                       : 'x',
-                  style: const TextStyle(
-                      color: AppTheme.cream, fontSize: 22, fontWeight: FontWeight.w900),
+                  style: TextStyle(
+                      color: c.text, fontSize: 22, fontWeight: FontWeight.w900),
                 ),
               ),
               Expanded(
@@ -283,8 +277,8 @@ class _FeaturedMatch extends StatelessWidget {
                     _TeamFlag(code: match.away.code, size: 48),
                     const SizedBox(height: 6),
                     Text(match.away.code,
-                        style: const TextStyle(
-                          color: AppTheme.cream, fontWeight: FontWeight.w800, fontSize: 16)),
+                        style: TextStyle(
+                          color: c.text, fontWeight: FontWeight.w800, fontSize: 16)),
                   ],
                 ),
               ),
@@ -294,7 +288,7 @@ class _FeaturedMatch extends StatelessWidget {
           Center(
             child: Text(
               '${match.venue} · ${match.city}',
-              style: const TextStyle(color: AppTheme.creamSoft, fontSize: 11),
+              style: TextStyle(color: c.textMuted, fontSize: 11),
               textAlign: TextAlign.center,
             ),
           ),
@@ -311,20 +305,21 @@ class _GroupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     final teamCodes = WC2026Matches.groupTeams[letter]!;
     final teams = teamCodes
-        .map((c) => CopaTeam(code: c, name: WC2026Matches.all
-            .firstWhere((m) => m.home.code == c || m.away.code == c,
+        .map((cc) => CopaTeam(code: cc, name: WC2026Matches.all
+            .firstWhere((m) => m.home.code == cc || m.away.code == cc,
                 orElse: () => CopaMatch(
-                    id: '', kickoff: DateTime.now(), home: CopaTeam(code: c, name: c),
-                    away: CopaTeam(code: c, name: c), status: MatchStatus.scheduled,
+                    id: '', kickoff: DateTime.now(), home: CopaTeam(code: cc, name: cc),
+                    away: CopaTeam(code: cc, name: cc), status: MatchStatus.scheduled,
                     round: letter, venue: '', city: ''))
-            .home.code == c
+            .home.code == cc
             ? WC2026Matches.all
-                .firstWhere((m) => m.home.code == c && m.round == letter)
+                .firstWhere((m) => m.home.code == cc && m.round == letter)
                 .home.name
             : WC2026Matches.all
-                .firstWhere((m) => m.away.code == c && m.round == letter)
+                .firstWhere((m) => m.away.code == cc && m.round == letter)
                 .away.name))
         .toList();
     final groupMatches = matches.where((m) => m.round == letter).toList();
@@ -339,9 +334,9 @@ class _GroupCard extends StatelessWidget {
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: AppTheme.ink,
+          color: c.card,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.ink4),
+          border: Border.all(color: c.border),
         ),
         padding: const EdgeInsets.all(10),
         child: Column(
@@ -354,19 +349,20 @@ class _GroupCard extends StatelessWidget {
                   width: 24, height: 24,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: AppTheme.gold,
+                    color: c.accent,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(letter,
-                      style: const TextStyle(
-                        color: AppTheme.inkDeep, fontWeight: FontWeight.w800, fontSize: 12)),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontWeight: FontWeight.w800, fontSize: 12)),
                 ),
                 const SizedBox(width: 6),
                 Text('Grupo $letter',
-                    style: const TextStyle(
-                      fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.cream)),
+                    style: TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w700, color: c.text)),
                 const Spacer(),
-                const Icon(Icons.chevron_right_rounded, size: 16, color: AppTheme.creamSoft),
+                Icon(Icons.chevron_right_rounded, size: 16, color: c.textMuted),
               ],
             ),
               const SizedBox(height: 8),
@@ -392,13 +388,14 @@ class _MiniStandingRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         children: [
           Text('$rank', style: TextStyle(
             fontSize: 10, fontWeight: FontWeight.w600,
-            color: qualified ? AppTheme.gold : AppTheme.creamSoft,
+            color: qualified ? c.accent : c.textMuted,
           )),
           const SizedBox(width: 4),
           _TeamFlag(code: standing.team.code, size: 18),
@@ -413,7 +410,7 @@ class _MiniStandingRow extends StatelessWidget {
           Text('${standing.points}',
               style: TextStyle(
                 fontSize: 11, fontWeight: FontWeight.w800,
-                color: qualified ? Theme.of(context).colorScheme.primary : null,
+                color: qualified ? c.accent : null,
               )),
         ],
       ),
@@ -432,13 +429,14 @@ class GroupDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     final teamCodes = WC2026Matches.groupTeams[letter]!;
-    final teams = teamCodes.map((c) {
+    final teams = teamCodes.map((cc) {
       final m = matches.firstWhere(
-        (m) => m.home.code == c || m.away.code == c,
+        (m) => m.home.code == cc || m.away.code == cc,
         orElse: () => matches.first,
       );
-      return m.home.code == c ? m.home : m.away;
+      return m.home.code == cc ? m.home : m.away;
     }).toList();
     final standings = computeStandings(teams, matches);
     final played = matches.where((m) => m.status != MatchStatus.scheduled).toList();
@@ -456,7 +454,7 @@ class GroupDetailPage extends StatelessWidget {
                   fontSize: 11,
                   letterSpacing: 0.8,
                   fontWeight: FontWeight.w700,
-                  color: AppTheme.creamSoft.withValues(alpha: 0.8),
+                  color: c.textMuted.withValues(alpha: 0.8),
                 )),
           ),
           Row(
@@ -472,20 +470,20 @@ class GroupDetailPage extends StatelessWidget {
           // Full standings table
           Container(
             decoration: BoxDecoration(
-              color: AppTheme.ink,
+              color: c.card,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.ink4),
+              border: Border.all(color: c.border),
             ),
             padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                  const Text('A classificação',
+                  Text('A classificação',
                       style: TextStyle(
                         fontSize: 18,
                         fontStyle: FontStyle.italic,
                         fontWeight: FontWeight.w800,
-                        color: AppTheme.gold,
+                        color: c.accent,
                       )),
                   const SizedBox(height: 10),
                   _StandingHeader(),
@@ -503,7 +501,7 @@ class GroupDetailPage extends StatelessWidget {
 
           if (played.isNotEmpty) ...[
             Text('Jogos • ${played.length} de ${matches.length}',
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.creamSoft)),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: c.textMuted)),
             const SizedBox(height: 8),
             for (final m in matches) _MatchRow(match: m),
           ],
@@ -519,6 +517,7 @@ class _TeamTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
@@ -529,9 +528,9 @@ class _TeamTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
-          color: AppTheme.ink,
+          color: c.card,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppTheme.ink4),
+          border: Border.all(color: c.border),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -540,12 +539,12 @@ class _TeamTile extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               team.code,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppTheme.cream),
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: c.text),
             ),
             const SizedBox(height: 2),
             Text(
               team.name,
-              style: const TextStyle(fontSize: 9, color: AppTheme.creamSoft),
+              style: TextStyle(fontSize: 9, color: c.textMuted),
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -560,10 +559,10 @@ class _TeamTile extends StatelessWidget {
 class _StandingHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    const style = TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.creamSoft);
+    final style = TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: context.fc.textMuted);
     return Row(
-      children: const [
-        SizedBox(width: 16),
+      children: [
+        const SizedBox(width: 16),
         Expanded(child: Text('TIME', style: style)),
         SizedBox(width: 24, child: Center(child: Text('P', style: style))),
         SizedBox(width: 24, child: Center(child: Text('G', style: style))),
@@ -584,7 +583,8 @@ class _StandingRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = qualified ? AppTheme.cream : AppTheme.creamSoft;
+    final c = context.fc;
+    final textColor = qualified ? c.text : c.textMuted;
     final style = TextStyle(
       fontSize: 13,
       fontWeight: qualified ? FontWeight.w700 : FontWeight.w500,
@@ -599,7 +599,7 @@ class _StandingRow extends StatelessWidget {
             width: 16,
             child: Text('$rank',
                 style: style.copyWith(
-                  color: qualified ? AppTheme.gold : AppTheme.creamSoft,
+                  color: qualified ? c.accent : c.textMuted,
                   fontSize: 12,
                 )),
           ),
@@ -625,7 +625,7 @@ class _StandingRow extends StatelessWidget {
               child: Text(
                 sg >= 0 ? '+$sg' : '$sg',
                 style: style.copyWith(
-                  color: sg > 0 ? AppTheme.field : sg < 0 ? AppTheme.flame : AppTheme.creamSoft,
+                  color: sg > 0 ? const Color(0xFF2E8F4F) : sg < 0 ? const Color(0xFFE85A3C) : c.textMuted,
                 ),
               ),
             ),
@@ -636,7 +636,7 @@ class _StandingRow extends StatelessWidget {
               child: Text(
                 '${standing.points}',
                 style: style.copyWith(
-                  color: qualified ? AppTheme.gold : AppTheme.creamSoft,
+                  color: qualified ? c.accent : c.textMuted,
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -654,25 +654,26 @@ class _MatchRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     final isLive = match.status == MatchStatus.live;
     final isDone = match.status == MatchStatus.finished;
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       decoration: BoxDecoration(
-        color: AppTheme.ink,
+        color: c.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.ink4),
+        border: Border.all(color: c.border),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Row(
         children: [
           Text(_formatKickoff(match.kickoff),
-              style: const TextStyle(fontSize: 11, color: AppTheme.creamSoft, fontWeight: FontWeight.w500)),
+              style: TextStyle(fontSize: 11, color: c.textMuted, fontWeight: FontWeight.w500)),
           const Spacer(),
           _TeamFlag(code: match.home.code, size: 22),
           const SizedBox(width: 6),
           Text(match.home.code,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.cream)),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: c.text)),
           const SizedBox(width: 10),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -680,8 +681,8 @@ class _MatchRow extends StatelessWidget {
               color: isLive
                   ? Colors.red.withValues(alpha: 0.15)
                   : isDone
-                      ? AppTheme.gold.withValues(alpha: 0.12)
-                      : AppTheme.ink3,
+                      ? c.accent.withValues(alpha: 0.12)
+                      : c.cardAlt,
               borderRadius: BorderRadius.circular(6),
               border: isLive
                   ? Border.all(color: Colors.red.withValues(alpha: 0.4))
@@ -694,13 +695,13 @@ class _MatchRow extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
-                color: isLive ? Colors.red : isDone ? AppTheme.gold : AppTheme.creamSoft,
+                color: isLive ? Colors.red : isDone ? c.accent : c.textMuted,
               ),
             ),
           ),
           const SizedBox(width: 10),
           Text(match.away.code,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.cream)),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: c.text)),
           const SizedBox(width: 6),
           _TeamFlag(code: match.away.code, size: 22),
         ],
@@ -745,8 +746,9 @@ class _MatchesTabState extends State<_MatchesTab> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     final filtered = _filtered();
-    final primary = Theme.of(context).colorScheme.primary;
+    final primary = c.accent;
 
     // Build flat list: filter bar first, then headers + cards interleaved
     final items = <Widget>[];
@@ -773,7 +775,7 @@ class _MatchesTabState extends State<_MatchesTab> {
                       duration: const Duration(milliseconds: 150),
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
-                        color: _filter == entry.$1 ? primary : AppTheme.slotSoft,
+                        color: _filter == entry.$1 ? primary : c.cardAlt,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -781,7 +783,7 @@ class _MatchesTabState extends State<_MatchesTab> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: _filter == entry.$1 ? Colors.white : AppTheme.inkSoft,
+                          color: _filter == entry.$1 ? Colors.white : c.textMuted,
                         ),
                       ),
                     ),
@@ -795,24 +797,24 @@ class _MatchesTabState extends State<_MatchesTab> {
 
     if (filtered.isEmpty) {
       items.add(
-        const Padding(
-          padding: EdgeInsets.only(top: 64),
+        Padding(
+          padding: const EdgeInsets.only(top: 64),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.sports_soccer_rounded, size: 48, color: AppTheme.slot),
-              SizedBox(height: 12),
+              Icon(Icons.sports_soccer_rounded, size: 48, color: c.border),
+              const SizedBox(height: 12),
               Center(
                 child: Text(
                   'Nenhum jogo neste período',
-                  style: TextStyle(color: AppTheme.inkSoft, fontWeight: FontWeight.w600),
+                  style: TextStyle(color: c.textMuted, fontWeight: FontWeight.w600),
                 ),
               ),
-              SizedBox(height: 4),
+              const SizedBox(height: 4),
               Center(
                 child: Text(
                   'A Copa começa em 11 de junho de 2026',
-                  style: TextStyle(color: AppTheme.inkSoft, fontSize: 12),
+                  style: TextStyle(color: c.textMuted, fontSize: 12),
                 ),
               ),
             ],
@@ -856,6 +858,7 @@ class _FullMatchCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     final isLive = match.status == MatchStatus.live;
     final isDone = match.status == MatchStatus.finished;
     final timeStr = _hhmm(match.kickoff.toLocal());
@@ -863,9 +866,9 @@ class _FullMatchCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8, left: 12, right: 12),
       decoration: BoxDecoration(
-        color: AppTheme.ink,
+        color: c.card,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.ink4),
+        border: Border.all(color: c.border),
       ),
       padding: const EdgeInsets.all(12),
       child: Row(
@@ -879,11 +882,11 @@ class _FullMatchCard extends StatelessWidget {
                   _LiveBadge(minute: match.liveMinute)
                 else
                   Text(timeStr,
-                      style: const TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.cream)),
+                      style: TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w700, color: c.text)),
                 const SizedBox(height: 2),
                 Text(match.displayRound,
-                    style: const TextStyle(fontSize: 9, color: AppTheme.creamSoft),
+                    style: TextStyle(fontSize: 9, color: c.textMuted),
                     textAlign: TextAlign.center),
               ],
             ),
@@ -901,8 +904,8 @@ class _FullMatchCard extends StatelessWidget {
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: isDone && (match.homeScore ?? 0) > (match.awayScore ?? 0)
-                            ? AppTheme.gold
-                            : AppTheme.cream,
+                            ? c.accent
+                            : c.text,
                       ),
                       overflow: TextOverflow.ellipsis),
                 ),
@@ -919,13 +922,13 @@ class _FullMatchCard extends StatelessWidget {
               color: isLive
                   ? Colors.red.withValues(alpha: 0.15)
                   : isDone
-                      ? AppTheme.gold.withValues(alpha: 0.12)
-                      : AppTheme.ink3,
+                      ? c.accent.withValues(alpha: 0.12)
+                      : c.cardAlt,
               borderRadius: BorderRadius.circular(8),
               border: isLive
                   ? Border.all(color: Colors.red.withValues(alpha: 0.4))
                   : isDone
-                      ? Border.all(color: AppTheme.gold.withValues(alpha: 0.3))
+                      ? Border.all(color: c.accent.withValues(alpha: 0.3))
                       : null,
             ),
             child: Text(
@@ -935,7 +938,7 @@ class _FullMatchCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w900,
-                color: isLive ? Colors.red : isDone ? AppTheme.gold : AppTheme.creamSoft,
+                color: isLive ? Colors.red : isDone ? c.accent : c.textMuted,
               ),
             ),
           ),
@@ -951,8 +954,8 @@ class _FullMatchCard extends StatelessWidget {
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: isDone && (match.awayScore ?? 0) > (match.homeScore ?? 0)
-                            ? AppTheme.gold
-                            : AppTheme.cream,
+                            ? c.accent
+                            : c.text,
                       ),
                       overflow: TextOverflow.ellipsis),
                 ),
@@ -1039,11 +1042,12 @@ class _RoundSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-        Text(subtitle, style: const TextStyle(fontSize: 12, color: AppTheme.inkSoft)),
+        Text(subtitle, style: TextStyle(fontSize: 12, color: c.textMuted)),
         const SizedBox(height: 8),
         for (var i = 0; i < matches.length; i++) ...[
           if (i > 0) const SizedBox(height: 6),
@@ -1062,6 +1066,7 @@ class _BracketCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     final isPending = pending || match.home == 'A definir' || match.home.startsWith('1°') || match.home.startsWith('2°') || match.home.startsWith('3°');
     final scheme = Theme.of(context).colorScheme;
     return Card(
@@ -1073,14 +1078,14 @@ class _BracketCard extends StatelessWidget {
             SizedBox(
               width: 22,
               child: Text('$index',
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.inkSoft)),
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: c.textMuted)),
             ),
             Expanded(
               child: Text(match.home,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: isPending ? AppTheme.inkSoft : scheme.onSurface,
+                    color: isPending ? c.textMuted : scheme.onSurface,
                   ),
                   textAlign: TextAlign.end),
             ),
@@ -1088,7 +1093,7 @@ class _BracketCard extends StatelessWidget {
               margin: const EdgeInsets.symmetric(horizontal: 10),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: isPending ? AppTheme.slotSoft : scheme.primary.withValues(alpha: 0.1),
+                color: isPending ? c.cardAlt : scheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -1096,7 +1101,7 @@ class _BracketCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
-                  color: isPending ? AppTheme.inkSoft : scheme.primary,
+                  color: isPending ? c.textMuted : scheme.primary,
                 ),
               ),
             ),
@@ -1105,7 +1110,7 @@ class _BracketCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: isPending ? AppTheme.inkSoft : scheme.onSurface,
+                    color: isPending ? c.textMuted : scheme.onSurface,
                   )),
             ),
           ],
