@@ -174,10 +174,8 @@ class NationPanel extends StatelessWidget {
                             width: constraints.maxWidth * progress,
                             decoration: BoxDecoration(
                               color: complete
-                                  ? AppTheme.field
-                                  : (progress > 0.7
-                                      ? AppTheme.gold
-                                      : AppTheme.pulpSoft),
+                                  ? AppTheme.gold
+                                  : AppTheme.goldDeep,
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),

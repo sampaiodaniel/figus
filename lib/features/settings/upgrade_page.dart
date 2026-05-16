@@ -440,17 +440,21 @@ class _ComparisonTable extends StatelessWidget {
   const _ComparisonTable();
 
   static const _rows = <(String, bool, bool)>[
+    // ── Grátis para todos ────────────────────────────────────────────────────
     ('Marcar figurinhas (ilimitado)', true, true),
-    ('Scan OCR de páginas', true, true),
+    ('Scan OCR para marcar rápido', true, true),
     ('Estatísticas e progresso', true, true),
-    ('Copa do Mundo ao vivo', true, true),
+    ('Copa ao vivo · grupos e resultados', true, true),
     ('Comparar coleção com amigo', true, true),
-    ('Sem anúncios', false, true),
-    ('Temas exclusivos de cor', false, true),
-    ('Export da coleção em PDF', false, true),
-    ('Sync entre dispositivos', false, true),
+    ('Múltiplos perfis · ideal para família', true, true),
+    ('Importar do Figuritas App', true, true),
+    ('Forjar repetidas em faltantes · 1/dia', true, true),
+    // ── Exclusivo Pro ────────────────────────────────────────────────────────
+    ('Sem anúncios no app', false, true),
+    ('Temas de cor exclusivos · modo claro e escuro', false, true),
+    ('Forjar repetidas ilimitado', false, true),
+    ('Sync entre dispositivos · mesmo perfil em 2 celulares', false, true),
     ('Troca por Bluetooth (em breve)', false, true),
-    ('Badge de apoiador', false, true),
   ];
 
   @override
@@ -531,16 +535,16 @@ class _TableRow extends StatelessWidget {
                 child: Text(label,
                     style: TextStyle(
                       fontSize: 13,
-                      color: free ? AppTheme.creamSoft : AppTheme.cream,
-                      fontWeight: free ? FontWeight.w400 : FontWeight.w600,
+                      color: free ? AppTheme.cream : AppTheme.gold,
+                      fontWeight: FontWeight.w500,
                     )),
               ),
               SizedBox(
                 width: 56,
                 child: Center(
                   child: free
-                      ? Icon(Icons.check_rounded, size: 18,
-                          color: AppTheme.creamSoft.withValues(alpha: 0.5))
+                      ? const Icon(Icons.check_rounded, size: 18,
+                          color: AppTheme.creamSoft)
                       : Icon(Icons.remove_rounded, size: 18,
                           color: AppTheme.ink4),
                 ),
