@@ -77,7 +77,7 @@ class _AlbumPageState extends ConsumerState<AlbumPage> {
                         },
                       ),
                 filled: true,
-                fillColor: AppTheme.slotSoft.withValues(alpha: 0.6),
+                fillColor: context.fc.cardAlt.withValues(alpha: 0.6),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide.none,
@@ -219,18 +219,19 @@ class _HeroStatsCard extends ConsumerWidget {
     final missing = stats.missing;
     final pct = total > 0 ? (owned / total * 100).round() : 0;
 
+    final c = context.fc;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [AppTheme.ink3, AppTheme.ink],
+          gradient: LinearGradient(
+            colors: [c.card, c.cardAlt],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: context.fc.accent.withValues(alpha: 0.18)),
+          border: Border.all(color: c.accent.withValues(alpha: 0.18)),
         ),
         child: Row(
           children: [
@@ -244,8 +245,8 @@ class _HeroStatsCard extends ConsumerWidget {
                   child: CircularProgressIndicator(
                     value: pct / 100,
                     strokeWidth: 6,
-                    backgroundColor: AppTheme.ink4,
-                    valueColor: AlwaysStoppedAnimation<Color>(context.fc.accent),
+                    backgroundColor: c.border,
+                    valueColor: AlwaysStoppedAnimation<Color>(c.accent),
                   ),
                 ),
                 Text(
@@ -253,7 +254,7 @@ class _HeroStatsCard extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
-                    color: context.fc.accent,
+                    color: c.accent,
                   ),
                 ),
               ],
@@ -267,7 +268,7 @@ class _HeroStatsCard extends ConsumerWidget {
                     'COPA 2026',
                     style: GoogleFonts.jetBrainsMono(
                       fontSize: 10,
-                      color: context.fc.accent,
+                      color: c.accent,
                       letterSpacing: 0.12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -281,7 +282,7 @@ class _HeroStatsCard extends ConsumerWidget {
                           style: GoogleFonts.instrumentSerif(
                             fontSize: 28,
                             fontStyle: FontStyle.italic,
-                            color: AppTheme.cream,
+                            color: c.text,
                           ),
                         ),
                         TextSpan(
@@ -289,7 +290,7 @@ class _HeroStatsCard extends ConsumerWidget {
                           style: GoogleFonts.instrumentSerif(
                             fontSize: 28,
                             fontStyle: FontStyle.italic,
-                            color: AppTheme.creamSoft.withValues(alpha: 0.4),
+                            color: c.textMuted.withValues(alpha: 0.5),
                           ),
                         ),
                       ],
@@ -298,9 +299,9 @@ class _HeroStatsCard extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Text(
                     '$missing faltando',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
-                      color: AppTheme.creamSoft,
+                      color: c.textMuted,
                     ),
                   ),
                 ],
@@ -322,7 +323,8 @@ class _FilterChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
+    final c = context.fc;
+    final primary = c.accent;
     const items = <(AlbumFilter, String, IconData)>[
       (AlbumFilter.all, 'Todas', Icons.apps_rounded),
       (AlbumFilter.missing, 'Me faltam', Icons.radar_rounded),
@@ -341,14 +343,14 @@ class _FilterChips extends StatelessWidget {
                 onSelected: (_) => onChanged(f),
                 avatar: Icon(icon,
                     size: 16,
-                    color: current == f ? Colors.white : AppTheme.inkSoft),
+                    color: current == f ? Colors.white : c.textMuted),
                 label: Text(label),
                 labelStyle: TextStyle(
-                  color: current == f ? Colors.white : AppTheme.inkSoft,
+                  color: current == f ? Colors.white : c.textMuted,
                   fontWeight: FontWeight.w600,
                 ),
                 selectedColor: primary,
-                backgroundColor: AppTheme.slotSoft,
+                backgroundColor: c.cardAlt,
                 showCheckmark: false,
                 side: BorderSide.none,
               ),

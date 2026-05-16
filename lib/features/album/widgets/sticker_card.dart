@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/figus_colors.dart';
 import '../../../core/theme/sticker_gradients.dart';
 import '../../../domain/models/album_view_models.dart';
 
@@ -130,6 +131,7 @@ class _MissingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fc = context.fc;
     return LayoutBuilder(builder: (ctx, c) {
       final w = c.maxWidth;
       final h = c.maxHeight;
@@ -141,9 +143,9 @@ class _MissingCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         child: Container(
           decoration: BoxDecoration(
-            color: AppTheme.inkDeep,
+            color: fc.cardAlt,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.ink4, width: 1.5),
+            border: Border.all(color: fc.border, width: 1.5),
           ),
           child: Column(
             children: [
@@ -161,7 +163,7 @@ class _MissingCard extends StatelessWidget {
                           fontSize: labelFs,
                           letterSpacing: 0.5,
                           fontWeight: FontWeight.w600,
-                          color: AppTheme.ink4,
+                          color: fc.textMuted.withValues(alpha: 0.55),
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -170,7 +172,7 @@ class _MissingCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: numFs,
                           fontWeight: FontWeight.w900,
-                          color: AppTheme.ink4,
+                          color: fc.textMuted.withValues(alpha: 0.55),
                           height: 1.0,
                         ),
                       ),
@@ -178,11 +180,11 @@ class _MissingCard extends StatelessWidget {
                   ),
                 ),
               ),
-              // Footer — player name (dark, muted)
+              // Footer — player name (muted)
               SizedBox(
                 height: footerH,
                 child: Container(
-                  color: AppTheme.ink3,
+                  color: fc.card,
                   padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
                   alignment: Alignment.center,
                   child: Text(
@@ -193,7 +195,7 @@ class _MissingCard extends StatelessWidget {
                     style: GoogleFonts.jetBrainsMono(
                       fontSize: labelFs,
                       height: 1.15,
-                      color: AppTheme.inkSoft,
+                      color: fc.textMuted,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -348,6 +350,7 @@ class StickerBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fc = context.fc;
     final owned = sticker.status != StickerOwnership.missing;
     final isDupe = sticker.status == StickerOwnership.duplicate;
     final foil   = sticker.isFoil;
@@ -363,6 +366,7 @@ class StickerBanner extends StatelessWidget {
         : null;
 
     final numericPart = sticker.number.replaceAll(RegExp(r'^[A-Z]+'), '');
+    final mutedOnCard = fc.textMuted.withValues(alpha: 0.55);
 
     return GestureDetector(
       onTap: () {
@@ -379,12 +383,12 @@ class StickerBanner extends StatelessWidget {
           AnimatedContainer(
             duration: const Duration(milliseconds: 220),
             decoration: BoxDecoration(
-              color: owned ? null : AppTheme.inkDeep,
+              color: owned ? null : fc.cardAlt,
               gradient: gradient,
               borderRadius: BorderRadius.circular(14),
               border: owned
                   ? null
-                  : Border.all(color: AppTheme.ink4, width: 1.5),
+                  : Border.all(color: fc.border, width: 1.5),
               boxShadow: owned
                   ? [
                       BoxShadow(
@@ -399,7 +403,7 @@ class StickerBanner extends StatelessWidget {
             child: Row(
               children: [
                 Icon(icon, size: 38,
-                    color: owned ? Colors.white : AppTheme.ink4),
+                    color: owned ? Colors.white : mutedOnCard),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
@@ -413,14 +417,14 @@ class StickerBanner extends StatelessWidget {
                             fontWeight: FontWeight.w700,
                             color: owned
                                 ? Colors.white.withValues(alpha: 0.85)
-                                : AppTheme.ink4,
+                                : mutedOnCard,
                           )),
                       const SizedBox(height: 2),
                       Text('#$numericPart',
                           style: TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.w900,
-                            color: owned ? Colors.white : AppTheme.inkSoft,
+                            color: owned ? Colors.white : fc.textMuted,
                           )),
                     ],
                   ),
@@ -432,7 +436,7 @@ class StickerBanner extends StatelessWidget {
                       color: Colors.white.withValues(alpha: owned ? 0.25 : 0.0),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: owned ? Colors.white : AppTheme.ink4,
+                        color: owned ? Colors.white : fc.border,
                         width: 1,
                       ),
                     ),
@@ -440,7 +444,7 @@ class StickerBanner extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
-                          color: owned ? Colors.white : AppTheme.inkSoft,
+                          color: owned ? Colors.white : fc.textMuted,
                         )),
                   ),
               ],
@@ -455,7 +459,7 @@ class StickerBanner extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppTheme.pulp,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppTheme.inkDeep, width: 2),
+                  border: Border.all(color: fc.bg, width: 2),
                 ),
                 constraints: const BoxConstraints(minWidth: 26),
                 child: Text('×${sticker.duplicateCount}',

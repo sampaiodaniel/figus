@@ -35,6 +35,7 @@ class NationPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     final owned = section.ownedCount;
     final total = section.totalCount;
     final progress = total == 0 ? 0.0 : owned / total;
@@ -53,9 +54,9 @@ class NationPanel extends StatelessWidget {
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
-            color: AppTheme.ink,
+            color: c.card,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppTheme.ink4),
+            border: Border.all(color: c.border),
           ),
           child: Material(
             color: Colors.transparent,
@@ -93,7 +94,7 @@ class NationPanel extends StatelessWidget {
                                   style: GoogleFonts.inter(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w700,
-                                    color: AppTheme.cream,
+                                    color: c.text,
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -131,7 +132,7 @@ class NationPanel extends StatelessWidget {
                               style: GoogleFonts.jetBrainsMono(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
-                                color: AppTheme.cream,
+                                color: c.text,
                               ),
                             ),
                             if (dupes > 0)
@@ -151,7 +152,7 @@ class NationPanel extends StatelessWidget {
                           expanded
                               ? Icons.expand_less_rounded
                               : Icons.expand_more_rounded,
-                          color: AppTheme.creamSoft,
+                          color: c.textMuted,
                           size: 18,
                         ),
                       ],
@@ -160,32 +161,29 @@ class NationPanel extends StatelessWidget {
                     const SizedBox(height: 6),
 
                     // Progress bar
-                    Builder(builder: (ctx) {
-                      final ac = ctx.fc.accent;
-                      return LayoutBuilder(
-                        builder: (ctx2, constraints) => Container(
-                          height: 4,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: AppTheme.ink4,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: Container(
-                              height: 4,
-                              width: constraints.maxWidth * progress,
-                              decoration: BoxDecoration(
-                                color: complete
-                                    ? ac
-                                    : ac.withValues(alpha: 0.55),
-                                borderRadius: BorderRadius.circular(2),
-                              ),
+                    LayoutBuilder(
+                      builder: (ctx2, constraints) => Container(
+                        height: 4,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: c.border,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Container(
+                            height: 4,
+                            width: constraints.maxWidth * progress,
+                            decoration: BoxDecoration(
+                              color: complete
+                                  ? c.accent
+                                  : c.accent.withValues(alpha: 0.55),
+                              borderRadius: BorderRadius.circular(2),
                             ),
                           ),
                         ),
-                      );
-                    }),
+                      ),
+                    ),
                   ],
                 ),
               ),
