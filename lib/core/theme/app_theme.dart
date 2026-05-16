@@ -43,8 +43,6 @@ class AppTheme {
           surface: paper,
           onSurface: darkText,
           surfaceContainer: paper2,
-          primary: goldDeep,
-          onPrimary: Colors.white,
         );
     return _base(scheme, isDark: false);
   }
@@ -57,8 +55,6 @@ class AppTheme {
           onSurface: cream,
           surfaceContainer: ink,
           surfaceContainerHigh: ink3,
-          primary: gold,
-          onPrimary: inkDeep,
           secondary: pulp,
           onSecondary: Colors.white,
         );
