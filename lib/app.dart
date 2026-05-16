@@ -20,6 +20,7 @@ import 'features/settings/upgrade_page.dart';
 import 'features/stats/stats_page.dart';
 import 'features/trades/compare_friend_page.dart';
 import 'features/trades/trades_page.dart';
+import 'features/help/help_page.dart';
 import 'features/you/favorite_nations_page.dart';
 import 'features/you/player_names_import_page.dart';
 import 'features/you/you_page.dart';
@@ -74,7 +75,8 @@ class FigusApp extends ConsumerWidget {
         GoRoute(path: '/names-import', builder: (_, __) => const PlayerNamesImportPage()),
         GoRoute(path: '/compare', builder: (_, __) => const CompareFriendPage()),
         GoRoute(path: '/donate', builder: (_, __) => const _SimplePage(title: 'Apoiar o dev', body: 'Obrigado! Em breve.')),
-        GoRoute(path: '/how-to', builder: (_, __) => const _SimplePage(title: 'Como usar', body: 'Toque = marcar. Toque novamente = repetida. Toque longo = remover.')),
+        GoRoute(path: '/how-to', builder: (_, __) => const HelpPage()),
+        GoRoute(path: '/help', builder: (_, __) => const HelpPage()),
         GoRoute(path: '/settings', builder: (_, __) => const _SimplePage(title: 'Configurações', body: 'Em breve.')),
       ],
     );

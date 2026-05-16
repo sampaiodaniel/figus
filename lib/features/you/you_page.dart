@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:share_plus/share_plus.dart';
+
 import '../../core/theme/app_theme.dart';
 import '../../data/providers.dart';
 import '../pro/pro_service.dart';
@@ -250,7 +252,10 @@ class YouPage extends ConsumerWidget {
           ),
 
           // ── Figus Pro (destaque) ────────────────────────────────────────────
-          _ProCard(isPro: pro.isPro, onTap: () => context.push('/upgrade')),
+          _ProCard(
+            isPro: pro.isPro,
+            onTap: () => context.push(pro.isPro ? '/themes' : '/upgrade'),
+          ),
           const SizedBox(height: 16),
 
           // ── Menu group 1 ───────────────────────────────────────────────────
@@ -260,6 +265,12 @@ class YouPage extends ConsumerWidget {
                 icon: Icons.insights_rounded,
                 title: 'Estatísticas',
                 onTap: () => context.push('/progress'),
+              ),
+              _MenuRow(
+                icon: Icons.palette_outlined,
+                title: 'Temas de cor',
+                iconColor: AppTheme.gold,
+                onTap: () => context.push('/themes'),
               ),
               _MenuRow(
                 icon: Icons.star_outline_rounded,
@@ -274,8 +285,8 @@ class YouPage extends ConsumerWidget {
               ),
               _MenuRow(
                 icon: Icons.help_outline_rounded,
-                title: 'Como marcar e trocar',
-                onTap: () => context.push('/how-to'),
+                title: 'Como usar',
+                onTap: () => context.push('/help'),
               ),
             ],
           ),
@@ -287,15 +298,13 @@ class YouPage extends ConsumerWidget {
               _MenuRow(
                 icon: Icons.share_rounded,
                 title: 'Compartilhar Figus',
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Em breve!')),
-                  );
-                },
+                onTap: () => Share.share(
+                  'Baixe o Figus — o melhor app para controlar sua coleção de figurinhas da Copa 2026 ⚽🏆\n\nhttps://appfigus.com',
+                ),
               ),
               _MenuRow(
                 icon: Icons.favorite_border_rounded,
-                title: 'Doar ao dev',
+                title: 'Apoiar o dev',
                 iconColor: AppTheme.pulpSoft,
                 onTap: () => context.push('/donate'),
               ),
@@ -388,8 +397,8 @@ class _ProCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     isPro
-                        ? 'Obrigado pelo apoio! Sem anúncios · temas exclusivos'
-                        : 'Sem anúncios · temas exclusivos · exportar coleção',
+                        ? 'Ativo · Sem anúncios · 4 temas de cor exclusivos'
+                        : 'Sem anúncios · 4 temas de cor · sync entre devices',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.white.withValues(alpha: 0.85),
