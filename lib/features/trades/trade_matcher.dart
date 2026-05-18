@@ -78,15 +78,21 @@ class TradeMatcher {
     required TradeInventory me,
     required TradeInventory friend,
   }) {
-    // Stickers I can hand over (my dupes that the friend is missing).
+    // Stickers I can hand over (my dupes that the friend is missing). We
+    // cap to 1 per code because the friend only needs ONE copy — handing
+    // over 3 ESP20 to fill a single missing slot doesn't make sense
+    // (Daniel: "A pessoa vai trocar uma dela por uma repetida? Não
+    // existe isso"). Any extra dupes I have can go to OTHER friends in
+    // separate sessions.
     final iCanGive = <String, int>{
       for (final e in me.dupesByCode.entries)
-        if (friend.missingCodes.contains(e.key)) e.key: e.value,
+        if (friend.missingCodes.contains(e.key)) e.key: 1,
     };
-    // Stickers I want to receive (friend's dupes I'm missing).
+    // Stickers I want to receive (friend's dupes I'm missing). Same
+    // rule: I only need 1 of each missing sticker.
     final iCanGet = <String, int>{
       for (final e in friend.dupesByCode.entries)
-        if (me.missingCodes.contains(e.key)) e.key: e.value,
+        if (me.missingCodes.contains(e.key)) e.key: 1,
     };
 
     final giveFoil = <String, int>{};

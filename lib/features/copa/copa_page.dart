@@ -40,7 +40,7 @@ class _CopaPageState extends ConsumerState<CopaPage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: FigusAppBar(
-        title: 'Copa do Mundo 2026',
+        title: 'Copa',
         bottom: TabBar(
           controller: _tab,
           labelStyle: const TextStyle(fontWeight: FontWeight.w700),

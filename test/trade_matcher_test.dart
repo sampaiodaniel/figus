@@ -112,11 +112,11 @@ void main() {
     });
 
     test(
-        '2×1 still fires when stack has a single sticker with high duplicate count',
+        '2×1 does NOT use 2 copies of the same sticker (Daniel: amigo nao quer 2 do mesmo)',
         () {
-      // Daniel could plausibly have BRA5×3 dupes and want one foil.
-      // _expand should flatten this into [BRA5, BRA5, BRA5] so the
-      // 2×1 pair can consume two copies.
+      // Daniel has BRA5×3 dupes and wants one foil. Even though the
+      // flat expansion has 3 BRA5 copies, the friend only needs ONE —
+      // we cap iCanGive to 1 per code. So no 2×1 mixed using two BRA5s.
       final stickers = {
         'BRA5': _normal('BRA5', 'BRA'),
         'FWC2': _foil('FWC2'),
@@ -132,11 +132,41 @@ void main() {
         stickers: stickers,
       );
       final offers = TradeMatcher.match(me: me, friend: friend);
-      final mixed = offers.where((o) => o.kind == 'mixed').toList();
-      expect(mixed, isNotEmpty,
-          reason: 'Expected 2×1 mixed offer when same dupe stack covers it');
-      expect(mixed.first.youReceive, {'FWC2': 1});
-      expect(mixed.first.totalGive, 2);
+      // No mixed offer with two BRA5 — the only viable trade would be
+      // 1 BRA5 for "half" of FWC2 which doesn't exist. Empty is correct.
+      expect(offers.where((o) => o.kind == 'mixed'), isEmpty);
+    });
+
+    test('no offer ever gives or receives the same code more than once', () {
+      // Daniel: 'nao faz sentido dar ou receber mais de uma copia da
+      // mesma figurinha'. Cover every kind (same, mixed) end-to-end.
+      final stickers = {
+        for (final c in ['BRA1', 'BRA2', 'BRA3', 'BRA4', 'ARG1', 'FWC2'])
+          c: c == 'FWC2'
+              ? _foil(c)
+              : _normal(c, c.substring(0, 3)),
+      };
+      final me = _inv(
+        dupes: {'BRA1': 5, 'BRA2': 1, 'BRA3': 1, 'BRA4': 1},
+        missing: {'ARG1', 'FWC2'},
+        stickers: stickers,
+      );
+      final friend = _inv(
+        dupes: {'ARG1': 3, 'FWC2': 1},
+        missing: {'BRA1', 'BRA2', 'BRA3', 'BRA4'},
+        stickers: stickers,
+      );
+      final offers = TradeMatcher.match(me: me, friend: friend);
+      for (final o in offers) {
+        for (final entry in o.youGive.entries) {
+          expect(entry.value, 1,
+              reason: 'youGive count must be 1 (got ${o.youGive})');
+        }
+        for (final entry in o.youReceive.entries) {
+          expect(entry.value, 1,
+              reason: 'youReceive count must be 1 (got ${o.youReceive})');
+        }
+      }
     });
 
     test('foil-priority: matching foils preferred over normal pairings', () {
