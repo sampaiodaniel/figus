@@ -110,13 +110,22 @@ class TradeMatcher {
 
     final offers = <TradeOffer>[];
 
-    // Strict 1-for-1 same-type only. Daniel: "se as trocas são 1×1,
-    // cada figurinha tem que ter contrapartida". Mixed 2×1 (1 brilhante
-    // por 2 normais) foi removido — quebrava a paridade da lista
-    // exportada e confundia. Se quiserem trocas mistas no futuro,
-    // deixamos como modo explícito ("trocar 2 normais por 1 brilhante?").
+    // Pairing rules (cap-to-1 per code enforced above):
+    //   1×1 foil↔foil
+    //   1×1 normal↔normal
+    //   2×1 mixed (2 normais ↔ 1 foil) — only when same-type isn't
+    //   possible on that side. Daniel: "Pode ser 1x1 e pode ser foil
+    //   2x1. Se só tenho normal e amigo foil, ok ser 2x1".
     _pairSameType(giveFoil, getFoil, true, me, friend, offers);
     _pairSameType(giveNorm, getNorm, false, me, friend, offers);
+    // After same-type runs and trims its maps, anything left in giveFoil
+    // pairs with getNorm (1 foil mine for 2 normals of theirs), and
+    // anything left in giveNorm pairs with getFoil (2 normals mine for
+    // 1 foil of theirs).
+    _pairMixed(giveFoil, getNorm,
+        giveIsFoil: true, me: me, friend: friend, offers: offers);
+    _pairMixed(giveNorm, getFoil,
+        giveIsFoil: false, me: me, friend: friend, offers: offers);
 
     offers.sort((a, b) => b.score.compareTo(a.score));
     return offers;

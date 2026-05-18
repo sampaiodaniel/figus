@@ -223,12 +223,12 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
     await Share.share(json, subject: 'Meu inventário Figus');
   }
 
-  /// Exports the current suggestion list as a WhatsApp-friendly text — for
-  /// when the friend doesn't use Figus and won't import a JSON. We don't
-  /// know the friend's real name, so the message stays addressee-less.
-  /// The codes are aggregated into two lists ("Você usa" = the friend's
-  /// dupes I'd accept; "E eu troco por" = my dupes I'd give) so the
-  /// recipient reads it as a simple chat message.
+  /// Exports the current suggestion list as a WhatsApp-friendly text. Two
+  /// sections:
+  ///   1. "Você troca / Eu troco por" — straight 1×1 same-type trades,
+  ///      same length on both sides because each line pairs by position.
+  ///   2. "Trocas 2 por 1" — mixed offers, shown one per line because
+  ///      the give/receive sides have different lengths.
   Future<void> _shareSuggestedTrades() async {
     final offers = _offers;
     if (offers == null || offers.isEmpty) return;
@@ -245,50 +245,53 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
       return;
     }
 
-    // Aggregate counts across all actionable offers. "youUse" = what the
-    // friend would hand over (= my youReceive). "iSwap" = my dupes I'd
-    // give (= my youGive). Same sticker appearing in multiple offers gets
-    // its counts summed.
-    final youUse = <String, int>{};
-    final iSwap = <String, int>{};
+    final sameOffers = <TradeOffer>[];
+    final mixedOffers = <TradeOffer>[];
     for (final i in actionable) {
       final o = offers[i];
-      o.youReceive.forEach((c, n) => youUse[c] = (youUse[c] ?? 0) + n);
-      o.youGive.forEach((c, n) => iSwap[c] = (iSwap[c] ?? 0) + n);
+      (o.kind == 'mixed' ? mixedOffers : sameOffers).add(o);
     }
 
     final lines = <String>[
       '🤝 Trocas sugeridas — Figus',
       '',
       'Comparei nossas figurinhas e as possíveis trocas são:',
-      '',
-      'Você troca:',
-      ..._formatCodeLines(youUse),
-      '',
-      'Eu troco por:',
-      ..._formatCodeLines(iSwap),
-      '',
-      'O que acha?',
-      '',
-      // Without the https:// prefix WhatsApp doesn't treat this as a
-      // shared link and end up keeping ONLY the URL (which is what was
-      // happening before — Daniel reported "está mandando apenas o
-      // link"). The user can still tap-and-paste appfigus.com manually.
-      'Baixe o Figus em appfigus.com',
     ];
 
-    await Share.share(lines.join('\n'));
-  }
+    if (sameOffers.isNotEmpty) {
+      // Each line on left corresponds 1×1 to the line on right at the
+      // same position — keep the order from the matcher.
+      final youTrocas = sameOffers.map((o) => o.youReceive.keys.first).toList();
+      final euTrocoPor = sameOffers.map((o) => o.youGive.keys.first).toList();
+      lines
+        ..add('')
+        ..add('Você troca:')
+        ..addAll(youTrocas)
+        ..add('')
+        ..add('Eu troco por:')
+        ..addAll(euTrocoPor);
+    }
 
-  /// One code per line for the WhatsApp message — easier to read on a phone
-  /// than a comma-joined wrap. Alphabetical so it's predictable.
-  List<String> _formatCodeLines(Map<String, int> m) {
-    if (m.isEmpty) return const ['—'];
-    final entries = m.entries.toList()
-      ..sort((a, b) => a.key.compareTo(b.key));
-    return entries
-        .map((e) => e.value > 1 ? '${e.key} ×${e.value}' : e.key)
-        .toList();
+    if (mixedOffers.isNotEmpty) {
+      lines
+        ..add('')
+        ..add('Trocas brilhante × 2 normais:');
+      for (final o in mixedOffers) {
+        final give = o.youGive.keys.join(' + ');
+        final receive = o.youReceive.keys.join(' + ');
+        lines.add('• Você troca $receive  →  eu troco $give');
+      }
+    }
+
+    lines
+      ..add('')
+      ..add('O que acha?')
+      ..add('')
+      // Without the https:// prefix WhatsApp doesn't grab the whole text
+      // as a "shared link" and end up keeping only the URL.
+      ..add('Baixe o Figus em appfigus.com');
+
+    await Share.share(lines.join('\n'));
   }
 
   Future<void> _pasteInventory() async {
@@ -588,7 +591,9 @@ class _OfferCard extends StatelessWidget {
                           ? const Color(0xFF22C58A)
                           : invalidated
                               ? c.textMuted
-                              : c.accent,
+                              : (offer.kind == 'mixed'
+                                  ? Colors.orange
+                                  : c.accent),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -596,7 +601,9 @@ class _OfferCard extends StatelessWidget {
                           ? '✓ Trocada'
                           : invalidated
                               ? '✕ Já usado em outra troca'
-                              : 'Troca 1×1',
+                              : (offer.kind == 'mixed'
+                                  ? 'Brilhante × 2 normais'
+                                  : 'Troca 1×1'),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 11,
