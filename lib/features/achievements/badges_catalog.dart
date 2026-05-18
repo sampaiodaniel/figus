@@ -106,7 +106,7 @@ const kAchievements = <AchievementDef>[
   AchievementDef(
     id: 'half_album',
     label: 'Meio caminho',
-    description: 'Metade do álbum completa',
+    description: 'Metade do álbum coberta',
     emoji: '🌗',
     color: Color(0xFF6B3FA0),
     category: AchievementCategory.collection,
@@ -114,7 +114,7 @@ const kAchievements = <AchievementDef>[
   AchievementDef(
     id: 'complete_album',
     label: 'Álbum cheio!',
-    description: 'Todas as 980 figurinhas',
+    description: 'Álbum inteiro completo',
     emoji: '🎉',
     color: Color(0xFFFF2D87),
     category: AchievementCategory.collection,
@@ -140,7 +140,7 @@ const kAchievements = <AchievementDef>[
   AchievementDef(
     id: 'complete_all_nations',
     label: 'Hexa mundial',
-    description: 'As 48 seleções completas',
+    description: 'Todas as seleções completas',
     emoji: '🌍',
     color: Color(0xFF1F66FF),
     category: AchievementCategory.nations,
@@ -166,7 +166,7 @@ const kAchievements = <AchievementDef>[
   AchievementDef(
     id: 'all_foils',
     label: 'Todas brilhando',
-    description: 'As 49 brilhantes completas',
+    description: 'Todas as brilhantes completas',
     emoji: '🌠',
     color: Color(0xFFFF7B3D),
     category: AchievementCategory.foils,

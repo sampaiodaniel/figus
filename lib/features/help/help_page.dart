@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/figus_colors.dart';
+import '../../core/widgets/figus_app_bar.dart';
 
 class HelpPage extends StatelessWidget {
   const HelpPage({super.key});
@@ -12,25 +13,12 @@ class HelpPage extends StatelessWidget {
     final c = context.fc;
     return Scaffold(
       backgroundColor: c.bg,
-      appBar: AppBar(
-        title: Text(
-          'Como usar',
-          style: GoogleFonts.inter(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: c.text,
-          ),
-        ),
-        backgroundColor: c.cardAlt,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-      ),
+      appBar: const FigusAppBar(title: 'Como usar'),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: const [
           _Section(
             icon: Icons.grid_view_rounded,
-            
             title: 'Coleção',
             items: [
               _Item(
@@ -55,7 +43,7 @@ class HelpPage extends StatelessWidget {
                 emoji: '🔍',
                 title: 'Filtros',
                 body:
-                    'Use as abas "Todas / Me faltam / Repetidas" no topo da coleção para focar no que precisa.',
+                    'No topo, alterne entre "Todas" e "Me faltam". As repetidas estão no menu próprio embaixo.',
               ),
               _Item(
                 emoji: '🔎',
@@ -67,7 +55,13 @@ class HelpPage extends StatelessWidget {
                 emoji: '🚩',
                 title: 'Agrupado por seleção',
                 body:
-                    'A coleção fica organizada por seleção com bandeira, código, nome e contador X/20. Toque o cabeçalho para expandir ou recolher.',
+                    'A coleção fica organizada por seleção com bandeira, código, nome e contador. Toque o cabeçalho para expandir ou recolher.',
+              ),
+              _Item(
+                emoji: '↗',
+                title: 'Compartilhar progresso',
+                body:
+                    'Botão de compartilhar no topo abre 3 opções: card visual 1080×1080, lista de faltando ou lista de repetidas.',
               ),
             ],
           ),
@@ -93,193 +87,196 @@ class HelpPage extends StatelessWidget {
                 emoji: '📤',
                 title: 'Compartilhar lista',
                 body:
-                    'Toque o ícone de compartilhar no topo — gera uma lista formatada por seleção para mandar no WhatsApp.',
+                    'Ícone de compartilhar no topo gera uma lista formatada por seleção pra mandar no WhatsApp.',
               ),
             ],
           ),
           SizedBox(height: 12),
           _Section(
             icon: Icons.swap_horiz_rounded,
-            
             title: 'Trocas',
             items: [
               _Item(
-                emoji: '↗️',
-                title: 'Compartilhar seu inventário',
+                emoji: '📷',
+                title: 'Trocar por QR Code',
                 body:
-                    'Na tela Trocas → "Comparar com amigo", toque o ícone ↗ no topo para exportar seu inventário em JSON e mandar para um amigo.',
+                    'Mostre seu QR ou escaneie o do amigo. As sugestões aparecem na hora — não precisa de internet pra escanear.',
               ),
               _Item(
                 emoji: '📋',
                 title: 'Comparar com amigo',
                 body:
-                    'Peça pro amigo compartilhar o inventário dele, cole no campo e toque "Comparar". O app sugere as trocas automaticamente.',
+                    'Compartilhe seu inventário ou cole o de outro colecionador. O app calcula as trocas sugeridas.',
+              ),
+              _Item(
+                emoji: '🤝',
+                title: 'One-tap "Marcamos!"',
+                body:
+                    'Cada sugestão tem botão verde "Marcamos!" — confirma e atualiza sua coleção: remove o que entregou das repetidas, adiciona o que recebeu.',
               ),
               _Item(
                 emoji: '⭐',
                 title: 'Regras de sugestão',
                 body:
-                    'Prioridade para trocas 1×1 do mesmo tipo. Brilhante vale 2 normais. As melhores trocas aparecem primeiro por pontuação.',
+                    'Prioridade pra trocas 1×1 do mesmo tipo. Brilhante vale 2 normais. As melhores aparecem primeiro por pontuação.',
               ),
               _Item(
-                emoji: '🃏',
-                title: 'Pra trocar / Caçando',
+                emoji: '↗',
+                title: 'Exportar repetidas',
                 body:
-                    'A tela também mostra o que você tem pra ofertar (repetidas) e o que ainda está caçando (faltando), agrupados por seleção.',
-              ),
-            ],
-          ),
-          SizedBox(height: 12),
-          _Section(
-            icon: Icons.upload_rounded,
-            
-            title: 'Importar coleção',
-            items: [
-              _Item(
-                emoji: '📲',
-                title: 'Vindo do Figuritas App',
-                body:
-                    'No Figuritas, vá em Compartilhar → Texto. Copie tudo. No Figus, vá em Você → Importar coleção → Colar lista, cole o texto e toque "Detectar". O app detecta o formato automaticamente.',
+                    'Manda sua lista formatada pelo WhatsApp ou copia pra colar em grupos.',
               ),
               _Item(
-                emoji: '✅',
-                title: 'Confirmação antes de salvar',
+                emoji: '🔗',
+                title: 'Bluetooth (em breve)',
                 body:
-                    'Sempre aparece um resumo com Tenho / Repetidas / Faltam antes de importar. Nada é salvo sem você confirmar.',
-              ),
-              _Item(
-                emoji: '📝',
-                title: 'Lista de códigos',
-                body:
-                    'Também aceita listas avulsas tipo "BRA1, MEX5, FWC9" separadas por vírgula ou linha.',
+                    'Encontre amigos por perto e troque sem internet — chega no próximo update.',
               ),
             ],
           ),
           SizedBox(height: 12),
           _Section(
             icon: Icons.emoji_events_rounded,
-            
             title: 'Copa ao vivo',
             items: [
               _Item(
                 emoji: '📅',
                 title: 'Jogos por dia',
                 body:
-                    'Veja os jogos de hoje, ontem e amanhã com horário e resultado atualizado durante a Copa.',
+                    'Veja os jogos com filtros Hoje / Amanhã / Esta semana / Todos.',
               ),
               _Item(
                 emoji: '🏆',
-                title: 'Grupos e fase eliminatória',
+                title: 'Grupos e Chaveamento',
                 body:
-                    'Tabela de grupos com pontuação, placares e classificação em tempo real.',
+                    'Abas Grupos (com tabela de pontuação) e Chaveamento (fase eliminatória) atualizam durante a Copa.',
               ),
             ],
           ),
           SizedBox(height: 12),
           _Section(
-            icon: Icons.share_rounded,
-            
-            title: 'Compartilhar progresso',
+            icon: Icons.settings_rounded,
+            title: 'Ajustes',
             items: [
               _Item(
-                emoji: '🖼️',
-                title: 'Card visual',
+                emoji: '☁',
+                title: 'Sincronizar entre dispositivos',
                 body:
-                    'Na aba Coleção, toque o ícone de compartilhar → "Meu progresso". Gera um card 1080×1080 com porcentagem, estatísticas e sua logo.',
+                    'O status de sync fica no card de Progresso (em cima). Toque pra entrar/sair — quando logado, sua coleção, tema, avatar e nome ficam sincronizados em todos os seus celulares.',
               ),
               _Item(
-                emoji: '📋',
-                title: 'Lista de faltando',
+                emoji: '👤',
+                title: 'Editar perfil',
                 body:
-                    'A mesma tela permite compartilhar só a lista das que faltam — útil para pedir em grupos de WhatsApp.',
+                    'Tap no seu cartão de perfil no topo — abre edição de nome e avatar. Outros perfis (família) ficam embaixo pra você alternar.',
               ),
               _Item(
-                emoji: '♻️',
-                title: 'Lista de repetidas',
+                emoji: '📊',
+                title: 'Estatísticas',
                 body:
-                    'Compartilha a lista completa de repetidas por seleção, perfeita para ofertar em grupos de troca.',
+                    'Painel completo com progresso, ritmo semanal, melhor dia da semana e tempo médio entre figurinhas.',
               ),
-            ],
-          ),
-          SizedBox(height: 12),
-          _Section(
-            icon: Icons.palette_outlined,
-            
-            title: 'Temas de cor  ★ Pro',
-            items: [
+              _Item(
+                emoji: '🏅',
+                title: 'Conquistas',
+                body:
+                    '20 troféus em 5 categorias (sequência, coleção, seleções, brilhantes, extras). Vão acendendo conforme você joga.',
+              ),
               _Item(
                 emoji: '🎨',
-                title: '5 temas disponíveis',
+                title: 'Temas de cor',
                 body:
-                    'Azul (padrão, grátis), Dourado, Vermelho, Esmeralda e Roxo. Os 4 coloridos são exclusivos Pro.',
+                    '2 grátis + 13 Pro. Tap num tema Pro mostra prévia de 10s antes de decidir assinar.',
               ),
               _Item(
-                emoji: '👁️',
-                title: 'Prévia de 10 segundos',
+                emoji: '⭐',
+                title: 'Seleções favoritas',
                 body:
-                    'Usuários free podem ver como fica o tema por 10 segundos antes de decidir assinar.',
+                    'Marque suas seleções favoritas pra elas aparecerem primeiro nas sugestões de troca.',
               ),
               _Item(
-                emoji: '📍',
-                title: 'Onde acessar',
+                emoji: '📲',
+                title: 'Importar coleção',
                 body:
-                    'Você → Temas de cor. A mudança é instantânea e afeta todo o app.',
+                    'Aceita texto colado do Figuritas/Cromo26 ou listas avulsas tipo "BRA1, MEX5". Sempre mostra resumo antes de salvar.',
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          _Section(
+            icon: Icons.local_fire_department_rounded,
+            iconColor: AppTheme.pulpSoft,
+            title: 'Sequência (streak)',
+            items: [
+              _Item(
+                emoji: '🌱',
+                title: 'Conte os dias',
+                body:
+                    'Toda vez que você abre o app num dia novo, a sequência cresce. Marcos em 3, 7, 14, 30 e 60 dias.',
+              ),
+              _Item(
+                emoji: '🛡',
+                title: 'Escudos',
+                body:
+                    '3 escudos automáticos por mês. Se você pula um dia, um escudo é gasto e a sequência continua.',
               ),
             ],
           ),
           SizedBox(height: 12),
           _Section(
             icon: Icons.people_rounded,
-            
             title: 'Perfis múltiplos',
             items: [
               _Item(
                 emoji: '👨‍👧',
                 title: 'Um app, vários colecionadores',
                 body:
-                    'Crie perfis separados para pai, filho, irmão — cada um com sua própria coleção independente.',
-              ),
-              _Item(
-                emoji: '✏️',
-                title: 'Criar e renomear',
-                body:
-                    'Você → toque no seu avatar → Perfis. Toque o lápis para renomear ou "Novo perfil" para adicionar.',
+                    'Perfis separados — pai, filho, irmã — cada um com sua coleção. O 1º perfil é grátis, perfis extras são Pro.',
               ),
               _Item(
                 emoji: '🔄',
                 title: 'Trocar de perfil',
                 body:
-                    'Na mesma tela, toque "Ativar" no perfil que quiser usar. Todos os dados da coleção mudam instantaneamente.',
+                    'Em Ajustes → tap no perfil ativo, depois "Ativar" em outro perfil. Tudo muda instantaneamente.',
               ),
             ],
           ),
           SizedBox(height: 12),
           _Section(
             icon: Icons.workspace_premium_rounded,
-            
             title: 'Figus Pro',
             items: [
               _Item(
                 emoji: '🚫',
                 title: 'Sem anúncios',
-                body: 'Remove o banner de anúncio que aparece no topo do app.',
+                body: 'Remove o banner de anúncio do app.',
               ),
               _Item(
                 emoji: '🎨',
-                title: 'Temas exclusivos',
-                body: '4 temas de cor extras: Dourado, Vermelho, Esmeralda e Roxo.',
+                title: 'Temas premium',
+                body: '13 temas exclusivos: clássicos escuros, claros quentes e claros frios.',
               ),
               _Item(
-                emoji: '📡',
-                title: 'Sync multi-device (em breve)',
+                emoji: '🎭',
+                title: 'Avatares premium',
+                body: '20 avatares exclusivos (clássicos diversos, estilos, festivos) além dos 5 grátis.',
+              ),
+              _Item(
+                emoji: '📈',
+                title: 'Estatísticas avançadas',
                 body:
-                    'Acesse a mesma coleção em vários celulares — pai e mãe controlam juntos.',
+                    'Histórico semanal e identificação do seu melhor dia da semana.',
+              ),
+              _Item(
+                emoji: '👨‍👩‍👧',
+                title: 'Perfis extras',
+                body: 'Mais de 1 perfil de coleção no mesmo dispositivo.',
               ),
               _Item(
                 emoji: '❤️',
                 title: 'Apoia o dev',
                 body:
-                    'O Figus é feito por um desenvolvedor independente. O Pro mantém o app gratuito pra todos.',
+                    'Figus é feito por um dev independente. O Pro mantém o app gratuito pra todo mundo.',
               ),
             ],
           ),

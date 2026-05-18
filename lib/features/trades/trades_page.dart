@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../core/country_codes.dart';
 import '../../core/theme/figus_colors.dart';
+import '../../core/widgets/figus_app_bar.dart';
 import '../../data/providers.dart';
 import '../../data/repos/album_repo.dart';
 import '../../domain/models/album_view_models.dart';
@@ -47,7 +48,7 @@ class TradesPage extends ConsumerWidget {
     final c = context.fc;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Trocas')),
+      appBar: const FigusAppBar(title: 'Trocas'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

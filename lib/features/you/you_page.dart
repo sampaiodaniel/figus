@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/debug/mobile_preview.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/figus_colors.dart';
+import '../../core/widgets/figus_app_bar.dart';
 import '../../data/providers.dart';
 import '../../data/repos/sync_repo.dart';
 import '../../data/sync_conflict.dart';
@@ -264,33 +265,7 @@ class YouPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: c.bg,
-      appBar: AppBar(
-        titleSpacing: 12,
-        title: Row(
-          children: [
-            Image.asset(
-              'assets/figus-logo-square.png',
-              width: 32,
-              height: 32,
-              filterQuality: FilterQuality.medium,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Configurações',
-                style: GoogleFonts.inter(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: c.text,
-                ),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: c.cardAlt,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-      ),
+      appBar: const FigusAppBar(title: 'Ajustes'),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         children: [

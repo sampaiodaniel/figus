@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/country_codes.dart';
 import '../../core/theme/figus_colors.dart';
+import '../../core/widgets/figus_app_bar.dart';
 import '../../data/models/copa_models.dart';
 import '../../data/repos/matches_repo.dart';
 import '../../data/seeds/wc2026_matches_seed.dart';
@@ -38,8 +39,8 @@ class _CopaPageState extends ConsumerState<CopaPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Copa do Mundo 2026'),
+      appBar: FigusAppBar(
+        title: 'Copa do Mundo 2026',
         bottom: TabBar(
           controller: _tab,
           labelStyle: const TextStyle(fontWeight: FontWeight.w700),

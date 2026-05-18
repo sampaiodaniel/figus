@@ -8,6 +8,7 @@ import '../pro/pro_service.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/figus_colors.dart';
+import '../../core/widgets/figus_app_bar.dart';
 import '../../data/providers.dart';
 import '../../data/repos/album_repo.dart';
 import '../../domain/models/album_view_models.dart';
@@ -41,26 +42,15 @@ class _AlbumPageState extends ConsumerState<AlbumPage> {
     final filter = ref.watch(albumFilterProvider);
 
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(36),
-        child: AppBar(
-          toolbarHeight: 36,
-          titleSpacing: 16,
-          title: const Text(
-            'Coleção',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+      appBar: FigusAppBar(
+        title: 'Coleção',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.ios_share_rounded),
+            tooltip: 'Compartilhar',
+            onPressed: _showShareSheet,
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.ios_share_rounded, size: 20),
-              padding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact,
-              tooltip: 'Compartilhar',
-              onPressed: _showShareSheet,
-            ),
-            const SizedBox(width: 8),
-          ],
-        ),
+        ],
       ),
       body: Column(
         children: [
@@ -344,9 +334,12 @@ class _FilterChips extends StatelessWidget {
     final c = context.fc;
     final primary = c.accent;
     const items = <(AlbumFilter, String)>[
+      // "Repetidas" lives in its own bottom-nav tab with a dedicated UI —
+      // duplicating the filter here would make us maintain two identical
+      // screens, and the visuals were drifting apart. Coleção now only
+      // toggles between full and missing.
       (AlbumFilter.all, 'Todas'),
       (AlbumFilter.missing, 'Me faltam'),
-      (AlbumFilter.duplicates, 'Repetidas'),
     ];
     // Row of equal-width chips — each takes 1/3 of the width so labels
     // never truncate, and the bar uses minimal vertical space.

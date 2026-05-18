@@ -42,8 +42,19 @@ class _ThemePickerPageState extends ConsumerState<ThemePickerPage> {
       _previewSecsLeft = 10;
     });
 
-    // Temporarily apply so the app shows the color
-    ref.read(previewThemeSeedProvider.notifier).state = seed;
+    // Temporarily apply so the app shows the color. Wrap in try/catch so a
+    // bad theme color (e.g. a paint shader that fails on this device) can't
+    // tank the whole app — we'd rather log it and back out of the preview.
+    try {
+      ref.read(previewThemeSeedProvider.notifier).state = seed;
+    } catch (e, st) {
+      debugPrint('[ThemePicker] preview start failed for ${seed.name}: $e\n$st');
+      setState(() {
+        _previewing = null;
+        _previewSecsLeft = 0;
+      });
+      return;
+    }
 
     _previewTimer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (!mounted) {

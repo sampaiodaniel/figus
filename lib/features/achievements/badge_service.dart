@@ -58,12 +58,17 @@ class BadgeService {
     if (ownedCount >= 1) await award('first_sticker');
     if (ownedCount >= 10) await award('ten_stickers');
     if (ownedCount >= 100) await award('hundred_stickers');
-    if (ownedCount >= 490) await award('half_album');
 
+    // Pull the live sticker count so the "half album" / "full album"
+    // thresholds stay correct no matter how many stickers the seed
+    // currently has (CC and LGD migrations changed it from 980 to 1058+).
     final totalCol = db.stickers.id.count();
     final totalResult = await (db.selectOnly(db.stickers)..addColumns([totalCol]))
         .getSingle();
     final totalCount = totalResult.read(totalCol) ?? 0;
+    if (totalCount > 0 && ownedCount >= totalCount ~/ 2) {
+      await award('half_album');
+    }
     if (totalCount > 0 && ownedCount >= totalCount) {
       await award('complete_album');
     }

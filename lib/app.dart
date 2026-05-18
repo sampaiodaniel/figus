@@ -120,6 +120,15 @@ class FigusApp extends ConsumerWidget {
     // Preload interstitial on app start
     InterstitialHelper.preload();
 
+    // Global error handler so a single bad widget doesn't tank the
+    // process — Flutter's default presents a red error screen in debug
+    // and prints to logs in release. Without this hook a crash inside a
+    // build can corrupt mid-write SQLite state on the next launch.
+    FlutterError.onError = (details) {
+      FlutterError.presentError(details);
+      debugPrint('[FigusApp] uncaught: ${details.exception}');
+    };
+
     return MaterialApp.router(
       title: 'Figus',
       debugShowCheckedModeBanner: false,
