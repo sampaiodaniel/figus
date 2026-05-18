@@ -70,7 +70,17 @@ class AlbumRepo {
 
     bool matchesSearch(StickerView v) {
       if (search == null || search.trim().isEmpty) return true;
-      final q = search.trim().toLowerCase();
+      final qTrim = search.trim();
+      // Special case: 3-letter codes (uppercase like BRA, FWC, LGD) almost
+      // always mean "show me everything from this section." Match strictly
+      // by sticker-number prefix so typing "SEN" doesn't pull stickers from
+      // any nation that happens to have a player with "sen" in the name.
+      final isCode = qTrim.length == 3 &&
+          RegExp(r'^[A-Za-z]{3}$').hasMatch(qTrim);
+      if (isCode) {
+        return v.number.toUpperCase().startsWith(qTrim.toUpperCase());
+      }
+      final q = qTrim.toLowerCase();
       return v.number.toLowerCase().contains(q) ||
           v.label.toLowerCase().contains(q) ||
           (v.playerName?.toLowerCase().contains(q) ?? false);

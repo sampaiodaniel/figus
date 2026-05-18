@@ -358,7 +358,9 @@ class WC2026Seed {
         number: 'FWC${i + 1}',
         nationCode: null,
         type: 'intro',
-        isFoil: false,
+        // Intro stickers (FWC1-FWC8) — emblema, mascotes, bola, slogan,
+        // cidades — todos são foil/brilhantes no álbum oficial.
+        isFoil: true,
         pageNumber: 0,
         positionInPage: i + 1,
         label: intro[i],

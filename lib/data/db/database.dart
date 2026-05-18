@@ -12,7 +12,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -154,6 +154,17 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(profiles, profiles.avatarEmoji);
             await m.createTable(streaks);
             await m.createTable(badges);
+          }
+          if (from < 10) {
+            // Intro stickers FWC1-FWC8 (emblema FIFA, mascotes, slogan,
+            // bola, cidades-sede) são foil/brilhantes no álbum oficial —
+            // o seed inicial marcava isFoil=false; corrige pra users já
+            // existentes. FWC9-FWC19 já era foil (legends).
+            await customUpdate(
+              "UPDATE stickers SET is_foil = 1 WHERE number IN "
+              "('FWC1','FWC2','FWC3','FWC4','FWC5','FWC6','FWC7','FWC8')",
+              updates: {stickers},
+            );
           }
         },
       );

@@ -104,8 +104,12 @@ class _ThemePickerPageState extends ConsumerState<ThemePickerPage> {
       if (mounted) Navigator.pop(context);
       return;
     }
-    // Pro-only: offer 10s preview then paywall
-    _startPreview(seed);
+    // Pro-only for a free user: hard block. The 10s preview shipped earlier
+    // had a habit of leaking ("free user used Café and it stuck"), and
+    // Daniel asked for the same behavior as locked avatars — tap = paywall,
+    // no visual confusion. Pro themes still RENDER inside the tile via
+    // ThemePreview so the user knows what they're paying for.
+    showPaywall(context, trigger: PaywallContext.theme);
   }
 
   @override

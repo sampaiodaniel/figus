@@ -517,20 +517,21 @@ class YouPage extends ConsumerWidget {
                   }
                 },
               ),
-              if (kDebugMode)
-                _MenuRow(
-                  icon: ref.watch(mobilePreviewProvider)
-                      ? Icons.smartphone_rounded
-                      : Icons.tablet_rounded,
-                  iconColor: ref.watch(mobilePreviewProvider)
-                      ? c.accent
-                      : c.textMuted,
-                  title: ref.watch(mobilePreviewProvider)
-                      ? 'Voltar à largura real (debug)'
-                      : 'Simular celular (debug)',
-                  subtitle: 'Trava a UI em 420px pra prever layout no celular',
-                  onTap: () => ref.read(mobilePreviewProvider.notifier).toggle(),
-                ),
+              // Mobile preview toggle stays visible in release too — Daniel
+              // uses it on the tablet to preview phone-width layouts.
+              _MenuRow(
+                icon: ref.watch(mobilePreviewProvider)
+                    ? Icons.smartphone_rounded
+                    : Icons.tablet_rounded,
+                iconColor: ref.watch(mobilePreviewProvider)
+                    ? c.accent
+                    : c.textMuted,
+                title: ref.watch(mobilePreviewProvider)
+                    ? 'Voltar à largura real'
+                    : 'Simular celular',
+                subtitle: 'Trava a UI em 420px pra prever layout no celular',
+                onTap: () => ref.read(mobilePreviewProvider.notifier).toggle(),
+              ),
               if (kDebugMode)
                 _MenuRow(
                   icon: Icons.view_carousel_outlined,

@@ -28,6 +28,13 @@ class FigusAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.fc;
+    // Use the dark/silhouette logo on light themes (the gold square is
+    // designed for dark backgrounds and gets washed out on cream/cool
+    // light palettes); fall back to the gold square on dark themes.
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final logoAsset = isLight
+        ? 'assets/figus-logo-dark.png'
+        : 'assets/figus-logo-square.png';
     return AppBar(
       // Title sits at the left edge; the brand logo floats absolutely in
       // the visual center via `flexibleSpace` so it isn't pushed off by
@@ -51,7 +58,7 @@ class FigusAppBar extends StatelessWidget implements PreferredSizeWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Image.asset(
-                'assets/figus-logo-square.png',
+                logoAsset,
                 width: 32,
                 height: 32,
                 filterQuality: FilterQuality.medium,

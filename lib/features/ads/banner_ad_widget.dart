@@ -47,15 +47,10 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   Future<void> _loadAd() async {
     if (_loadStarted) return;
     _loadStarted = true;
-    // Anchored adaptive banner: full device width, height auto-calculated
-    // (~50–90px). Mais alto que o 320x50 fixo, suportado pelo test unit, e
-    // não exige hooks pós-load.
-    final width = MediaQuery.of(context).size.width.truncate();
-    final adaptive = await AdSize.getAnchoredAdaptiveBannerAdSize(
-      Orientation.portrait,
-      width,
-    );
-    final AdSize size = adaptive ?? AdSize.banner;
+    // Full banner (468x60) — Daniel's preferred slot. Cabe bem em tablet
+    // e em telas de celular acima de ~480dp; pra device mais estreito o
+    // wrapping container já clampa via FittedBox fora.
+    final AdSize size = AdSize.fullBanner;
     final ad = BannerAd(
       adUnitId: _bannerAdUnitId(),
       request: const AdRequest(),
