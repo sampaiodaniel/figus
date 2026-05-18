@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/figus_colors.dart';
+import '../../core/widgets/figus_app_bar.dart';
 import '../../data/providers.dart';
 import '../pro/paywall_sheet.dart';
 import '../pro/pro_service.dart';
@@ -22,7 +23,7 @@ class ProfilesPage extends ConsumerWidget {
     final c = context.fc;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Perfil')),
+      appBar: const FigusAppBar(title: 'Perfil'),
       body: asyncProfiles.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Erro: $e')),

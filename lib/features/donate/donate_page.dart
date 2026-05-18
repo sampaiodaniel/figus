@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
 import '../../core/theme/figus_colors.dart';
+import '../../core/widgets/figus_app_bar.dart';
 import 'donation_service.dart';
 
 /// Donation page. Primary path is Google Play / App Store in-app purchase
@@ -60,7 +61,7 @@ class _DonatePageState extends ConsumerState<DonatePage> {
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Apoiar o dev')),
+      appBar: const FigusAppBar(title: 'Apoiar o dev'),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
         children: [

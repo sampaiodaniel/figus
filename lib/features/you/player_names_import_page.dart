@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/figus_colors.dart';
+import '../../core/widgets/figus_app_bar.dart';
 import '../../data/providers.dart';
 
 /// Bulk import of player names from a CSV/TSV the user pastes:
@@ -32,7 +33,7 @@ class _PlayerNamesImportPageState extends ConsumerState<PlayerNamesImportPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Importar nomes')),
+      appBar: const FigusAppBar(title: 'Importar nomes'),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

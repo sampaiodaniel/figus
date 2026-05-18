@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/country_codes.dart';
 import '../../core/theme/figus_colors.dart';
+import '../../core/widgets/figus_app_bar.dart';
 import '../../data/providers.dart';
 import '../../data/seeds/wc2026_seed.dart';
 
@@ -44,7 +45,7 @@ class _FavoriteNationsPageState extends ConsumerState<FavoriteNationsPage> {
   Widget build(BuildContext context) {
     final favs = _favorites;
     return Scaffold(
-      appBar: AppBar(title: const Text('Seleções favoritas')),
+      appBar: const FigusAppBar(title: 'Seleções favoritas'),
       body: favs == null
           ? const Center(child: CircularProgressIndicator())
           : ListView(

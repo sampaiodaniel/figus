@@ -27,6 +27,7 @@ import 'features/scan/scan_page.dart';
 import 'features/settings/upgrade_page.dart';
 import 'features/stats/stats_page.dart';
 import 'features/trades/compare_friend_page.dart';
+import 'features/trades/trade_bt_page.dart';
 import 'features/trades/trade_matcher.dart';
 import 'features/trades/trade_qr_page.dart';
 import 'features/trades/trades_page.dart';
@@ -113,6 +114,7 @@ class FigusApp extends ConsumerWidget {
             mode: state.uri.queryParameters['mode'] ?? 'show',
           ),
         ),
+        GoRoute(path: '/trade-bt', builder: (_, __) => const TradeBtPage()),
         GoRoute(path: '/donate', builder: (_, __) => const DonatePage()),
         GoRoute(path: '/how-to', builder: (_, __) => const HelpPage()),
         GoRoute(path: '/help', builder: (_, __) => const HelpPage()),

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/figus_colors.dart';
+import '../../core/widgets/figus_app_bar.dart';
 import '../../data/providers.dart';
 import '../scan/ocr_service.dart';
 import '../scan/review_detections_sheet.dart';
@@ -17,7 +18,7 @@ class FiguritasImportPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Importar coleção')),
+      appBar: const FigusAppBar(title: 'Importar coleção'),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -321,21 +322,27 @@ class FiguritasImportPage extends ConsumerWidget {
               color: fc.accent,
               icon: Icons.check_circle_outline_rounded,
               label: 'Tenho',
-              value: '$ownedCount figurinhas',
+              value: ownedCount == 1
+                  ? '1 figurinha'
+                  : '$ownedCount figurinhas',
             ),
             const SizedBox(height: 8),
             _SummaryRow(
               color: AppTheme.pulp,
               icon: Icons.copy_all_rounded,
               label: 'Repetidas',
-              value: '$dupesCount cópias extras',
+              value: dupesCount == 1
+                  ? '1 cópia extra'
+                  : '$dupesCount cópias extras',
             ),
             const SizedBox(height: 8),
             _SummaryRow(
               color: fc.textMuted,
               icon: Icons.radio_button_unchecked_rounded,
               label: 'Faltam',
-              value: '$missingCount figurinhas',
+              value: missingCount == 1
+                  ? '1 figurinha'
+                  : '$missingCount figurinhas',
             ),
             const SizedBox(height: 16),
             Container(

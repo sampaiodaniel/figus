@@ -86,9 +86,9 @@ class TradesPage extends ConsumerWidget {
               _ActionTile(
                 icon: Icons.bluetooth_searching_rounded,
                 label: 'Bluetooth',
-                sub: 'Em breve',
+                sub: 'Trocar sem internet',
                 accent: c.accent,
-                disabled: true,
+                onTap: () => context.push('/trade-bt'),
               ),
               _ActionTile(
                 icon: Icons.compare_arrows_rounded,

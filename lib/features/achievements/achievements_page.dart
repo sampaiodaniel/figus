@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/figus_colors.dart';
+import '../../core/widgets/figus_app_bar.dart';
 import '../../data/providers.dart';
 import 'badge_service.dart';
 import 'badges_catalog.dart';
@@ -48,7 +49,7 @@ class _AchievementsPageState extends ConsumerState<AchievementsPage> {
 
     return Scaffold(
       backgroundColor: c.bg,
-      appBar: AppBar(title: const Text('Conquistas')),
+      appBar: const FigusAppBar(title: 'Conquistas'),
       body: earnedAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Erro: $e')),

@@ -66,6 +66,11 @@ dependencies:
   mobile_scanner: ^5.2.3
   archive: ^3.6.1
 
+  # P2P trade over Bluetooth/Wi-Fi Direct via Google Nearby Connections.
+  # Android-only; iOS host shows an "em breve" placeholder.
+  nearby_connections: ^4.2.0
+  permission_handler: ^11.3.1
+
   # Supabase — multi-device sync (auth + realtime)
   supabase_flutter: ^2.8.1
 

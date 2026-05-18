@@ -120,7 +120,11 @@ class _ReviewDetectionsSheetState extends State<_ReviewDetectionsSheet> {
     if (!mounted) return;
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$marked figurinha(s) marcada(s) ✓')),
+      SnackBar(
+        content: Text(marked == 1
+            ? '1 figurinha marcada ✓'
+            : '$marked figurinhas marcadas ✓'),
+      ),
     );
   }
 }

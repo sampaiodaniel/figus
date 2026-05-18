@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/figus_colors.dart';
+import '../../core/widgets/figus_app_bar.dart';
 import '../../data/providers.dart';
 import '../pro/paywall_sheet.dart';
 import '../pro/pro_service.dart';
@@ -17,7 +18,7 @@ class AvatarPickerPage extends ConsumerWidget {
     final profileAsync = ref.watch(profilesListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Avatar')),
+      appBar: const FigusAppBar(title: 'Avatar'),
       body: profileAsync.when(
         data: (profiles) {
           final active = profiles.firstWhere(
