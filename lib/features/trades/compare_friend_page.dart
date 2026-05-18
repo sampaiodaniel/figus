@@ -294,31 +294,30 @@ class _Hero extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.fc;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [c.accent, c.accent.withValues(alpha: 0.7)],
+          colors: [c.accent, c.accent.withValues(alpha: 0.75)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: const Row(
         children: [
-          Row(
-            children: [
-              Icon(Icons.compare_arrows_rounded, color: Colors.white, size: 26),
-              SizedBox(width: 10),
-              Text('Sugestões automáticas',
-                  style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800)),
-            ],
-          ),
-          SizedBox(height: 6),
-          Text(
-            'Comparo suas repetidas com as do amigo. '
-            '1×1 mesmo tipo é prioridade; brilhante vale 2 normais.',
-            style: TextStyle(color: Colors.white, height: 1.3),
+          Icon(Icons.compare_arrows_rounded, color: Colors.white, size: 28),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Cole o inventário do amigo ou escaneie o QR — '
+              'as melhores trocas aparecem na hora.',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                height: 1.35,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),

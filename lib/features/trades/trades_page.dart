@@ -12,6 +12,158 @@ import '../../data/providers.dart';
 import '../../data/repos/album_repo.dart';
 import '../../domain/models/album_view_models.dart';
 
+/// Hub of the trade flow — the headline differentiator of the app. Reworked
+/// from a wall-of-text into a quick action grid: every entry point (QR,
+/// Bluetooth, compare-by-paste, export) is a big tappable icon. The two
+/// existing lists ("Pra trocar" / "Caçando") stay below so the user always
+/// knows what they can offer and what they want.
+class TradesPage extends ConsumerWidget {
+  const TradesPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dupesAsync = ref.watch(_duplicatesProvider);
+    final missingAsync = ref.watch(_missingProvider);
+    final c = context.fc;
+
+    return Scaffold(
+      appBar: const FigusAppBar(title: 'Trocas'),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // ── Suggestion section ──────────────────────────────────────────
+          _SectionLabel(
+            icon: Icons.auto_awesome_rounded,
+            label: 'SUGESTÕES DE TROCA',
+            accent: c.accent,
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  c.accent.withValues(alpha: 0.12),
+                  c.accent.withValues(alpha: 0.04),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: c.accent.withValues(alpha: 0.25)),
+            ),
+            child: Text(
+              'Compare com um amigo pra ver trocas sugeridas automaticamente. '
+              'Você confirma cada troca antes de marcar — nada é alterado sem '
+              'seu OK.',
+              style: TextStyle(
+                fontSize: 13,
+                color: c.text,
+                height: 1.4,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // ── 2x2 action grid ─────────────────────────────────────────────
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            childAspectRatio: 1.15,
+            children: [
+              _ActionTile(
+                icon: Icons.qr_code_scanner_rounded,
+                label: 'QR Code',
+                sub: 'Mostre ou escaneie',
+                accent: c.accent,
+                onTap: () => context.push('/trade-qr'),
+              ),
+              _ActionTile(
+                icon: Icons.bluetooth_searching_rounded,
+                label: 'Bluetooth',
+                sub: 'Em breve',
+                accent: c.accent,
+                disabled: true,
+              ),
+              _ActionTile(
+                icon: Icons.compare_arrows_rounded,
+                label: 'Comparar',
+                sub: 'Inventário do amigo',
+                accent: c.accent,
+                onTap: () => context.push('/compare'),
+              ),
+              dupesAsync.maybeWhen(
+                data: (list) => _ActionTile(
+                  icon: Icons.ios_share_rounded,
+                  label: 'Exportar',
+                  sub: list.isEmpty
+                      ? 'Sem repetidas'
+                      : 'Lista pra WhatsApp',
+                  accent: c.accent,
+                  disabled: list.isEmpty,
+                  onTap: list.isEmpty
+                      ? null
+                      : () => _shareDuplicatesList(list),
+                ),
+                orElse: () => _ActionTile(
+                  icon: Icons.ios_share_rounded,
+                  label: 'Exportar',
+                  sub: 'Lista pra WhatsApp',
+                  accent: c.accent,
+                  disabled: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 28),
+
+          // ── My duplicates ───────────────────────────────────────────────
+          _SectionLabel(
+            icon: Icons.outbox_rounded,
+            label: 'PRA TROCAR',
+            accent: c.accent,
+            subtitle: 'Suas repetidas — leva pra escola, partidas, encontros',
+          ),
+          const SizedBox(height: 10),
+          dupesAsync.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (e, _) => Text('Erro: $e'),
+            data: (list) => list.isEmpty
+                ? const _EmptyMini(text: 'Você não tem repetidas ainda.')
+                : _ChipList(items: list),
+          ),
+          const SizedBox(height: 28),
+
+          // ── Missing list ────────────────────────────────────────────────
+          _SectionLabel(
+            icon: Icons.radar_rounded,
+            label: 'CAÇANDO',
+            accent: c.accent,
+            subtitle: 'Figurinhas que você ainda não tem',
+          ),
+          const SizedBox(height: 10),
+          missingAsync.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (e, _) => Text('Erro: $e'),
+            data: (sections) => sections.isEmpty
+                ? const _EmptyMini(text: 'Coleção completa! 🎉')
+                : _MissingSections(sections: sections),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 void _shareDuplicatesList(List<StickerView> dupes) {
   // Sort by sticker number for predictability — humans skim lists easier.
   final sorted = List<StickerView>.from(dupes)
@@ -36,261 +188,83 @@ void _shareDuplicatesList(List<StickerView> dupes) {
       subject: 'Minhas figurinhas repetidas — Copa 2026');
 }
 
-/// Trades hub — placeholder until P2P (v2) lands. Today shows your duplicates
-/// (what you can offer) and missing list (what you want).
-class TradesPage extends ConsumerWidget {
-  const TradesPage({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final dupesAsync = ref.watch(_duplicatesProvider);
-    final missingAsync = ref.watch(_missingProvider);
-    final c = context.fc;
-
-    return Scaffold(
-      appBar: const FigusAppBar(title: 'Trocas'),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            InkWell(
-              onTap: () => context.push('/compare'),
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [c.accent, c.accent.withValues(alpha: 0.7)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.compare_arrows_rounded, color: Colors.white, size: 28),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Comparar com amigo',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                        Icon(Icons.chevron_right_rounded, color: Colors.white),
-                      ],
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Compartilhe seu inventário (botão ↗ lá dentro), mande pro amigo. '
-                      'Ele cola no app e vê as trocas sugeridas automaticamente.',
-                      style: TextStyle(color: Colors.white, height: 1.4),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // ── Exportar repetidas (real) ─────────────────────────────────
-            dupesAsync.when(
-              loading: () => const SizedBox.shrink(),
-              error: (_, __) => const SizedBox.shrink(),
-              data: (list) => _TradeActionTile(
-                icon: Icons.ios_share_rounded,
-                title: 'Exportar minhas repetidas',
-                subtitle: list.isEmpty
-                    ? 'Você ainda não tem repetidas pra exportar'
-                    : 'Manda a lista pelo WhatsApp ou copia pra colar onde quiser',
-                accent: c.accent,
-                enabled: list.isNotEmpty,
-                onTap: list.isEmpty
-                    ? null
-                    : () => _shareDuplicatesList(list),
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // ── Bluetooth / Nearby — em breve ─────────────────────────────
-            _TradeActionTile(
-              icon: Icons.bluetooth_searching_rounded,
-              title: 'Trocar via Bluetooth',
-              subtitle: 'Encontre amigos por perto e troque sem internet · em breve',
-              accent: c.accent,
-              enabled: false,
-              comingSoon: true,
-              onTap: null,
-            ),
-            const SizedBox(height: 8),
-
-            // ── QR code ───────────────────────────────────────────────────
-            _TradeActionTile(
-              icon: Icons.qr_code_scanner_rounded,
-              title: 'Trocar por QR Code',
-              subtitle:
-                  'Mostre seu QR ou escaneie o de outro colecionador',
-              accent: c.accent,
-              enabled: true,
-              onTap: () => context.push('/trade-qr'),
-            ),
-            const SizedBox(height: 24),
-            _SectionHeader(
-              title: 'Pra trocar',
-              subtitle: 'Suas repetidas — leva pra escola, partidas, encontros',
-              icon: Icons.outbox_rounded,
-            ),
-            dupesAsync.when(
-              loading: () => const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-              error: (e, _) => Text('Erro: $e'),
-              data: (list) => list.isEmpty
-                  ? const _EmptyMini(text: 'Você não tem repetidas ainda.')
-                  : _ChipList(items: list),
-            ),
-            const SizedBox(height: 24),
-            _SectionHeader(
-              title: 'Caçando',
-              subtitle: 'Figurinhas que você ainda não tem',
-              icon: Icons.radar_rounded,
-            ),
-            missingAsync.when(
-              loading: () => const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-              error: (e, _) => Text('Erro: $e'),
-              data: (sections) => sections.isEmpty
-                  ? const _EmptyMini(text: 'Coleção completa! 🎉')
-                  : _MissingSections(sections: sections),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Reusable CTA tile for trade actions (export, Bluetooth, QR). When
-/// [enabled] is false the tile dims out and the chevron is hidden; if
-/// [comingSoon] is true we add a small "Em breve" pill in the corner.
-class _TradeActionTile extends StatelessWidget {
+/// Square action tile with a large icon + 1-line label + 1-line sub. Used
+/// in the 2×2 grid at the top of [TradesPage]. Disabled tiles dim and show
+/// no chevron; enabled tiles get a small chevron to suggest interactivity.
+class _ActionTile extends StatelessWidget {
   final IconData icon;
-  final String title;
-  final String subtitle;
+  final String label;
+  final String sub;
   final Color accent;
-  final bool enabled;
-  final bool comingSoon;
+  final bool disabled;
   final VoidCallback? onTap;
 
-  const _TradeActionTile({
+  const _ActionTile({
     required this.icon,
-    required this.title,
-    required this.subtitle,
+    required this.label,
+    required this.sub,
     required this.accent,
-    required this.enabled,
-    this.comingSoon = false,
+    this.disabled = false,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final c = context.fc;
-    final muted = !enabled;
+    final iconColor = disabled ? c.textMuted : accent;
     return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      onTap: disabled ? null : onTap,
+      borderRadius: BorderRadius.circular(18),
       child: Container(
-        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
         decoration: BoxDecoration(
           color: c.card,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: c.border),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: disabled ? c.border : accent.withValues(alpha: 0.45),
+            width: disabled ? 1 : 1.5,
+          ),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: (muted ? c.textMuted : accent).withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              alignment: Alignment.center,
-              child: Icon(icon, color: muted ? c.textMuted : accent, size: 22),
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: iconColor.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 24),
+                ),
+                const Spacer(),
+                if (!disabled)
+                  Icon(Icons.chevron_right_rounded,
+                      color: iconColor.withValues(alpha: 0.6), size: 18),
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: muted
-                                ? c.text.withValues(alpha: 0.5)
-                                : c.text,
-                          ),
-                        ),
-                      ),
-                      if (comingSoon) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: c.cardAlt,
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(
-                              color: c.border,
-                            ),
-                          ),
-                          child: Text(
-                            'EM BREVE',
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.6,
-                              color: c.textMuted,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: c.textMuted,
-                      height: 1.3,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+            const Spacer(),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: disabled ? c.text.withValues(alpha: 0.5) : c.text,
               ),
             ),
-            if (enabled)
-              Icon(Icons.chevron_right_rounded,
-                  color: c.textMuted.withValues(alpha: 0.6), size: 18),
+            const SizedBox(height: 2),
+            Text(
+              sub,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                color: c.textMuted,
+              ),
+            ),
           ],
         ),
       ),
@@ -298,34 +272,52 @@ class _TradeActionTile extends StatelessWidget {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final String subtitle;
+class _SectionLabel extends StatelessWidget {
   final IconData icon;
-  const _SectionHeader({required this.title, required this.subtitle, required this.icon});
+  final String label;
+  final Color accent;
+  final String? subtitle;
+
+  const _SectionLabel({
+    required this.icon,
+    required this.label,
+    required this.accent,
+    this.subtitle,
+  });
 
   @override
   Widget build(BuildContext context) {
     final c = context.fc;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Icon(icon, color: c.accent),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
-                Text(subtitle,
-                    style: TextStyle(fontSize: 12, color: c.textMuted)),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: accent, size: 18),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.2,
+                  color: accent,
+                ),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  subtitle!,
+                  style: TextStyle(fontSize: 12, color: c.textMuted),
+                ),
               ],
-            ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
