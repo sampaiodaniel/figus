@@ -72,7 +72,9 @@ class TradesPage extends ConsumerWidget {
             crossAxisCount: 2,
             mainAxisSpacing: 10,
             crossAxisSpacing: 10,
-            childAspectRatio: 1.15,
+            // Tiles are squarer + smaller now so the icon and text fill the
+            // available area instead of swimming in white space.
+            childAspectRatio: 1.0,
             children: [
               _ActionTile(
                 icon: Icons.qr_code_scanner_rounded,
@@ -178,9 +180,11 @@ void _shareDuplicatesList(List<StickerView> dupes) {
   }
   final total = sorted.fold<int>(
       0, (sum, s) => sum + (s.duplicateCount > 0 ? s.duplicateCount : 1));
+  final pluralTotal =
+      total == 1 ? '1 figurinha pra trocar' : '$total figurinhas pra trocar';
   lines
     ..add('')
-    ..add('Total: $total figurinhas pra trocar')
+    ..add('Total: $pluralTotal')
     ..add('')
     ..add('Quer trocar? Me chama 👋')
     ..add('Baixe o Figus: https://appfigus.com');
@@ -216,7 +220,7 @@ class _ActionTile extends StatelessWidget {
       onTap: disabled ? null : onTap,
       borderRadius: BorderRadius.circular(18),
       child: Container(
-        padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: c.card,
           borderRadius: BorderRadius.circular(18),
@@ -225,32 +229,31 @@ class _ActionTile extends StatelessWidget {
             width: disabled ? 1 : 1.5,
           ),
         ),
+        // Centered vertical layout: big icon, label below, sub last. Tiles
+        // are visually compact but the icon is the dominant element so the
+        // action reads at a glance.
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(icon, color: iconColor, size: 24),
-                ),
-                const Spacer(),
-                if (!disabled)
-                  Icon(Icons.chevron_right_rounded,
-                      color: iconColor.withValues(alpha: 0.6), size: 18),
-              ],
+            Container(
+              width: 60,
+              height: 60,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: iconColor, size: 34),
             ),
-            const Spacer(),
+            const SizedBox(height: 10),
             Text(
               label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 16,
                 fontWeight: FontWeight.w800,
                 color: disabled ? c.text.withValues(alpha: 0.5) : c.text,
               ),
@@ -258,12 +261,10 @@ class _ActionTile extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               sub,
+              textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 11,
-                color: c.textMuted,
-              ),
+              style: TextStyle(fontSize: 12, color: c.textMuted),
             ),
           ],
         ),

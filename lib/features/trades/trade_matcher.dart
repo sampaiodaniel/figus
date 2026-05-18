@@ -33,11 +33,17 @@ class TradeInventory {
   /// Codes whose nation is favorited by the owner.
   final Set<String> favoriteNations;
 
+  /// Optional display name of whoever this inventory belongs to. Carried
+  /// straight through from the QR/paste payload so the comparison screen
+  /// can show "Trocas com X" without a second lookup.
+  final String? profileName;
+
   const TradeInventory({
     required this.dupesByCode,
     required this.missingCodes,
     required this.stickersByCode,
     required this.favoriteNations,
+    this.profileName,
   });
 }
 

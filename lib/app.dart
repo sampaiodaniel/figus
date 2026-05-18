@@ -27,6 +27,7 @@ import 'features/scan/scan_page.dart';
 import 'features/settings/upgrade_page.dart';
 import 'features/stats/stats_page.dart';
 import 'features/trades/compare_friend_page.dart';
+import 'features/trades/trade_matcher.dart';
 import 'features/trades/trade_qr_page.dart';
 import 'features/trades/trades_page.dart';
 import 'features/auth/auth_page.dart';
@@ -101,7 +102,9 @@ class FigusApp extends ConsumerWidget {
         GoRoute(
           path: '/compare',
           builder: (_, state) => CompareFriendPage(
-            initialFriendJson: state.extra is Map ? state.extra as Map : null,
+            initialFriend: state.extra is TradeInventory
+                ? state.extra as TradeInventory
+                : null,
           ),
         ),
         GoRoute(

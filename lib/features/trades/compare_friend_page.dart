@@ -13,12 +13,12 @@ import 'trade_matcher.dart';
 /// "Comparar com amigo" — accepts the friend's inventory (pasted JSON for
 /// now; Bluetooth/QR plug in later) and shows the suggested trades.
 class CompareFriendPage extends ConsumerStatefulWidget {
-  /// Optional pre-loaded friend inventory (already-decoded JSON map) passed
-  /// in when the user arrives from a QR scan instead of pasting JSON
-  /// manually. When present, [_CompareFriendPageState.initState] runs the
-  /// match immediately so the trades show up without an extra tap.
-  final Map<dynamic, dynamic>? initialFriendJson;
-  const CompareFriendPage({super.key, this.initialFriendJson});
+  /// Optional pre-loaded friend inventory (already decoded into a
+  /// [TradeInventory]) passed in when the user arrives from a QR scan.
+  /// When present, the match runs immediately on first frame so the trade
+  /// suggestions show up without an extra tap.
+  final TradeInventory? initialFriend;
+  const CompareFriendPage({super.key, this.initialFriend});
   @override
   ConsumerState<CompareFriendPage> createState() => _CompareFriendPageState();
 }
@@ -36,11 +36,9 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
   @override
   void initState() {
     super.initState();
-    final initial = widget.initialFriendJson;
+    final initial = widget.initialFriend;
     if (initial != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _applyFriendJson(
-            jsonEncode(initial.cast<String, dynamic>()),
-          ));
+      WidgetsBinding.instance.addPostFrameCallback((_) => _applyFriend(initial));
     }
   }
 
@@ -261,6 +259,28 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
   }
 
   Future<void> _applyFriendJson(String json) async {
+    try {
+      final friend = InventoryCodec.decodeAsFriend(json);
+      // Preserve the display name parsed off the JSON since TradeInventory
+      // dropped that field for the paste flow.
+      final inventoryWithName = TradeInventory(
+        dupesByCode: friend.dupesByCode,
+        missingCodes: friend.missingCodes,
+        stickersByCode: friend.stickersByCode,
+        favoriteNations: friend.favoriteNations,
+        profileName: InventoryCodec.profileNameOf(json),
+      );
+      await _applyFriend(inventoryWithName);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _error = 'Não consegui ler o inventário: $e';
+      });
+    }
+  }
+
+  Future<void> _applyFriend(TradeInventory friend) async {
     setState(() {
       _busy = true;
       _error = null;
@@ -269,20 +289,19 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
       _confirmedIdx.clear();
     });
     try {
-      final friend = InventoryCodec.decodeAsFriend(json);
       final me = await InventoryCodec.myInventory(ref.read(databaseProvider));
       final offers = TradeMatcher.match(me: me, friend: friend);
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _friendName = InventoryCodec.profileNameOf(json) ?? 'amigo';
+        _friendName = friend.profileName ?? 'amigo';
         _offers = offers;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _error = 'Não consegui ler o inventário: $e';
+        _error = 'Não consegui comparar inventários: $e';
       });
     }
   }

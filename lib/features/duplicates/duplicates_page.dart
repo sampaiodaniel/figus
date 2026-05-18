@@ -133,12 +133,18 @@ class _Header extends StatelessWidget {
                     text: '$uniqueCount ',
                     style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                   ),
-                  const TextSpan(text: 'figurinhas diferentes  ·  '),
+                  TextSpan(
+                    text: uniqueCount == 1
+                        ? 'figurinha diferente  ·  '
+                        : 'figurinhas diferentes  ·  ',
+                  ),
                   TextSpan(
                     text: '$totalCopies ',
                     style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                   ),
-                  const TextSpan(text: 'cópias no total'),
+                  TextSpan(
+                    text: totalCopies == 1 ? 'cópia no total' : 'cópias no total',
+                  ),
                 ],
               ),
             ),

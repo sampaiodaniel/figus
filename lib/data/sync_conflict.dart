@@ -58,6 +58,13 @@ Future<SyncDecision> decideSyncAction({
   return picked ?? SyncDecision.cancel;
 }
 
+String _pluralize(int marked, int extras) {
+  final figs = '$marked ${marked == 1 ? "figurinha" : "figurinhas"}';
+  if (extras <= 0) return figs;
+  final reps = '$extras ${extras == 1 ? "repetida" : "repetidas"}';
+  return '$figs  ·  $reps';
+}
+
 /// Dialog shown when local and cloud both have data and they don't match.
 /// Each side is itself a tappable button — so the user picks by tapping
 /// the side they want to keep, not by reading info and then hunting for
@@ -96,9 +103,7 @@ class SyncConflictDialog extends StatelessWidget {
           _SideChoiceButton(
             icon: Icons.phone_android_rounded,
             title: 'Manter este dispositivo',
-            subtitle:
-                '$localMarked figurinhas'
-                '${localExtras > 0 ? "  ·  $localExtras repetidas" : ""}',
+            subtitle: _pluralize(localMarked, localExtras),
             footer: 'A nuvem será sobrescrita com estes dados',
             color: c.accent,
             onTap: () => Navigator.pop(context, SyncDecision.useLocal),
@@ -107,9 +112,7 @@ class SyncConflictDialog extends StatelessWidget {
           _SideChoiceButton(
             icon: Icons.cloud_done_rounded,
             title: 'Usar dados da nuvem',
-            subtitle:
-                '$remoteMarked figurinhas'
-                '${remoteExtras > 0 ? "  ·  $remoteExtras repetidas" : ""}',
+            subtitle: _pluralize(remoteMarked, remoteExtras),
             footer: 'Este dispositivo será sobrescrito com a nuvem',
             color: const Color(0xFF1AB4D3),
             onTap: () => Navigator.pop(context, SyncDecision.useCloud),

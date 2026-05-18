@@ -29,29 +29,35 @@ class FigusAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final c = context.fc;
     return AppBar(
-      // Title is centered; the leading logo balances it on the left so the
-      // visual weight stays in the middle of the bar.
-      centerTitle: true,
-      titleSpacing: 0,
+      // Title sits at the left edge; the brand logo floats absolutely in
+      // the visual center via `flexibleSpace` so it isn't pushed off by
+      // long titles or many trailing actions.
+      centerTitle: false,
+      titleSpacing: 16,
       backgroundColor: c.cardAlt,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
-      leading: Padding(
-        padding: const EdgeInsets.only(left: 12),
-        child: Image.asset(
-          'assets/figus-logo-square.png',
-          width: 32,
-          height: 32,
-          filterQuality: FilterQuality.medium,
-        ),
-      ),
-      leadingWidth: 52,
       title: Text(
         title,
         style: GoogleFonts.inter(
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: c.text,
+        ),
+      ),
+      flexibleSpace: SafeArea(
+        child: IgnorePointer(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Image.asset(
+                'assets/figus-logo-square.png',
+                width: 32,
+                height: 32,
+                filterQuality: FilterQuality.medium,
+              ),
+            ),
+          ),
         ),
       ),
       actions: actions,

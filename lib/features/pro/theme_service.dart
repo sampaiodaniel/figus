@@ -156,8 +156,15 @@ class ThemeSeedNotifier extends StateNotifier<AppThemeSeed> {
     // matter the call site (picker, paywall sheet, remote settings apply,
     // auto-sync). app.dart enforces visually too, but stopping the write
     // keeps the persisted state honest.
-    final isPro = ref.read(proProvider).isActive;
+    final proState = ref.read(proProvider);
+    final isPro = proState.isActive;
+    // ignore: avoid_print
+    print('[ThemeService] set(${seed.name}) proOnly=${seed.proOnly} '
+        'isPro=$isPro (isPro=${proState.isPro} trial=${proState.isTrial}) '
+        'pushToCloud=$pushToCloud');
     if (seed.proOnly && !isPro) {
+      // ignore: avoid_print
+      print('[ThemeService] BLOCKED: Pro-only seed for non-Pro user');
       return;
     }
     state = seed;

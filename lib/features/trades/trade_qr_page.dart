@@ -6,7 +6,6 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../core/theme/figus_colors.dart';
 import '../../data/providers.dart';
-import 'inventory_codec.dart';
 import 'qr_codec.dart';
 
 /// Two-mode page for in-person trades: show your inventory as a QR code, or
@@ -40,8 +39,7 @@ class _TradeQrPageState extends ConsumerState<TradeQrPage> {
     });
     try {
       final db = ref.read(databaseProvider);
-      final exported = await InventoryCodec.exportMine(db);
-      final encoded = TradeQrCodec.encode(exported);
+      final encoded = await TradeQrCodec.encodeFromDb(db);
       if (!mounted) return;
       setState(() => _payload = encoded);
     } catch (e) {
@@ -124,10 +122,25 @@ class _TradeQrPageState extends ConsumerState<TradeQrPage> {
               aspectRatio: 1,
               child: QrImageView(
                 data: _payload!,
+                // Low error correction stretches QR capacity to ~2953 bytes
+                // at v40 — important for the long inventory payload.
                 version: QrVersions.auto,
                 gapless: true,
-                errorCorrectionLevel: QrErrorCorrectLevel.M,
+                errorCorrectionLevel: QrErrorCorrectLevel.L,
                 backgroundColor: Colors.white,
+                // If the data is somehow STILL too big, the builder runs and
+                // shows a useful error inline instead of just a grey box.
+                errorStateBuilder: (ctx, err) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'Não consegui montar o QR — inventário muito grande.\n'
+                      'Use "Comparar" e cole o inventário por texto.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: c.textMuted, fontSize: 12),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -147,16 +160,14 @@ class _TradeQrPageState extends ConsumerState<TradeQrPage> {
   }
 
   Widget _buildScan(FigusColors c) {
-    return _Scanner(onDetected: (raw) {
+    return _Scanner(onDetected: (raw) async {
       try {
-        final json = TradeQrCodec.decode(raw);
+        final db = ref.read(databaseProvider);
+        final friend = await TradeQrCodec.decodeFromQr(raw, db);
         // Navigate to compare page with the decoded inventory. Route param
         // pattern keeps it simple — no Riverpod state to thread.
         if (!mounted) return;
-        context.go(
-          '/compare',
-          extra: json,
-        );
+        context.go('/compare', extra: friend);
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
