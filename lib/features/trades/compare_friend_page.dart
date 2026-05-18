@@ -262,21 +262,22 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
       '',
       'Comparei nossas figurinhas e as possíveis trocas são:',
       '',
-      'Ou você traz:',
+      'Você troca:',
       ..._formatCodeLines(youUse),
       '',
-      'E eu trago:',
+      'Eu troco por:',
       ..._formatCodeLines(iSwap),
       '',
       'O que acha?',
       '',
-      'Baixe o Figus em https://appfigus.com',
+      // Without the https:// prefix WhatsApp doesn't treat this as a
+      // shared link and end up keeping ONLY the URL (which is what was
+      // happening before — Daniel reported "está mandando apenas o
+      // link"). The user can still tap-and-paste appfigus.com manually.
+      'Baixe o Figus em appfigus.com',
     ];
 
-    await Share.share(
-      lines.join('\n'),
-      subject: 'Trocas Figus',
-    );
+    await Share.share(lines.join('\n'));
   }
 
   /// One code per line for the WhatsApp message — easier to read on a phone
