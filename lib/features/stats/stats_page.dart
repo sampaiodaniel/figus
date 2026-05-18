@@ -5,10 +5,12 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/figus_colors.dart';
+import '../../core/widgets/figus_app_bar.dart';
 import '../../data/providers.dart';
 import '../../domain/models/album_view_models.dart';
 import '../pro/pro_badge.dart';
 import '../pro/pro_service.dart';
+import '../streak/streak_service.dart';
 
 class StatsPage extends ConsumerWidget {
   const StatsPage({super.key});
@@ -20,19 +22,7 @@ class StatsPage extends ConsumerWidget {
     final c = context.fc;
     return Scaffold(
       backgroundColor: c.bg,
-      appBar: AppBar(
-        title: Text(
-          'Estatísticas',
-          style: GoogleFonts.inter(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: c.text,
-          ),
-        ),
-        backgroundColor: c.cardAlt,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-      ),
+      appBar: const FigusAppBar(title: 'Estatísticas'),
       body: statsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Erro: $e')),
@@ -42,16 +32,22 @@ class StatsPage extends ConsumerWidget {
   }
 }
 
-class _StatsBody extends StatelessWidget {
+class _StatsBody extends ConsumerWidget {
   final AlbumStats stats;
   final bool isPro;
   const _StatsBody({required this.stats, required this.isPro});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final c = context.fc;
     final pct = stats.percentComplete;
     final pctInt = (pct * 100).round();
+    // SEQUÊNCIA vem do StreakService (mesma fonte do banner em Ajustes).
+    // Antes a Stats lia stats.streak (dias com figurinhas marcadas) e o
+    // Ajustes lia currentStreak (dias de visita ao app) — números
+    // divergiam ("Ajustes: 2 dias seguidos" × "Stats: 1d sequência").
+    final streak = ref.watch(currentStreakProvider).valueOrNull;
+    final currentStreakDays = streak?.currentStreak ?? 0;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
@@ -309,7 +305,7 @@ class _StatsBody extends StatelessWidget {
                   icon: Icons.local_fire_department_rounded,
                   iconColor: AppTheme.flame,
                   label: 'SEQUÊNCIA',
-                  value: '${stats.streak}d',
+                  value: '${currentStreakDays}d',
                 ),
               ),
             ],
