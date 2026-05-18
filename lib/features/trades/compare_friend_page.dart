@@ -224,14 +224,14 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
   }
 
   /// Exports the current suggestion list as a WhatsApp-friendly text — for
-  /// when the friend doesn't use Figus and won't import a JSON. Same as
-  /// what shows on screen, formatted as plain lines with emojis so it
-  /// reads naturally in a chat.
+  /// when the friend doesn't use Figus and won't import a JSON. We don't
+  /// know the friend's real name, so the message stays addressee-less.
+  /// The codes are aggregated into two lists ("Você usa" = the friend's
+  /// dupes I'd accept; "E eu troco por" = my dupes I'd give) so the
+  /// recipient reads it as a simple chat message.
   Future<void> _shareSuggestedTrades() async {
     final offers = _offers;
     if (offers == null || offers.isEmpty) return;
-    // Skip confirmed/invalidated trades — the recipient only cares about
-    // ones still actionable.
     final actionable = <int>[
       for (var i = 0; i < offers.length; i++)
         if (!_confirmedIdx.contains(i) && !_invalidatedIdx.contains(i)) i,
@@ -245,45 +245,46 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
       return;
     }
 
-    final friend = _friendName ?? 'amigo';
+    // Aggregate counts across all actionable offers. "youUse" = what the
+    // friend would hand over (= my youReceive). "iSwap" = my dupes I'd
+    // give (= my youGive). Same sticker appearing in multiple offers gets
+    // its counts summed.
+    final youUse = <String, int>{};
+    final iSwap = <String, int>{};
+    for (final i in actionable) {
+      final o = offers[i];
+      o.youReceive.forEach((c, n) => youUse[c] = (youUse[c] ?? 0) + n);
+      o.youGive.forEach((c, n) => iSwap[c] = (iSwap[c] ?? 0) + n);
+    }
+
     final lines = <String>[
       '🤝 Trocas sugeridas — Figus',
       '',
-      'Comparei minhas figurinhas com as do $friend e aqui '
-          'estão as trocas possíveis:',
+      'Comparei nossas figurinhas e as possíveis trocas são:',
       '',
+      'Você usa:',
+      _formatCodeMap(youUse),
+      '',
+      'E eu troco por:',
+      _formatCodeMap(iSwap),
+      '',
+      'O que acha?',
+      '',
+      'Baixe o Figus em https://appfigus.com',
     ];
-    for (var k = 0; k < actionable.length; k++) {
-      final o = offers[actionable[k]];
-      final give = _formatCodeMap(o.youGive);
-      final receive = _formatCodeMap(o.youReceive);
-      final note = o.kind == 'mixed'
-          ? (o.totalGive > o.totalReceive
-              ? '  (2 normais por 1 brilhante)'
-              : '  (1 brilhante por 2 normais)')
-          : '';
-      lines.add('${k + 1}) 📤 $give  →  📥 $receive$note');
-    }
-    final total = actionable.length;
-    lines
-      ..add('')
-      ..add(total == 1
-          ? 'Total: 1 troca possível'
-          : 'Total: $total trocas possíveis')
-      ..add('')
-      ..add('Bora marcar?')
-      ..add('')
-      ..add('Baixe o Figus: https://appfigus.com');
 
     await Share.share(
       lines.join('\n'),
-      subject: 'Trocas Figus com $friend',
+      subject: 'Trocas Figus',
     );
   }
 
   String _formatCodeMap(Map<String, int> m) {
     if (m.isEmpty) return '—';
-    return m.entries
+    // Sort by code so the list reads predictable (BRA before FRA etc).
+    final entries = m.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    return entries
         .map((e) => e.value > 1 ? '${e.key} ×${e.value}' : e.key)
         .join(', ');
   }
