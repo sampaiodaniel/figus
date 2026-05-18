@@ -178,6 +178,19 @@ class SyncRepo {
     return lastError?.toString();
   }
 
+  /// Deletes every row this user has in the collection table. Used by the
+  /// "replace cloud with this device" path in the sync conflict dialog —
+  /// after this returns, `pushAllLocal` repopulates from local state.
+  Future<void> deleteAllForCurrentUser() async {
+    if (!isSignedIn) return;
+    try {
+      await _client!.from(_table).delete().eq('user_id', userId!);
+    } catch (e) {
+      debugPrint('[SyncRepo] deleteAllForCurrentUser error: $e');
+      rethrow;
+    }
+  }
+
   Future<void> signOut() async {
     try {
       await _client?.auth.signOut();

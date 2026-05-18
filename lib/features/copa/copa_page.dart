@@ -72,24 +72,35 @@ class _TeamFlag extends StatelessWidget {
   final double size;
   const _TeamFlag({required this.code, this.size = 28});
 
+  Widget _fallback(BuildContext context) {
+    return Container(
+      width: size,
+      height: size * 0.7,
+      decoration: BoxDecoration(
+        color: context.fc.cardAlt,
+        borderRadius: BorderRadius.circular(3),
+      ),
+      alignment: Alignment.center,
+      child: Text(code,
+          style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w700)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final iso = paniniToIso2[code];
-    if (iso == null) {
-      return Container(
-        width: size, height: size * 0.7,
-        decoration: BoxDecoration(
-          color: context.fc.cardAlt,
-          borderRadius: BorderRadius.circular(3),
-        ),
-        alignment: Alignment.center,
-        child: Text(code, style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w700)),
+    if (iso == null) return _fallback(context);
+    // Defensive: CountryFlag has crashed in release on some ARM tablets when
+    // its asset lookup fails. Wrap in try/catch + ErrorWidget builder so a
+    // single bad flag can't tank the whole Matches list.
+    try {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(3),
+        child: CountryFlag.fromCountryCode(iso, width: size, height: size * 0.7),
       );
+    } catch (_) {
+      return _fallback(context);
     }
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(3),
-      child: CountryFlag.fromCountryCode(iso, width: size, height: size * 0.7),
-    );
   }
 }
 
@@ -750,104 +761,115 @@ class _MatchesTabState extends State<_MatchesTab> {
     final filtered = _filtered();
     final primary = c.accent;
 
-    // Build flat list: filter bar first, then headers + cards interleaved
+    // Build a flat list of widgets and feed ListView.builder — the previous
+    // implementation passed all 73 match cards (with 2 flags each, ~150
+    // sub-widgets) as `children` of a non-lazy ListView. On older ARM
+    // tablets the eager inflation could OOM, taking the whole app down
+    // and leaving SQLite mid-write. The .builder path only inflates
+    // visible rows.
     final items = <Widget>[];
 
-    // Filter bar
-    items.add(
-      Padding(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              for (final entry in const [
-                (_DateFilter.today,    'Hoje'),
-                (_DateFilter.tomorrow, 'Amanhã'),
-                (_DateFilter.week,     'Esta semana'),
-                (_DateFilter.all,      'Todos'),
-              ])
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: GestureDetector(
-                    onTap: () => setState(() => _filter = entry.$1),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: _filter == entry.$1 ? primary : c.cardAlt,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        entry.$2,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: _filter == entry.$1 ? Colors.white : c.textMuted,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
+    items.add(_buildFilterBar(c, primary));
 
     if (filtered.isEmpty) {
-      items.add(
-        Padding(
-          padding: const EdgeInsets.only(top: 64),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.sports_soccer_rounded, size: 48, color: c.border),
-              const SizedBox(height: 12),
-              Center(
-                child: Text(
-                  'Nenhum jogo neste período',
-                  style: TextStyle(color: c.textMuted, fontWeight: FontWeight.w600),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Center(
-                child: Text(
-                  'A Copa começa em 11 de junho de 2026',
-                  style: TextStyle(color: c.textMuted, fontSize: 12),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      items.add(_buildEmpty(c));
     } else {
       String? lastKey;
       for (final m in filtered) {
         final key = _groupKey(m.kickoff.toLocal());
         if (key != lastKey) {
-          items.add(
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 16, 12, 6),
-              child: Text(
-                key,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: primary.withValues(alpha: 0.8),
-                ),
-              ),
-            ),
-          );
+          items.add(_buildDayHeader(key, primary));
           lastKey = key;
         }
         items.add(_FullMatchCard(match: m));
       }
     }
 
-    return ListView(
+    return ListView.builder(
       padding: const EdgeInsets.only(bottom: 24),
-      children: items,
+      itemCount: items.length,
+      itemBuilder: (_, i) => items[i],
+    );
+  }
+
+  Widget _buildFilterBar(FigusColors c, Color primary) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            for (final entry in const [
+              (_DateFilter.today,    'Hoje'),
+              (_DateFilter.tomorrow, 'Amanhã'),
+              (_DateFilter.week,     'Esta semana'),
+              (_DateFilter.all,      'Todos'),
+            ])
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: GestureDetector(
+                  onTap: () => setState(() => _filter = entry.$1),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: _filter == entry.$1 ? primary : c.cardAlt,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      entry.$2,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: _filter == entry.$1 ? Colors.white : c.textMuted,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmpty(FigusColors c) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 64),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.sports_soccer_rounded, size: 48, color: c.border),
+          const SizedBox(height: 12),
+          Center(
+            child: Text(
+              'Nenhum jogo neste período',
+              style: TextStyle(color: c.textMuted, fontWeight: FontWeight.w600),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Center(
+            child: Text(
+              'A Copa começa em 11 de junho de 2026',
+              style: TextStyle(color: c.textMuted, fontSize: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDayHeader(String key, Color primary) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 16, 12, 6),
+      child: Text(
+        key,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: primary.withValues(alpha: 0.8),
+        ),
+      ),
     );
   }
 }

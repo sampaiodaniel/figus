@@ -10,6 +10,10 @@ import '../pro/theme_service.dart';
 
 enum _Step { email, otp, done }
 
+/// What the user picked when local and cloud both had data and they
+/// didn't match. Drives whichever side overwrites the other.
+enum _SyncDecision { cancel, useCloud, useLocal, identical, autoPull, autoPush }
+
 class AuthPage extends ConsumerStatefulWidget {
   final VoidCallback? onSignedIn;
   const AuthPage({super.key, this.onSignedIn});
@@ -115,20 +119,79 @@ class _AuthPageState extends ConsumerState<AuthPage> {
 
       if (!mounted) return;
 
-      // ── 3. Apply remote entries locally ─────────────────────────────────
-      var applyStats =
-          (applied: 0, unmatched: 0, markedApplied: 0, extrasApplied: 0);
-      if (remote.isNotEmpty) {
-        setState(() => _syncStage = 'Aplicando...');
-        applyStats = await repo.applyRemoteEntries(remote);
+      // ── 3. Decide what to do based on local vs remote counts ───────────
+      final pid = (await ref.read(profileRepoProvider).active()).id;
+      final local = await repo.localCounts(pid);
+      final remoteMarked = remote.values
+          .where((v) => v.status == 'owned' || v.status == 'duplicate')
+          .length;
+      final remoteExtras = remote.values
+          .where((v) => v.status == 'duplicate')
+          .fold<int>(0, (sum, v) => sum + v.dupCount);
+      // ignore: avoid_print
+      print('[Auth] local marked=${local.marked} extras=${local.extras} · '
+          'remote marked=$remoteMarked extras=$remoteExtras');
+
+      final decision = await _decideMergeAction(
+        localMarked: local.marked,
+        localExtras: local.extras,
+        remoteMarked: remoteMarked,
+        remoteExtras: remoteExtras,
+      );
+      if (!mounted) return;
+
+      // ── 4. Execute the user's choice ────────────────────────────────────
+      var appliedMarks = 0;
+      var appliedExtras = 0;
+      var unmatched = 0;
+      String actionTaken;
+      switch (decision) {
+        case _SyncDecision.cancel:
+          actionTaken = 'cancel';
+        case _SyncDecision.useCloud:
+          setState(() => _syncStage = 'Substituindo dados locais...');
+          final r = await repo.replaceLocalFromRemote(remote);
+          appliedMarks = remoteMarked;
+          appliedExtras = remoteExtras;
+          unmatched = r.unmatched;
+          actionTaken = 'useCloud';
+        case _SyncDecision.useLocal:
+          setState(() => _syncStage = 'Substituindo nuvem...');
+          await repo.replaceCloudWithLocal();
+          actionTaken = 'useLocal';
+        case _SyncDecision.autoPull:
+          // Local was empty — pull silently is safe.
+          setState(() => _syncStage = 'Aplicando...');
+          if (remote.isNotEmpty) {
+            final r = await repo.applyRemoteEntries(remote);
+            appliedMarks = r.markedApplied;
+            appliedExtras = r.extrasApplied;
+            unmatched = r.unmatched;
+          }
+          actionTaken = 'autoPull';
+        case _SyncDecision.autoPush:
+          // Cloud was empty — push silently is safe (cloud only gains).
+          setState(() => _syncStage = 'Subindo...');
+          await repo.pushAllLocal();
+          actionTaken = 'autoPush';
+        case _SyncDecision.identical:
+          setState(() => _syncStage = 'Aplicando...');
+          if (remote.isNotEmpty) {
+            final r = await repo.applyRemoteEntries(remote);
+            appliedMarks = r.markedApplied;
+            appliedExtras = r.extrasApplied;
+            unmatched = r.unmatched;
+          }
+          await repo.pushAllLocal();
+          actionTaken = 'identical';
       }
+
+      // ── 5. User settings always come from the cloud (preferences are
+      // user-level, not device-level — applying overwriting is safe).
       await _applyRemoteSettings(settings);
 
-      // ── 4. Push anything local that the cloud didn't have ──────────────
-      setState(() => _syncStage = 'Sincronizando...');
-      final pushStats = await repo.pushAllLocal();
       // ignore: avoid_print
-      print('[Auth] pushed ${pushStats.totalRows} rows back up');
+      print('[Auth] decision=$actionTaken applied=$appliedMarks');
 
       if (!mounted) return;
       ref.read(collectionVersionProvider.notifier).state++;
@@ -143,15 +206,16 @@ class _AuthPageState extends ConsumerState<AuthPage> {
           email: sync.userEmail ?? '',
           userId: sync.userId ?? '',
           pulledRows: remote.length,
-          appliedMarks: applyStats.markedApplied,
-          appliedExtras: applyStats.extrasApplied,
-          unmatched: applyStats.unmatched,
+          appliedMarks: appliedMarks,
+          appliedExtras: appliedExtras,
+          unmatched: unmatched,
           hasTheme: settings.theme != null,
           hasAvatar: settings.avatar != null && settings.avatar!.isNotEmpty,
           hasProfileName: settings.profileName != null &&
               settings.profileName!.trim().isNotEmpty,
           hasFavorites: settings.favoriteNations != null &&
               settings.favoriteNations!.isNotEmpty,
+          decision: decision,
         );
         _step = _Step.done;
       });
@@ -169,6 +233,36 @@ class _AuthPageState extends ConsumerState<AuthPage> {
         _step = _Step.done;
       });
     }
+  }
+
+  /// Picks the merge action based on local vs cloud counts. Auto-picks
+  /// when there's no risk of data loss (one side empty) and only opens the
+  /// dialog when both sides have data and they don't match — that's the
+  /// case where silent merge could clobber something the user cares about.
+  Future<_SyncDecision> _decideMergeAction({
+    required int localMarked,
+    required int localExtras,
+    required int remoteMarked,
+    required int remoteExtras,
+  }) async {
+    if (localMarked == 0 && remoteMarked == 0) return _SyncDecision.identical;
+    if (localMarked == 0) return _SyncDecision.autoPull;
+    if (remoteMarked == 0) return _SyncDecision.autoPush;
+    if (localMarked == remoteMarked && localExtras == remoteExtras) {
+      return _SyncDecision.identical;
+    }
+    if (!mounted) return _SyncDecision.cancel;
+    final picked = await showDialog<_SyncDecision>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _SyncConflictDialog(
+        localMarked: localMarked,
+        localExtras: localExtras,
+        remoteMarked: remoteMarked,
+        remoteExtras: remoteExtras,
+      ),
+    );
+    return picked ?? _SyncDecision.cancel;
   }
 
   Future<void> _applyRemoteSettings(
@@ -481,6 +575,7 @@ class _SyncSummary {
   final bool hasAvatar;
   final bool hasProfileName;
   final bool hasFavorites;
+  final _SyncDecision decision;
 
   const _SyncSummary({
     required this.email,
@@ -493,6 +588,7 @@ class _SyncSummary {
     required this.hasAvatar,
     required this.hasProfileName,
     required this.hasFavorites,
+    required this.decision,
   });
 
   // Treat "pulled rows" as the source of truth for whether the cloud had
@@ -505,6 +601,150 @@ class _SyncSummary {
       hasAvatar ||
       hasProfileName ||
       hasFavorites;
+
+  bool get wasCancelled => decision == _SyncDecision.cancel;
+}
+
+/// Dialog shown when local and cloud both have data and they don't match.
+/// The user is offered three exits — cancel (sync stays partial), keep
+/// device (clobber cloud), or use cloud (clobber local). No automatic
+/// merge happens behind the user's back.
+class _SyncConflictDialog extends StatelessWidget {
+  final int localMarked;
+  final int localExtras;
+  final int remoteMarked;
+  final int remoteExtras;
+
+  const _SyncConflictDialog({
+    required this.localMarked,
+    required this.localExtras,
+    required this.remoteMarked,
+    required this.remoteExtras,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.fc;
+    return AlertDialog(
+      title: const Text('Conflito de sincronização'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Os dados deste dispositivo e da nuvem são diferentes. '
+            'Para evitar perder algo, escolha o que fazer.',
+            style: TextStyle(color: c.text, height: 1.4, fontSize: 13),
+          ),
+          const SizedBox(height: 16),
+          _SideStat(
+            icon: Icons.phone_android_rounded,
+            label: 'Neste dispositivo',
+            marked: localMarked,
+            extras: localExtras,
+            color: c.accent,
+          ),
+          const SizedBox(height: 8),
+          _SideStat(
+            icon: Icons.cloud_done_rounded,
+            label: 'Na nuvem',
+            marked: remoteMarked,
+            extras: remoteExtras,
+            color: const Color(0xFF1AB4D3),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: c.cardAlt,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: c.border),
+            ),
+            child: Text(
+              'A opção escolhida sobrescreve totalmente o lado oposto.',
+              style: TextStyle(fontSize: 11, color: c.textMuted, height: 1.4),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, _SyncDecision.cancel),
+          child: const Text('Sem sync agora'),
+        ),
+        OutlinedButton(
+          onPressed: () => Navigator.pop(context, _SyncDecision.useLocal),
+          child: const Text('Manter dispositivo'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _SyncDecision.useCloud),
+          child: const Text('Usar nuvem'),
+        ),
+      ],
+    );
+  }
+}
+
+class _SideStat extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final int marked;
+  final int extras;
+  final Color color;
+
+  const _SideStat({
+    required this.icon,
+    required this.label,
+    required this.marked,
+    required this.extras,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.fc;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 22),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: c.textMuted,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$marked figurinhas'
+                  '${extras > 0 ? "  ·  $extras repetidas" : ""}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: c.text,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _DoneView extends StatelessWidget {

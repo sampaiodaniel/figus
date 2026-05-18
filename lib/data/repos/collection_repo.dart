@@ -153,6 +153,69 @@ class CollectionRepo {
   /// missing markers needed for sync correctness), plus the total extra
   /// copies (duplicate_count sum) so the UI can show "X figurinhas + Y
   /// repetidas".
+  /// Lightweight summary of a profile's local collection — used by the
+  /// sync conflict dialog so the UI can show "you have X here, cloud has
+  /// Y" before deciding to overwrite either side.
+  Future<({int marked, int extras})> localCounts(int profileId) async {
+    final entries = await (db.select(db.collections)
+          ..where((c) =>
+              c.profileId.equals(profileId) &
+              c.status.isIn(['owned', 'duplicate'])))
+        .get();
+    var marked = 0;
+    var extras = 0;
+    for (final e in entries) {
+      marked++;
+      if (e.status == 'duplicate') extras += e.duplicateCount;
+    }
+    return (marked: marked, extras: extras);
+  }
+
+  /// Replaces the active profile's local collection with the supplied
+  /// remote map. Deletes whatever was there first, then re-inserts from
+  /// the remote — used when the user explicitly chooses "use cloud" in
+  /// the conflict dialog.
+  Future<({int applied, int unmatched})> replaceLocalFromRemote(
+      Map<String, ({String status, int dupCount})> remote) async {
+    final pid = await _activeProfileId();
+    final all = await db.select(db.stickers).get();
+    final byNumber = {for (final s in all) s.number: s};
+    var applied = 0;
+    var unmatched = 0;
+    await db.transaction(() async {
+      await (db.delete(db.collections)..where((c) => c.profileId.equals(pid)))
+          .go();
+      for (final entry in remote.entries) {
+        final sticker = byNumber[entry.key];
+        if (sticker == null) {
+          unmatched++;
+          continue;
+        }
+        await db.into(db.collections).insert(CollectionsCompanion.insert(
+              profileId: pid,
+              stickerId: sticker.id,
+              status: Value(entry.value.status),
+              duplicateCount: Value(entry.value.dupCount),
+            ));
+        applied++;
+      }
+    });
+    return (applied: applied, unmatched: unmatched);
+  }
+
+  /// Wipes the user's cloud collection and re-pushes everything local.
+  /// Used when the user explicitly chooses "keep this device" in the
+  /// conflict dialog — they've accepted that the cloud will lose any
+  /// rows that aren't on this device.
+  Future<({int totalRows, int markedStickers, int extraCopies})>
+      replaceCloudWithLocal() async {
+    if (sync == null || !sync!.isSignedIn) {
+      return (totalRows: 0, markedStickers: 0, extraCopies: 0);
+    }
+    await sync!.deleteAllForCurrentUser();
+    return pushAllLocal();
+  }
+
   Future<({int totalRows, int markedStickers, int extraCopies})> pushAllLocal() async {
     if (sync == null || !sync!.isSignedIn) {
       return (totalRows: 0, markedStickers: 0, extraCopies: 0);
