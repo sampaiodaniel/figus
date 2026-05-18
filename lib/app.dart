@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'core/debug/mobile_preview.dart';
 import 'core/theme/app_theme.dart';
 import 'data/auto_sync_observer.dart';
+import 'features/achievements/achievements_page.dart';
 import 'features/ads/banner_ad_widget.dart';
 import 'features/ads/banner_gallery_page.dart';
 import 'features/pro/pro_service.dart';
@@ -86,6 +87,7 @@ class FigusApp extends ConsumerWidget {
         ),
         GoRoute(path: '/scan', builder: (_, __) => const ScanPage()),
         GoRoute(path: '/progress', builder: (_, __) => const StatsPage()),
+        GoRoute(path: '/achievements', builder: (_, __) => const AchievementsPage()),
         GoRoute(path: '/themes', builder: (_, __) => const ThemePickerPage()),
 
         GoRoute(path: '/auth', builder: (_, __) => const AuthPage()),

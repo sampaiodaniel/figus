@@ -303,12 +303,53 @@ class YouPage extends ConsumerWidget {
                   ],
                 ),
                 Divider(color: c.border, height: 24),
-                // Apenas o status de sync — sem juntar com brilhantes.
+                // Status de sync — agora também é o único ponto de acesso ao
+                // login (linha duplicada no menu de baixo foi removida pra
+                // não repetir a info). Quando não logado, leva ao /auth.
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(
-                    isSignedIn ? '☁ ${syncEmail ?? "Sync ativo"}' : '○ Coleção salva neste aparelho',
-                    style: TextStyle(fontSize: 11, color: c.textMuted),
+                  child: InkWell(
+                    onTap: isSignedIn
+                        ? () => _showSyncOptions(context, ref, syncEmail ?? '')
+                        : () => context.push('/auth'),
+                    borderRadius: BorderRadius.circular(6),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isSignedIn
+                                ? Icons.cloud_done_rounded
+                                : Icons.cloud_outlined,
+                            size: 12,
+                            color: isSignedIn ? c.accent : c.textMuted,
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              isSignedIn
+                                  ? (syncEmail ?? 'Sync ativo')
+                                  : 'Sincronize entre vários dispositivos',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: isSignedIn ? c.textMuted : c.accent,
+                                fontWeight: isSignedIn
+                                    ? FontWeight.w400
+                                    : FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          if (!isSignedIn) ...[
+                            const SizedBox(width: 4),
+                            Icon(Icons.chevron_right_rounded,
+                                size: 14, color: c.accent),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -330,18 +371,15 @@ class YouPage extends ConsumerWidget {
           _MenuGroup(
             children: [
               _MenuRow(
-                icon: isSignedIn ? Icons.cloud_done_rounded : Icons.cloud_off_rounded,
-                iconColor: isSignedIn ? c.accent : c.textMuted,
-                title: isSignedIn ? 'Conta sync ativa' : 'Entrar · Sincronizar',
-                subtitle: isSignedIn ? syncEmail : 'Acesse em vários dispositivos',
-                onTap: isSignedIn
-                    ? () => _showSyncOptions(context, ref, syncEmail ?? '')
-                    : () => context.push('/auth'),
-              ),
-              _MenuRow(
                 icon: Icons.insights_rounded,
                 title: 'Estatísticas',
                 onTap: () => context.push('/progress'),
+              ),
+              _MenuRow(
+                icon: Icons.emoji_events_outlined,
+                title: 'Conquistas',
+                iconColor: AppTheme.gold,
+                onTap: () => context.push('/achievements'),
               ),
               _MenuRow(
                 icon: Icons.palette_outlined,

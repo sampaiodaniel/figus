@@ -82,6 +82,15 @@ enum AppThemeSeed {
 class ThemeSeedNotifier extends StateNotifier<AppThemeSeed> {
   final Ref ref;
   ThemeSeedNotifier(this.ref) : super(AppThemeSeed.gold) {
+    // Register Pro-state listener SYNCHRONOUSLY in the constructor, before
+    // any await. Riverpod requires ref.listen to be called during synchronous
+    // provider construction (or in an active scope) — calling it after an
+    // await inside an async method risks throwing if the parent provider
+    // graph has settled. The handler defers work until _init finishes via
+    // the _initDone flag, so _lastFreeSeed is correct before we enforce.
+    ref.listen<ProState>(proProvider, (_, next) {
+      if (_initDone) _enforceProGating(next);
+    });
     // ignore: discarded_futures
     _init();
   }
@@ -94,18 +103,15 @@ class ThemeSeedNotifier extends StateNotifier<AppThemeSeed> {
   AppThemeSeed _lastFreeSeed = AppThemeSeed.gold;
   AppThemeSeed get lastFreeSeed => _lastFreeSeed;
 
+  bool _initDone = false;
+
   Future<void> _init() async {
     await _load();
     // Wait for ProNotifier to finish its own prefs read so we don't demote
     // a legitimate Pro user during the boot race.
     await ref.read(proProvider.notifier).loaded;
     _enforceProGating(ref.read(proProvider));
-    // React to subsequent Pro state changes (trial expires while running,
-    // debug toggle off, purchase event, etc.). The listener is registered
-    // AFTER the initial enforce so we don't double-fire.
-    ref.listen<ProState>(proProvider, (prev, next) {
-      _enforceProGating(next);
-    });
+    _initDone = true;
   }
 
   Future<void> _load() async {
