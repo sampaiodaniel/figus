@@ -455,7 +455,7 @@ class _ComparisonTable extends StatelessWidget {
     ('Renomear perfil', true, true),
     ('Perfis adicionais (família)', false, true),
     ('Scan OCR ilimitado', false, true),
-    ('Troca por Bluetooth (em breve)', false, true),
+    ('Troca por Bluetooth e QR Code', true, true),
   ];
 
   @override

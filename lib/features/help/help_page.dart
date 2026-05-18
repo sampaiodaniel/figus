@@ -128,9 +128,9 @@ class HelpPage extends StatelessWidget {
               ),
               _Item(
                 emoji: '🔗',
-                title: 'Bluetooth (em breve)',
+                title: 'Trocar por Bluetooth',
                 body:
-                    'Encontre amigos por perto e troque sem internet — chega no próximo update.',
+                    'Encontre amigos por perto e troque sem internet. Um anuncia, o outro procura, dois toques e os inventários trocam sozinhos.',
               ),
             ],
           ),

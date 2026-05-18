@@ -93,18 +93,23 @@ class PaywallSheet extends ConsumerWidget {
             ),
             _FeatureRow(
               icon: Icons.palette_rounded,
-              title: '5 temas exclusivos',
-              subtitle: 'Dourado, Vermelho, Esmeralda, Roxo + padrão.',
+              title: '13 temas exclusivos',
+              subtitle: 'Dourado, Vermelho, Esmeralda, Roxo, Sunset e mais 8.',
             ),
             _FeatureRow(
-              icon: Icons.bluetooth_rounded,
-              title: 'Troca por Bluetooth (em breve)',
-              subtitle: 'Membros Pro terão acesso primeiro.',
+              icon: Icons.face_retouching_natural_rounded,
+              title: '20 avatares premium',
+              subtitle: 'Clássicos, estilos e festivos (Carnaval, Brasil, etc).',
             ),
             _FeatureRow(
-              icon: Icons.picture_as_pdf_rounded,
-              title: 'Export da coleção em PDF',
-              subtitle: 'Liste o que tem, falta e repetidas para imprimir.',
+              icon: Icons.insights_rounded,
+              title: 'Estatísticas avançadas',
+              subtitle: 'Histórico semanal, melhor dia da semana, ritmo.',
+            ),
+            _FeatureRow(
+              icon: Icons.people_alt_rounded,
+              title: 'Perfis extras',
+              subtitle: 'Coleções separadas pra família no mesmo aparelho.',
             ),
 
             const SizedBox(height: 20),
