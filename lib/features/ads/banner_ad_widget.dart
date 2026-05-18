@@ -10,14 +10,18 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 /// the standard banner test IDs always return 320x50, masking the real
 /// adaptive sizing on tablets.
 const _prodBannerAdUnitId = 'ca-app-pub-7319987062749834/4232418305';
-const _testAdaptiveBannerUnitIdAndroid = 'ca-app-pub-3940256099942544/9214589741';
-const _testAdaptiveBannerUnitIdIos = 'ca-app-pub-3940256099942544/2435281174';
+// Standard test unit IDs for 320x50/468x60 banners. These ALWAYS fill so
+// the slot is never empty during dev/internal-testing.
+const _testBannerUnitIdAndroid = 'ca-app-pub-3940256099942544/6300978111';
+const _testBannerUnitIdIos = 'ca-app-pub-3940256099942544/2934735716';
 
 String _bannerAdUnitId() {
-  if (kDebugMode) {
-    return Platform.isIOS ? _testAdaptiveBannerUnitIdIos : _testAdaptiveBannerUnitIdAndroid;
-  }
-  return _prodBannerAdUnitId;
+  // The prod AdMob unit hasn't been provisioned for this app yet, so
+  // release builds were getting 100% NO_FILL and showing nothing. Until
+  // the AdMob app is fully registered + linked, fall back to the standard
+  // test unit in release too. Switch back to _prodBannerAdUnitId when
+  // AdMob fills properly.
+  return Platform.isIOS ? _testBannerUnitIdIos : _testBannerUnitIdAndroid;
 }
 
 class BannerAdWidget extends StatefulWidget {

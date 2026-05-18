@@ -39,7 +39,9 @@ class MobilePreviewWrapper extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!kDebugMode) return child;
+    // Honored in release too — Daniel uses the toggle on the M8 tablet to
+    // preview phone-width layouts. The kDebugMode gate was masking the
+    // toggle and making it look broken.
     final enabled = ref.watch(mobilePreviewProvider);
     if (!enabled) return child;
 
