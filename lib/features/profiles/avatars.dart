@@ -72,15 +72,20 @@ class AvatarImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (id.startsWith('avatar_')) {
-      return SizedBox(
-        width: size,
-        height: size,
-        child: SvgPicture.asset(
-          'assets/avatars/$id.svg',
+      // SVGs in the v3 pack are flattened (we strip the outer wrapper that
+      // contained the circular clip-path, because flutter_svg 2.x doesn't
+      // support nested <svg> elements). ClipOval reinstates the round look
+      // at the widget level.
+      return ClipOval(
+        child: SizedBox(
           width: size,
           height: size,
-          // SVG is round on its own (a filled circle as the bg) — no need
-          // to clip.
+          child: SvgPicture.asset(
+            'assets/avatars/$id.svg',
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
+          ),
         ),
       );
     }

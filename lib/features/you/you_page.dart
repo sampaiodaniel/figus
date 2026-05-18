@@ -67,8 +67,21 @@ Future<void> _showSyncOptions(BuildContext context, WidgetRef ref, String email)
               // Initial backfill of pre-login marks happens in AuthPage._verifyOtp.
               final repo = ref.read(collectionRepoProvider);
               final sync = ref.read(syncRepoProvider);
-              final remote = await sync.pullAll();
-              final settings = await sync.pullUserSettings();
+              final Map<String, ({String status, int dupCount})> remote;
+              final ({String? theme, List<String>? favoriteNations, String? profileName, String? avatar}) settings;
+              try {
+                remote = await sync.pullAll();
+                settings = await sync.pullUserSettings();
+              } catch (e) {
+                messenger
+                  ..clearSnackBars()
+                  ..showSnackBar(SnackBar(
+                    content: Text('Erro de sincronização: $e'),
+                    duration: const Duration(seconds: 8),
+                    backgroundColor: const Color(0xFFB85450),
+                  ));
+                return;
+              }
               final applyStats = await repo.applyRemoteEntries(remote);
               // Apply theme / favorite nations / profile name from cloud too.
               if (settings.theme != null) {

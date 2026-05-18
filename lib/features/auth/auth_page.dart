@@ -28,6 +28,11 @@ class _AuthPageState extends ConsumerState<AuthPage> {
   // so the user knows whether the sync brought their existing data or if
   // they just opened a fresh account (no rows to restore).
   _SyncSummary? _syncSummary;
+  String? _syncError;
+  bool _syncInProgress = false;
+  // Stage tracker so the spinner can show "Baixando…" / "Aplicando…" /
+  // "Subindo…" instead of an ambiguous indefinite circle.
+  String _syncStage = '';
 
   @override
   void dispose() {
@@ -75,39 +80,55 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       }
     });
     if (err == null) {
-      // PULL FIRST, then push. The old order (push-then-pull) had a nasty
-      // edge case: if the user reinstalled the app, the local DB was empty
-      // BUT it still had implicit 'missing' rows for every sticker created
-      // by the seed. pushAllLocal then uploaded those 'missing' statuses
-      // and (depending on timestamps) could blank out the 'owned' rows
-      // already on the server. Pulling first restores the server state
-      // locally; pushing afterwards only adds anything the user marked
-      // pre-login that the server didn't yet know about.
-      final repo = ref.read(collectionRepoProvider);
-      final sync = ref.read(syncRepoProvider);
+      // Run the initial sync in its own method so the "Tentar de novo"
+      // button on the done screen can reuse it.
+      await _runInitialSync();
+    }
+  }
 
+  Future<void> _runInitialSync() async {
+    if (!mounted) return;
+    setState(() {
+      _syncInProgress = true;
+      _syncError = null;
+      _syncSummary = null;
+      _syncStage = 'Conectando...';
+    });
+
+    final repo = ref.read(collectionRepoProvider);
+    final sync = ref.read(syncRepoProvider);
+
+    try {
+      // ── 1. Pull collection from cloud ───────────────────────────────────
+      if (mounted) setState(() => _syncStage = 'Baixando figurinhas...');
       final remote = await sync.pullAll();
-      final settings = await sync.pullUserSettings();
-      if (!mounted) return;
       // ignore: avoid_print
-      print('[Auth] pulled ${remote.length} sticker rows from cloud · '
-          'theme=${settings.theme} avatar=${settings.avatar} '
-          'name=${settings.profileName}');
+      print('[Auth] pull returned ${remote.length} rows');
 
+      // ── 2. Pull user metadata (theme/avatar/name) ──────────────────────
+      if (mounted) setState(() => _syncStage = 'Baixando perfil...');
+      final settings = await sync.pullUserSettings();
+      // ignore: avoid_print
+      print('[Auth] settings: theme=${settings.theme} '
+          'avatar=${settings.avatar} name=${settings.profileName} '
+          'favs=${settings.favoriteNations?.length}');
+
+      if (!mounted) return;
+
+      // ── 3. Apply remote entries locally ─────────────────────────────────
       var applyStats =
           (applied: 0, unmatched: 0, markedApplied: 0, extrasApplied: 0);
       if (remote.isNotEmpty) {
+        setState(() => _syncStage = 'Aplicando...');
         applyStats = await repo.applyRemoteEntries(remote);
       }
       await _applyRemoteSettings(settings);
-      // Now push: anything local that the cloud didn't have (e.g. the
-      // user marked a few stickers before logging in) gets uploaded.
-      // pushAllLocal is upsert-by-(user_id,sticker_number), so it won't
-      // clobber what pullAll just restored.
+
+      // ── 4. Push anything local that the cloud didn't have ──────────────
+      setState(() => _syncStage = 'Sincronizando...');
       final pushStats = await repo.pushAllLocal();
       // ignore: avoid_print
-      print('[Auth] pushed ${pushStats.totalRows} rows back up · '
-          'marked=${pushStats.markedStickers} extras=${pushStats.extraCopies}');
+      print('[Auth] pushed ${pushStats.totalRows} rows back up');
 
       if (!mounted) return;
       ref.read(collectionVersionProvider.notifier).state++;
@@ -116,7 +137,11 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       ref.invalidate(profilesListProvider);
 
       setState(() {
+        _syncInProgress = false;
+        _syncStage = '';
         _syncSummary = _SyncSummary(
+          email: sync.userEmail ?? '',
+          userId: sync.userId ?? '',
           pulledRows: remote.length,
           appliedMarks: applyStats.markedApplied,
           appliedExtras: applyStats.extrasApplied,
@@ -128,8 +153,21 @@ class _AuthPageState extends ConsumerState<AuthPage> {
           hasFavorites: settings.favoriteNations != null &&
               settings.favoriteNations!.isNotEmpty,
         );
+        _step = _Step.done;
       });
       widget.onSignedIn?.call();
+    } catch (e, st) {
+      // Any error in the sync flow surfaces here so the user can see what
+      // went wrong instead of staring at a frozen spinner.
+      // ignore: avoid_print
+      print('[Auth] sync error: $e\n$st');
+      if (!mounted) return;
+      setState(() {
+        _syncInProgress = false;
+        _syncStage = '';
+        _syncError = e.toString();
+        _step = _Step.done;
+      });
     }
   }
 
@@ -211,7 +249,11 @@ class _AuthPageState extends ConsumerState<AuthPage> {
                 child: _step == _Step.done
                     ? _DoneView(
                         summary: _syncSummary,
+                        syncInProgress: _syncInProgress,
+                        syncStage: _syncStage,
+                        syncError: _syncError,
                         onClose: () => Navigator.pop(context),
+                        onRetry: _runInitialSync,
                       )
                     : _AuthCard(
                         c: c,
@@ -429,6 +471,8 @@ class _AuthCard extends StatelessWidget {
 }
 
 class _SyncSummary {
+  final String email;
+  final String userId;
   final int pulledRows;
   final int appliedMarks;
   final int appliedExtras;
@@ -439,6 +483,8 @@ class _SyncSummary {
   final bool hasFavorites;
 
   const _SyncSummary({
+    required this.email,
+    required this.userId,
     required this.pulledRows,
     required this.appliedMarks,
     required this.appliedExtras,
@@ -449,8 +495,12 @@ class _SyncSummary {
     required this.hasFavorites,
   });
 
+  // Treat "pulled rows" as the source of truth for whether the cloud had
+  // data — appliedMarks only counts owned/duplicate, so a user who marked
+  // then unmarked stickers (status=missing in the cloud) would otherwise
+  // see "no data" even though their sync history is intact.
   bool get restoredAnything =>
-      appliedMarks > 0 ||
+      pulledRows > 0 ||
       hasTheme ||
       hasAvatar ||
       hasProfileName ||
@@ -459,33 +509,113 @@ class _SyncSummary {
 
 class _DoneView extends StatelessWidget {
   final VoidCallback onClose;
+  final VoidCallback onRetry;
   final _SyncSummary? summary;
-  const _DoneView({required this.onClose, this.summary});
+  final bool syncInProgress;
+  final String syncStage;
+  final String? syncError;
+
+  const _DoneView({
+    required this.onClose,
+    required this.onRetry,
+    required this.syncInProgress,
+    required this.syncStage,
+    required this.syncError,
+    this.summary,
+  });
 
   @override
   Widget build(BuildContext context) {
     final c = context.fc;
     final s = summary;
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Center(
-          child: Icon(Icons.check_circle_rounded,
-              size: 72, color: Color(0xFF22C58A)),
+        Center(
+          child: Icon(
+            syncError != null
+                ? Icons.warning_amber_rounded
+                : Icons.check_circle_rounded,
+            size: 72,
+            color: syncError != null
+                ? const Color(0xFFE5B14B)
+                : const Color(0xFF22C58A),
+          ),
         ),
         const SizedBox(height: 16),
-        const Text('Conta conectada!',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
+        Text(
+          syncError != null ? 'Conta conectada, mas...' : 'Conta conectada!',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+        ),
         const SizedBox(height: 16),
-        if (s == null) ...[
-          Text(
-            'Sincronizando seus dados…',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: c.textMuted, height: 1.5),
+
+        // ── IN PROGRESS ────────────────────────────────────────────────────
+        if (syncInProgress) ...[
+          const SizedBox(
+            height: 32,
+            child: Center(
+              child: SizedBox(
+                width: 28,
+                height: 28,
+                child: CircularProgressIndicator(strokeWidth: 3),
+              ),
+            ),
           ),
-        ] else if (s.restoredAnything) ...[
+          const SizedBox(height: 8),
+          Text(
+            syncStage.isEmpty ? 'Sincronizando...' : syncStage,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: c.textMuted, fontSize: 13),
+          ),
+          const SizedBox(height: 24),
+        ]
+        // ── ERROR ──────────────────────────────────────────────────────────
+        else if (syncError != null) ...[
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE5B14B).withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: const Color(0xFFE5B14B).withValues(alpha: 0.4),
+              ),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  'Falha ao baixar seus dados:',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: c.text,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  syncError!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: c.textMuted,
+                      fontSize: 11,
+                      fontFamily: 'monospace',
+                      height: 1.4),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Tentar de novo'),
+            onPressed: onRetry,
+          ),
+          const SizedBox(height: 8),
+        ]
+        // ── SUCCESS WITH DATA ──────────────────────────────────────────────
+        else if (s != null && s.restoredAnything) ...[
           Text(
             'Dados restaurados da nuvem:',
             textAlign: TextAlign.center,
@@ -493,6 +623,7 @@ class _DoneView extends StatelessWidget {
                 color: c.text, fontWeight: FontWeight.w700, fontSize: 14),
           ),
           const SizedBox(height: 12),
+          _restoreLine('📡', '${s.pulledRows} linhas baixadas da nuvem'),
           if (s.appliedMarks > 0)
             _restoreLine('📒',
                 '${s.appliedMarks} figurinhas marcadas'
@@ -509,9 +640,19 @@ class _DoneView extends StatelessWidget {
               style: TextStyle(fontSize: 11, color: c.textMuted),
             ),
           ],
-        ] else ...[
-          // No data came down. Could mean: brand-new account, OR they
-          // logged into a different email than the one used before.
+          const SizedBox(height: 8),
+          Text(
+            'Logado como: ${s.email}',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: c.textMuted,
+              fontSize: 11,
+              fontFamily: 'monospace',
+            ),
+          ),
+        ]
+        // ── SUCCESS, BUT EMPTY ─────────────────────────────────────────────
+        else if (s != null) ...[
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
@@ -531,9 +672,23 @@ class _DoneView extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Se você esperava recuperar figurinhas, confira se '
-                  'logou com o mesmo e-mail dos seus outros dispositivos. '
-                  'Daqui em diante, tudo que marcar será sincronizado.',
+                  'Logado como:',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: c.textMuted, fontSize: 11),
+                ),
+                Text(
+                  s.email,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: c.accent,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Se este NÃO é o e-mail dos seus outros dispositivos, '
+                  'volte, faça logout em Ajustes e relogue com o e-mail '
+                  'certo. Daqui em diante, tudo que marcar será sincronizado.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       color: c.textMuted, fontSize: 12, height: 1.4),
@@ -541,10 +696,18 @@ class _DoneView extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Tentar sincronizar de novo'),
+            onPressed: onRetry,
+          ),
+          const SizedBox(height: 8),
         ],
-        const SizedBox(height: 32),
+
+        const SizedBox(height: 16),
         FilledButton(
-          onPressed: onClose,
+          onPressed: syncInProgress ? null : onClose,
           child: const Text('Pronto'),
         ),
       ],

@@ -77,6 +77,9 @@ class _AutoSyncObserverState extends ConsumerState<AutoSyncObserver>
     _lastSyncedAt = now;
     try {
       final repo = ref.read(collectionRepoProvider);
+      // pullAll now rethrows on error; the outer catch silences for the
+      // auto-sync UX (the user-triggered "Sincronizar agora" path surfaces
+      // errors via SnackBar instead).
       final remote = await sync.pullAll();
       final settings = await sync.pullUserSettings();
       if (remote.isNotEmpty) {

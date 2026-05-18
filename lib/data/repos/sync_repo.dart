@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -76,8 +78,22 @@ class SyncRepo {
     const pageSize = 1000;
     final result = <String, ({String status, int dupCount})>{};
     try {
+      // Force-refresh the session before querying. A stale token still
+      // counts as "signed in" client-side (currentUser != null), but RLS
+      // rejects the query server-side because auth.uid() comes back null —
+      // and Supabase returns 0 rows instead of an error, which is why the
+      // user sees a "successful" sync that brought nothing. Refreshing
+      // sets a valid Bearer for the upcoming select.
+      try {
+        await _client!.auth.refreshSession().timeout(const Duration(seconds: 15));
+      } catch (e) {
+        debugPrint('[SyncRepo] pullAll refreshSession failed (continuing): $e');
+      }
       var offset = 0;
       while (true) {
+        // Hard timeout per page — without this, the spinner can spin
+        // forever if Supabase happens to be flaky on a given device. 30s
+        // is plenty for 1k rows in any country.
         final rows = await _client!
             .from(_table)
             .select('sticker_number,status,duplicate_count')
@@ -86,7 +102,8 @@ class SyncRepo {
             // Postgres can return overlapping/missing rows across pages and
             // the user has to sync twice to converge.
             .order('sticker_number')
-            .range(offset, offset + pageSize - 1);
+            .range(offset, offset + pageSize - 1)
+            .timeout(const Duration(seconds: 30));
         if (rows.isEmpty) break;
         for (final r in rows) {
           result[r['sticker_number'] as String] = (
@@ -100,7 +117,11 @@ class SyncRepo {
       return result;
     } catch (e) {
       debugPrint('[SyncRepo] pullAll error: $e');
-      return result;
+      // Re-throw so the caller can show a meaningful error instead of an
+      // empty map masquerading as "no data on server". The few callers that
+      // truly want silent failure (auto-sync observer, the cloud icon in
+      // the progress card) already wrap this in their own try/catch.
+      rethrow;
     }
   }
 
