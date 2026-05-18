@@ -45,7 +45,7 @@ class _FavoriteNationsPageState extends ConsumerState<FavoriteNationsPage> {
   Widget build(BuildContext context) {
     final favs = _favorites;
     return Scaffold(
-      appBar: const FigusAppBar(title: 'Seleções favoritas'),
+      appBar: const FigusAppBar(title: 'Favoritas'),
       body: favs == null
           ? const Center(child: CircularProgressIndicator())
           : ListView(
