@@ -53,10 +53,49 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
       appBar: AppBar(
         title: const Text('Comparar com amigo'),
         actions: [
-          IconButton(
+          PopupMenuButton<String>(
             icon: const Icon(Icons.share_rounded),
-            tooltip: 'Compartilhar meu inventário',
-            onPressed: _shareMyInventory,
+            tooltip: 'Compartilhar',
+            onSelected: (key) {
+              if (key == 'trades') {
+                _shareSuggestedTrades();
+              } else if (key == 'inventory') {
+                _shareMyInventory();
+              }
+            },
+            itemBuilder: (ctx) => [
+              if (_offers != null && _offers!.isNotEmpty)
+                const PopupMenuItem<String>(
+                  value: 'trades',
+                  child: Row(
+                    children: [
+                      Icon(Icons.handshake_rounded, size: 18),
+                      SizedBox(width: 10),
+                      Flexible(
+                        child: Text(
+                          'Mandar trocas pro amigo (texto)',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              const PopupMenuItem<String>(
+                value: 'inventory',
+                child: Row(
+                  children: [
+                    Icon(Icons.data_object_rounded, size: 18),
+                    SizedBox(width: 10),
+                    Flexible(
+                      child: Text(
+                        'Meu inventário (JSON)',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -182,6 +221,71 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
     final exported = await InventoryCodec.exportMine(db);
     final json = InventoryCodec.encodeJson(exported);
     await Share.share(json, subject: 'Meu inventário Figus');
+  }
+
+  /// Exports the current suggestion list as a WhatsApp-friendly text — for
+  /// when the friend doesn't use Figus and won't import a JSON. Same as
+  /// what shows on screen, formatted as plain lines with emojis so it
+  /// reads naturally in a chat.
+  Future<void> _shareSuggestedTrades() async {
+    final offers = _offers;
+    if (offers == null || offers.isEmpty) return;
+    // Skip confirmed/invalidated trades — the recipient only cares about
+    // ones still actionable.
+    final actionable = <int>[
+      for (var i = 0; i < offers.length; i++)
+        if (!_confirmedIdx.contains(i) && !_invalidatedIdx.contains(i)) i,
+    ];
+    if (actionable.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nada pra compartilhar — todas as trocas já foram marcadas.'),
+        ),
+      );
+      return;
+    }
+
+    final friend = _friendName ?? 'amigo';
+    final lines = <String>[
+      '🤝 Trocas sugeridas — Figus',
+      '',
+      'Comparei minhas figurinhas com as do $friend e aqui '
+          'estão as trocas possíveis:',
+      '',
+    ];
+    for (var k = 0; k < actionable.length; k++) {
+      final o = offers[actionable[k]];
+      final give = _formatCodeMap(o.youGive);
+      final receive = _formatCodeMap(o.youReceive);
+      final note = o.kind == 'mixed'
+          ? (o.totalGive > o.totalReceive
+              ? '  (2 normais por 1 brilhante)'
+              : '  (1 brilhante por 2 normais)')
+          : '';
+      lines.add('${k + 1}) 📤 $give  →  📥 $receive$note');
+    }
+    final total = actionable.length;
+    lines
+      ..add('')
+      ..add(total == 1
+          ? 'Total: 1 troca possível'
+          : 'Total: $total trocas possíveis')
+      ..add('')
+      ..add('Bora marcar?')
+      ..add('')
+      ..add('Baixe o Figus: https://appfigus.com');
+
+    await Share.share(
+      lines.join('\n'),
+      subject: 'Trocas Figus com $friend',
+    );
+  }
+
+  String _formatCodeMap(Map<String, int> m) {
+    if (m.isEmpty) return '—';
+    return m.entries
+        .map((e) => e.value > 1 ? '${e.key} ×${e.value}' : e.key)
+        .join(', ');
   }
 
   Future<void> _pasteInventory() async {
