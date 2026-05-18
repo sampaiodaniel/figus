@@ -82,7 +82,8 @@ enum AppThemeSeed {
 class ThemeSeedNotifier extends StateNotifier<AppThemeSeed> {
   final Ref ref;
   ThemeSeedNotifier(this.ref) : super(AppThemeSeed.gold) {
-    _load();
+    // ignore: discarded_futures
+    _init();
   }
 
   static const _key = 'theme_seed';
@@ -93,9 +94,22 @@ class ThemeSeedNotifier extends StateNotifier<AppThemeSeed> {
   AppThemeSeed _lastFreeSeed = AppThemeSeed.gold;
   AppThemeSeed get lastFreeSeed => _lastFreeSeed;
 
+  Future<void> _init() async {
+    await _load();
+    // Wait for ProNotifier to finish its own prefs read so we don't demote
+    // a legitimate Pro user during the boot race.
+    await ref.read(proProvider.notifier).loaded;
+    _enforceProGating(ref.read(proProvider));
+    // React to subsequent Pro state changes (trial expires while running,
+    // debug toggle off, purchase event, etc.). The listener is registered
+    // AFTER the initial enforce so we don't double-fire.
+    ref.listen<ProState>(proProvider, (prev, next) {
+      _enforceProGating(next);
+    });
+  }
+
   Future<void> _load() async {
     final p = await SharedPreferences.getInstance();
-    // Last free first — we may need it as the fallback below.
     final lastFree = p.getString(_keyLastFree);
     if (lastFree != null) {
       final match = AppThemeSeed.values
@@ -107,18 +121,26 @@ class ThemeSeedNotifier extends StateNotifier<AppThemeSeed> {
     if (saved != null) {
       final match =
           AppThemeSeed.values.where((t) => t.name == saved).firstOrNull;
-      if (match != null) {
-        // Don't restore a Pro seed for a user who isn't (or isn't anymore)
-        // Pro — fall back to the last free choice instead so the picker
-        // stays in sync with what the app actually renders.
-        final isPro = ref.read(proProvider).isActive;
-        if (match.proOnly && !isPro) {
-          state = _lastFreeSeed;
-        } else {
-          state = match;
-        }
-      }
+      if (match != null) state = match;
+      // Don't gate here — _init() will gate against the Pro state once
+      // ProNotifier has finished loading.
     }
+  }
+
+  /// Force-fall back to [_lastFreeSeed] (and persist) whenever the current
+  /// state is a Pro-only seed but Pro is no longer active. Runs on boot
+  /// after Pro is loaded AND on every subsequent Pro state change.
+  void _enforceProGating(ProState pro) {
+    if (pro.isActive) return;
+    if (!state.proOnly) return;
+    final fallback = _lastFreeSeed;
+    state = fallback;
+    // Persist the demoted seed so the next cold start renders the same
+    // thing as the in-memory state. Fire-and-forget — UI already updated.
+    // ignore: discarded_futures
+    SharedPreferences.getInstance().then((p) {
+      p.setString(_key, fallback.name);
+    });
   }
 
   /// Apply a theme. Set [pushToCloud] false when applying a value that came

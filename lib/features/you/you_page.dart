@@ -350,12 +350,6 @@ class YouPage extends ConsumerWidget {
                 onTap: () => context.push('/themes'),
               ),
               _MenuRow(
-                icon: Icons.face_outlined,
-                title: 'Avatar',
-                iconColor: c.accent,
-                onTap: () => context.push('/avatars'),
-              ),
-              _MenuRow(
                 icon: Icons.star_outline_rounded,
                 title: 'Seleções favoritas',
                 iconColor: c.accent,

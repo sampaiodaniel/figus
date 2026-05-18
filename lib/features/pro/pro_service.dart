@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -63,6 +65,13 @@ class ProNotifier extends StateNotifier<ProState> {
     _load();
   }
 
+  // Exposed so dependent providers (ThemeSeedNotifier) can wait for the
+  // initial prefs read before enforcing gating — otherwise the default
+  // `isPro: false` state would demote a legitimate Pro user during the few
+  // ms between provider creation and load completion.
+  final Completer<void> _loadedCompleter = Completer<void>();
+  Future<void> get loaded => _loadedCompleter.future;
+
   static const _keyIsPro = 'pro_is_pro';
   static const _keyTrialEnds = 'pro_trial_ends';
   static const _keyHasUsedTrial = 'pro_has_used_trial';
@@ -91,6 +100,7 @@ class ProNotifier extends StateNotifier<ProState> {
       await p.setString(_keyOcrDate, today);
       await p.setInt(_keyOcrScans, 0);
     }
+    if (!_loadedCompleter.isCompleted) _loadedCompleter.complete();
   }
 
   Future<void> activatePro() async {
