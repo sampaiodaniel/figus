@@ -8,6 +8,7 @@ import '../../core/widgets/figus_app_bar.dart';
 import '../../data/providers.dart';
 import '../scan/ocr_service.dart';
 import '../scan/review_detections_sheet.dart';
+import 'figuritas_parser.dart';
 
 /// Two import flows for bringing a sticker collection from any source:
 ///   1. Pick a screenshot → OCR extracts codes (mobile only).
@@ -201,81 +202,14 @@ class FiguritasImportPage extends ConsumerWidget {
 
   // ── Figuritas format ────────────────────────────────────────────────────────
 
-  static bool _isFiguritasFormat(String text) {
-    final lower = text.toLowerCase();
-    return lower.contains('faltante') || lower.contains('figurinhas app');
-  }
-
-  /// Returns (faltantesSet, repetidas map code→extraCount).
-  static (Set<String>, Map<String, int>) _parseFiguritasExport(String text) {
-    final faltantes = <String>{};
-    final repetidas = <String, int>{};
-
-    var inFaltantes = false;
-    var inRepetidas = false;
-
-    for (final rawLine in text.split('\n')) {
-      final line = rawLine.trim();
-      if (line.isEmpty) continue;
-
-      final lower = line.toLowerCase();
-
-      if (lower.contains('faltante')) {
-        inFaltantes = true;
-        inRepetidas = false;
-        continue;
-      }
-      if (lower.contains('repetida')) {
-        inFaltantes = false;
-        inRepetidas = true;
-        continue;
-      }
-      // Footer / irrelevant lines
-      if (lower.contains('baixe') ||
-          lower.contains('http') ||
-          lower.contains('figurinhas app')) {
-        continue;
-      }
-
-      if (!inFaltantes && !inRepetidas) continue;
-
-      // Extract team code: first sequence of ASCII letters (2-4 chars)
-      final codeMatch = RegExp(r'^([A-Za-z]{2,4})\b').firstMatch(line);
-      if (codeMatch == null) continue;
-      final teamCode = codeMatch.group(1)!.toUpperCase();
-
-      // Numbers come after ':'
-      final colonIdx = line.indexOf(':');
-      if (colonIdx < 0) continue;
-      final numbersPart = line.substring(colonIdx + 1);
-
-      for (final part in numbersPart.split(',')) {
-        final trimmed = part.trim();
-        // Handle "N", "N x2", "Nx2", "N(x2)", "N×2" — Figuritas sometimes
-        // encodes quantity when you have multiple copies of the same sticker.
-        final m = RegExp(r'^(\d+)(?:\s*[x×(]\s*(\d+))?').firstMatch(trimmed);
-        if (m == null) continue;
-        final n = int.tryParse(m.group(1)!);
-        final count = int.tryParse(m.group(2) ?? '1') ?? 1;
-        if (n == null || n < 0) continue;
-        final code = n == 0 ? '${teamCode}00' : '$teamCode$n';
-        if (inFaltantes) {
-          faltantes.add(code);
-        } else {
-          repetidas[code] = (repetidas[code] ?? 0) + count;
-        }
-      }
-    }
-
-    return (faltantes, repetidas);
-  }
+  static bool _isFiguritasFormat(String text) => isFiguritasFormat(text);
 
   Future<void> _importFiguritasFormat(
     BuildContext context,
     WidgetRef ref,
     String text,
   ) async {
-    final (faltantes, repetidas) = _parseFiguritasExport(text);
+    final (faltantes, repetidas) = parseFiguritasExport(text);
 
     // Count how many stickers will be owned/duped/missing after import.
     // Only stickers whose prefix appears in the export are touched.

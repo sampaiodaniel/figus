@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/figus_colors.dart';
 import '../../data/providers.dart';
+import '../import/figuritas_parser.dart';
 import 'inventory_codec.dart';
 import 'trade_matcher.dart';
 
@@ -219,7 +220,8 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
             ),
             const SizedBox(height: 6),
             Text(
-              'Peça pro amigo compartilhar o inventário (botão ↗) e cole aqui.',
+              'Cole o JSON exportado pelo Figus ou a lista de texto '
+              'do app Figuritas — os dois formatos funcionam.',
               style: TextStyle(fontSize: 13, color: c.textMuted),
             ),
             const SizedBox(height: 14),
@@ -240,7 +242,7 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: c.border),
                 ),
-                hintText: 'Cole o JSON aqui...',
+                hintText: 'Cole aqui o JSON do Figus ou a lista do Figuritas',
                 hintStyle: TextStyle(color: c.textMuted),
                 contentPadding: const EdgeInsets.all(14),
               ),
@@ -279,26 +281,102 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
     await _applyFriendJson(result);
   }
 
-  Future<void> _applyFriendJson(String json) async {
-    try {
-      final friend = InventoryCodec.decodeAsFriend(json);
-      // Preserve the display name parsed off the JSON since TradeInventory
-      // dropped that field for the paste flow.
-      final inventoryWithName = TradeInventory(
-        dupesByCode: friend.dupesByCode,
-        missingCodes: friend.missingCodes,
-        stickersByCode: friend.stickersByCode,
-        favoriteNations: friend.favoriteNations,
-        profileName: InventoryCodec.profileNameOf(json),
-      );
-      await _applyFriend(inventoryWithName);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _busy = false;
-        _error = 'Não consegui ler o inventário: $e';
-      });
+  Future<void> _applyFriendJson(String raw) async {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) {
+      setState(() => _error = 'Cole o inventário ou exportação do amigo.');
+      return;
     }
+
+    // Strategy 1 — Figus's own JSON. Detect by leading '{' to avoid trying
+    // to parse a Figuritas text dump as JSON (which used to fail with
+    // "SyntaxError: Unexpected identifier Figurinhas").
+    if (trimmed.startsWith('{')) {
+      try {
+        final friend = InventoryCodec.decodeAsFriend(trimmed);
+        final inventoryWithName = TradeInventory(
+          dupesByCode: friend.dupesByCode,
+          missingCodes: friend.missingCodes,
+          stickersByCode: friend.stickersByCode,
+          favoriteNations: friend.favoriteNations,
+          profileName: InventoryCodec.profileNameOf(trimmed),
+        );
+        await _applyFriend(inventoryWithName);
+        return;
+      } catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _busy = false;
+          _error = 'Não consegui ler o JSON: $e';
+        });
+        return;
+      }
+    }
+
+    // Strategy 2 — Figuritas plain-text export. The user can paste the
+    // share-as-text output from the Figuritas app directly and we treat
+    // their "Repetidas" as the friend's dupes pool.
+    if (isFiguritasFormat(trimmed)) {
+      try {
+        await _applyFiguritasExport(trimmed);
+        return;
+      } catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _busy = false;
+          _error = 'Não consegui ler o formato Figuritas: $e';
+        });
+        return;
+      }
+    }
+
+    setState(() {
+      _busy = false;
+      _error = 'Formato não reconhecido. Cole o JSON do Figus '
+          '(começando com "{") ou a exportação de texto do Figuritas.';
+    });
+  }
+
+  /// Converts a Figuritas plain-text export into a [TradeInventory] using
+  /// the local seed for sticker metadata (foil flag, nation code). The
+  /// friend's "missingCodes" is inferred as "everything in the local seed
+  /// that isn't in their dupes" — Figuritas doesn't ship that list
+  /// explicitly when the user shares only "Repetidas".
+  Future<void> _applyFiguritasExport(String text) async {
+    final (faltantes, repetidas) = parseFiguritasExport(text);
+    final db = ref.read(databaseProvider);
+    final localStickers = await db.select(db.stickers).get();
+    final localNations = await db.select(db.nations).get();
+    final nationCodeById = {for (final n in localNations) n.id: n.code};
+
+    final stickers = <String, TradeSticker>{};
+    final allCodes = <String>{};
+    for (final s in localStickers) {
+      stickers[s.number] = TradeSticker(
+        code: s.number,
+        nationCode: s.nationId != null ? nationCodeById[s.nationId!] : null,
+        isFoil: s.isFoil,
+      );
+      allCodes.add(s.number);
+    }
+
+    // If "Faltantes" was included in the export, use it. Otherwise infer:
+    // friend is missing every album sticker that isn't in their dupes.
+    final Set<String> missing;
+    if (faltantes.isNotEmpty) {
+      missing = faltantes;
+    } else {
+      missing = allCodes.difference(repetidas.keys.toSet());
+    }
+
+    final friend = TradeInventory(
+      dupesByCode: repetidas,
+      missingCodes: missing,
+      stickersByCode: stickers,
+      favoriteNations: const {},
+      profileName: 'amigo do Figuritas',
+    );
+    await _applyFriend(friend);
   }
 
   Future<void> _applyFriend(TradeInventory friend) async {
