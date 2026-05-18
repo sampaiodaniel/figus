@@ -19,44 +19,43 @@ class FigusAvatar {
   String get assetPath => 'assets/avatars/$id.svg';
 }
 
-/// 25 cartoon avatars generated via the DiceBear "avataaars" API (see
-/// tool/fetch_avatars.ps1). 5 are free, covering basic ethnicity/gender
-/// representation; the remaining 20 are Pro (varied looks + festive themes).
+/// 25 cartoon avatars from the Figus v2 pack (curated DiceBear avataaars
+/// configurations with named personas). 5 free + 20 Pro split across
+/// classics, lifestyles and festive themes. Labels match the pack's
+/// config.js so the UI shows the persona name, not a generic descriptor.
 const figusAvatars = <FigusAvatar>[
-  // ── free (5) — basic representation ──────────────────────────────────────
-  FigusAvatar(id: 'avatar_01', label: 'Loira',        proOnly: false),
-  FigusAvatar(id: 'avatar_02', label: 'Castanho',     proOnly: false),
-  FigusAvatar(id: 'avatar_03', label: 'Barba',        proOnly: false),
-  FigusAvatar(id: 'avatar_04', label: 'Afro',         proOnly: false),
-  FigusAvatar(id: 'avatar_05', label: 'Lisa',         proOnly: false),
+  // ── free (5) — representação básica ──────────────────────────────────────
+  FigusAvatar(id: 'avatar_01', label: 'Mariana',      proOnly: false),
+  FigusAvatar(id: 'avatar_02', label: 'Amanda',       proOnly: false),
+  FigusAvatar(id: 'avatar_03', label: 'Lucas',        proOnly: false),
+  FigusAvatar(id: 'avatar_04', label: 'Pedro',        proOnly: false),
+  FigusAvatar(id: 'avatar_05', label: 'Sam',          proOnly: false),
 
-  // ── pro · classics (7) ───────────────────────────────────────────────────
-  FigusAvatar(id: 'avatar_06', label: 'Morena',       proOnly: true),
-  FigusAvatar(id: 'avatar_07', label: 'Veterano',     proOnly: true),
-  FigusAvatar(id: 'avatar_08', label: 'Ruiva',        proOnly: true),
-  FigusAvatar(id: 'avatar_09', label: 'Jovem',        proOnly: true),
-  FigusAvatar(id: 'avatar_10', label: 'Oriental',     proOnly: true),
-  FigusAvatar(id: 'avatar_11', label: 'Dreads',       proOnly: true),
-  FigusAvatar(id: 'avatar_12', label: 'Executiva',    proOnly: true),
+  // ── pro · clássicos (8) ──────────────────────────────────────────────────
+  FigusAvatar(id: 'avatar_06', label: 'Yuki',         proOnly: true),
+  FigusAvatar(id: 'avatar_07', label: 'Isabela',      proOnly: true),
+  FigusAvatar(id: 'avatar_08', label: 'Dona Clara',   proOnly: true),
+  FigusAvatar(id: 'avatar_09', label: 'Celina',       proOnly: true),
+  FigusAvatar(id: 'avatar_10', label: 'Rodrigo',      proOnly: true),
+  FigusAvatar(id: 'avatar_11', label: 'Zé',           proOnly: true),
+  FigusAvatar(id: 'avatar_12', label: 'Pirí',         proOnly: true),
+  FigusAvatar(id: 'avatar_13', label: 'Seu Toninho',  proOnly: true),
 
-  // ── pro · accessories (4) ────────────────────────────────────────────────
-  FigusAvatar(id: 'avatar_13', label: 'Óculos',       proOnly: true),
-  FigusAvatar(id: 'avatar_14', label: 'Sol',          proOnly: true),
-  FigusAvatar(id: 'avatar_15', label: 'Hipster',      proOnly: true),
-  FigusAvatar(id: 'avatar_16', label: 'Rosa',         proOnly: true),
+  // ── pro · estilos (6) ────────────────────────────────────────────────────
+  FigusAvatar(id: 'avatar_14', label: 'Atleta',       proOnly: true),
+  FigusAvatar(id: 'avatar_15', label: 'Diretor',      proOnly: true),
+  FigusAvatar(id: 'avatar_16', label: 'Kai',          proOnly: true),
+  FigusAvatar(id: 'avatar_17', label: 'Punk',         proOnly: true),
+  FigusAvatar(id: 'avatar_18', label: 'Flora',        proOnly: true),
+  FigusAvatar(id: 'avatar_19', label: 'Gamer',        proOnly: true),
 
-  // ── pro · festive (6) ────────────────────────────────────────────────────
-  FigusAvatar(id: 'avatar_17', label: 'Brasil A',     proOnly: true),
-  FigusAvatar(id: 'avatar_18', label: 'Brasil V',     proOnly: true),
-  FigusAvatar(id: 'avatar_19', label: 'Halloween',    proOnly: true),
-  FigusAvatar(id: 'avatar_20', label: 'Papai Noel',   proOnly: true),
-  FigusAvatar(id: 'avatar_21', label: 'São João',     proOnly: true),
+  // ── pro · festivos (6) ───────────────────────────────────────────────────
+  FigusAvatar(id: 'avatar_20', label: 'Natal',        proOnly: true),
+  FigusAvatar(id: 'avatar_21', label: 'Halloween',    proOnly: true),
   FigusAvatar(id: 'avatar_22', label: 'Carnaval',     proOnly: true),
-
-  // ── pro · extra (3) ──────────────────────────────────────────────────────
-  FigusAvatar(id: 'avatar_23', label: 'Vovô',         proOnly: true),
-  FigusAvatar(id: 'avatar_24', label: 'Hijab',        proOnly: true),
-  FigusAvatar(id: 'avatar_25', label: 'Turbante',     proOnly: true),
+  FigusAvatar(id: 'avatar_23', label: 'São João',     proOnly: true),
+  FigusAvatar(id: 'avatar_24', label: 'Copa Brasil',  proOnly: true),
+  FigusAvatar(id: 'avatar_25', label: 'Réveillon',    proOnly: true),
 ];
 
 /// Default avatar id used for new profiles + existing rows after migration.

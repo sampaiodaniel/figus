@@ -78,9 +78,9 @@ class _AchievementsPageState extends ConsumerState<AchievementsPage> {
                   physics: const NeverScrollableScrollPhysics(),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 0.85,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    childAspectRatio: 0.92,
                   ),
                   itemCount: entry.value.length,
                   itemBuilder: (_, i) {
@@ -239,59 +239,103 @@ class _BadgeTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.fc;
-    final color = unlocked ? def.color : c.textMuted.withValues(alpha: 0.35);
     return GestureDetector(
       onTap: () => _showDetail(context),
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: unlocked
-              ? def.color.withValues(alpha: 0.10)
-              : c.cardAlt,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: unlocked ? def.color.withValues(alpha: 0.5) : c.border,
-            width: unlocked ? 1.5 : 1,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Big colored gradient panel for unlocked / flat grey for locked.
+          // The emoji fills the tile so the badge feels like a real medal,
+          // not a tiny pictogram floating in white space.
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: unlocked
+                  ? LinearGradient(
+                      colors: [
+                        def.color.withValues(alpha: 0.95),
+                        def.color.withValues(alpha: 0.55),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    )
+                  : null,
+              color: unlocked ? null : c.cardAlt,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: unlocked ? def.color : c.border,
+                width: unlocked ? 0 : 1,
+              ),
+              boxShadow: unlocked
+                  ? [
+                      BoxShadow(
+                        color: def.color.withValues(alpha: 0.30),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : null,
+            ),
           ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Greyed emoji when locked — saturation handled via opacity.
-            Opacity(
-              opacity: unlocked ? 1.0 : 0.30,
-              child: Container(
-                width: 48,
-                height: 48,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
+          // Emoji — fills most of the tile area. Opacity drops when locked.
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Opacity(
+                opacity: unlocked ? 1.0 : 0.18,
+                child: LayoutBuilder(builder: (_, cons) {
+                  final dim = cons.maxWidth < cons.maxHeight
+                      ? cons.maxWidth
+                      : cons.maxHeight;
+                  return Text(
+                    def.emoji,
+                    style: TextStyle(fontSize: dim * 0.55),
+                  );
+                }),
+              ),
+            ),
+          ),
+          // Label as a subtle ribbon at the bottom — only the persona/marco
+          // name, no description. Always readable: white on color tile,
+          // muted on grey tile.
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
+              decoration: BoxDecoration(
+                color: unlocked
+                    ? Colors.black.withValues(alpha: 0.28)
+                    : Colors.transparent,
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(20),
                 ),
-                child: Text(
-                  def.emoji,
-                  style: const TextStyle(fontSize: 26),
+              ),
+              child: Text(
+                def.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: unlocked
+                      ? Colors.white
+                      : c.textMuted.withValues(alpha: 0.7),
+                  letterSpacing: 0.2,
                 ),
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              def.label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: unlocked ? c.text : c.textMuted,
-              ),
+          ),
+          // Lock overlay only — unlocked badges don't need a checkmark, the
+          // saturated color already screams "earned".
+          if (!unlocked)
+            const Positioned(
+              top: 8,
+              right: 8,
+              child: Icon(Icons.lock_rounded, size: 14, color: Colors.white70),
             ),
-            if (unlocked)
-              Icon(Icons.check_circle_rounded, size: 12, color: def.color)
-            else
-              Icon(Icons.lock_outline_rounded, size: 12, color: c.textMuted),
-          ],
-        ),
+        ],
       ),
     );
   }

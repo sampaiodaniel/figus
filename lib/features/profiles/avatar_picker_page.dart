@@ -133,10 +133,10 @@ class _AvatarGrid extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4,
-        mainAxisSpacing: 10,
-        crossAxisSpacing: 10,
-        childAspectRatio: 0.95,
+        crossAxisCount: 3,
+        mainAxisSpacing: 14,
+        crossAxisSpacing: 14,
+        childAspectRatio: 1.0,
       ),
       itemCount: avatars.length,
       itemBuilder: (_, i) {
@@ -145,47 +145,43 @@ class _AvatarGrid extends StatelessWidget {
         final locked = a.proOnly && !isPro;
         return InkWell(
           onTap: () => onPick(a),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(18),
           child: Container(
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: isSelected ? c.accent.withValues(alpha: 0.14) : c.cardAlt,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(
                 color: isSelected ? c.accent : c.border,
                 width: isSelected ? 2 : 1,
               ),
             ),
             child: Stack(
+              fit: StackFit.expand,
               children: [
-                Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      AvatarImage(id: a.id, size: 56),
-                      const SizedBox(height: 4),
-                      Text(
-                        a.label,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: locked ? c.textMuted : c.text,
-                        ),
-                      ),
-                    ],
+                // Avatar fills the tile — LayoutBuilder so size scales with
+                // available width on every screen.
+                Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: LayoutBuilder(
+                    builder: (_, cons) {
+                      final size =
+                          cons.maxWidth < cons.maxHeight ? cons.maxWidth : cons.maxHeight;
+                      return Center(child: AvatarImage(id: a.id, size: size));
+                    },
                   ),
                 ),
                 if (locked)
                   const Positioned(
                     top: 6,
                     right: 6,
-                    child: Icon(Icons.lock_rounded, size: 14, color: Color(0xFFB8860B)),
+                    child: Icon(Icons.lock_rounded, size: 16, color: Color(0xFFB8860B)),
                   ),
                 if (isSelected)
                   Positioned(
                     top: 6,
                     right: 6,
-                    child: Icon(Icons.check_circle_rounded, size: 16, color: c.accent),
+                    child: Icon(Icons.check_circle_rounded, size: 18, color: c.accent),
                   ),
               ],
             ),

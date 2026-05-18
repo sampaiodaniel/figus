@@ -78,12 +78,16 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: "assets/figus-icon-512.png"
+  # figus-logo-square.png has the logo centered and filling ~92% of the
+  # canvas, so it survives Android's adaptive-icon safe-zone crop and
+  # actually shows up large on the launcher (the previous source was
+  # figus-icon-512.png which had the logo glued to the top-left corner).
+  image_path: "assets/figus-logo-square.png"
   adaptive_icon_background: "#13100E"
-  adaptive_icon_foreground: "assets/figus-icon-512.png"
+  adaptive_icon_foreground: "assets/figus-logo-square.png"
   web:
     generate: true
-    image_path: "assets/figus-icon-512.png"
+    image_path: "assets/figus-logo-square.png"
     background_color: "#13100E"
     theme_color: "#E5B14B"
 
