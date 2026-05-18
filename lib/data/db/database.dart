@@ -12,7 +12,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -167,65 +167,49 @@ class AppDatabase extends _$AppDatabase {
             );
           }
           if (from < 11) {
-            // Realinha o conjunto de foils com a lista oficial Panini
-            // WC 2026 enviada pelo Daniel: 48 escudos + 16 estádios + 4
-            // institucionais (Logo Panini, Mascote Maple, Bola oficial,
-            // Troféu da Copa) = 68 metallized.
-            //
-            // v10 marcou FWC1-FWC8 todos foil; agora desmarca os 6 que
-            // não fazem parte dos 4 institucionais (Emblema, Mascote
-            // Zayu, Mascote Clutch, Slogan, 2 Cidades-sede).
+            // (Migration que adicionava STAD/TRF — revertida pela v12.
+            // Mantida vazia aqui pra users que pularam direto de 9→12.)
+          }
+          if (from < 12) {
+            // Reverte o experimento da v11. Daniel apontou que o album
+            // tem 1058 stickers, não 1075 — os 16 estádios + 1 troféu
+            // adicionados não existem como slots dedicados no álbum
+            // físico. Os 68 metallized voltam a ser distribuídos entre
+            // os slots já existentes: 1 Logo (FWC00) + 8 intro
+            // (FWC1-FWC8) + 11 legends (FWC9-FWC19) + 48 escudos
+            // (sticker #1 de cada nation).
             await customUpdate(
-              "UPDATE stickers SET is_foil = 0 WHERE number IN "
+              "DELETE FROM collections WHERE sticker_id IN "
+              "(SELECT id FROM stickers WHERE number = 'TRF1' "
+              "OR number LIKE 'STAD%')",
+              updates: {collections},
+            );
+            await customUpdate(
+              "DELETE FROM stickers WHERE number = 'TRF1' "
+              "OR number LIKE 'STAD%'",
+              updates: {stickers},
+            );
+            // Restaura is_foil=1 onde a v11 havia desmarcado (intros
+            // 1,3,4,5,7,8 + legends 9-19).
+            await customUpdate(
+              "UPDATE stickers SET is_foil = 1 WHERE number IN "
               "('FWC1','FWC3','FWC4','FWC5','FWC7','FWC8')",
               updates: {stickers},
             );
-            // Legends (FWC9-FWC19) também saem do conjunto foil — não
-            // fazem parte das 68 metalizadas oficiais.
             await customUpdate(
-              "UPDATE stickers SET is_foil = 0 WHERE number LIKE 'FWC1%' "
+              "UPDATE stickers SET is_foil = 1 WHERE number LIKE 'FWC1%' "
               "AND CAST(SUBSTR(number, 4) AS INTEGER) BETWEEN 9 AND 19",
               updates: {stickers},
             );
-            // Insere o Troféu + os 16 estádios pra users existentes. Cada
-            // INSERT é guardado por exists-check pra ser idempotente.
-            final albumRow = await (select(albums)
-                  ..where((a) => a.code.equals(WC2026Seed.albumCode)))
-                .getSingleOrNull();
-            if (albumRow != null) {
-              final newStickers = WC2026Seed.stickers.where(
-                (s) =>
-                    s.number == 'TRF1' || s.number.startsWith('STAD'),
-              );
-              for (final s in newStickers) {
-                final exists = await (select(stickers)
-                      ..where((st) => st.number.equals(s.number)))
-                    .getSingleOrNull();
-                if (exists == null) {
-                  await into(stickers).insert(StickersCompanion.insert(
-                    albumId: albumRow.id,
-                    nationId: const Value(null),
-                    number: s.number,
-                    type: s.type,
-                    isFoil: Value(s.isFoil),
-                    pageNumber: s.pageNumber,
-                    positionInPage: s.positionInPage,
-                    label: s.label,
-                    playerName: const Value(null),
-                  ));
-                }
-              }
-              // Refresh albums.total_stickers cache so the achievements/
-              // stats screens reflect the new total (1058 → 1075).
-              await customUpdate(
-                'UPDATE albums SET total_stickers = ? WHERE code = ?',
-                variables: [
-                  Variable.withInt(WC2026Seed.stickers.length),
-                  Variable.withString(WC2026Seed.albumCode),
-                ],
-                updates: {albums},
-              );
-            }
+            // Restaura albums.total_stickers pra contagem correta do seed.
+            await customUpdate(
+              'UPDATE albums SET total_stickers = ? WHERE code = ?',
+              variables: [
+                Variable.withInt(WC2026Seed.stickers.length),
+                Variable.withString(WC2026Seed.albumCode),
+              ],
+              updates: {albums},
+            );
           }
         },
       );

@@ -330,27 +330,6 @@ class WC2026Seed {
     ],
   };
 
-  /// 16 estádios-sede oficiais da Copa 2026 — 11 nos EUA, 3 no México, 2
-  /// no Canadá. Cada um vira um sticker foil (`STAD1`..`STAD16`).
-  static const stadiums = <String>[
-    'MetLife Stadium · East Rutherford',
-    'AT&T Stadium · Arlington',
-    'SoFi Stadium · Inglewood',
-    'Lincoln Financial Field · Filadélfia',
-    'Levi\'s Stadium · Santa Clara',
-    'Hard Rock Stadium · Miami Gardens',
-    'Mercedes-Benz Stadium · Atlanta',
-    'NRG Stadium · Houston',
-    'Arrowhead Stadium · Kansas City',
-    'Gillette Stadium · Foxborough',
-    'Lumen Field · Seattle',
-    'Estádio Azteca · Cidade do México',
-    'Akron Stadium · Guadalajara',
-    'BBVA Stadium · Monterrey',
-    'BC Place · Vancouver',
-    'BMO Field · Toronto',
-  ];
-
   static List<SeedSticker> _buildStickers() {
     final list = <SeedSticker>[];
 
@@ -364,30 +343,6 @@ class WC2026Seed {
       label: 'Logo Panini',
     ));
 
-    // ── Troféu oficial — 1 institucional foil ────────────────────────────
-    list.add(const SeedSticker(
-      number: 'TRF1',
-      nationCode: null,
-      type: 'trophy',
-      isFoil: true,
-      pageNumber: 0,
-      positionInPage: 100,
-      label: 'Troféu da Copa do Mundo',
-    ));
-
-    // ── 16 Estádios-sede oficiais — todos foil ───────────────────────────
-    for (var i = 0; i < stadiums.length; i++) {
-      list.add(SeedSticker(
-        number: 'STAD${i + 1}',
-        nationCode: null,
-        type: 'stadium',
-        isFoil: true,
-        pageNumber: 50,
-        positionInPage: i,
-        label: stadiums[i],
-      ));
-    }
-
     const intro = [
       'Emblema FIFA WC 2026',
       'Mascote Maple',
@@ -398,18 +353,16 @@ class WC2026Seed {
       'Cidades-sede CAN',
       'Cidades-sede MEX/USA',
     ];
-    // Foil pattern matches the official Panini WC 2026 spec sent by Daniel:
-    // 48 escudos + 16 estádios + 4 institucionais (Logo, Mascote, Troféu,
-    // Bola) = 68 metallized stickers. Of the 8 intro slots, only Mascote
-    // Maple (FWC2) and Bola oficial (FWC6) are foil — Logo Panini (FWC00)
-    // and the new Troféu (TRF1) round out the 4 institucionais.
-    const introFoilSet = {2, 6};
+    // All 8 intro stickers (FWC1-FWC8) are foil — emblema FIFA, 3 mascotes,
+    // slogan, bola, 2 cidades-sede. Total foils chega a 68 quando somado
+    // aos 11 legends (FWC9-FWC19) e aos 48 escudos das seleções (#1 de
+    // cada nation) + FWC00 (Logo Panini) = 1 + 8 + 11 + 48.
     for (var i = 0; i < 8; i++) {
       list.add(SeedSticker(
         number: 'FWC${i + 1}',
         nationCode: null,
         type: 'intro',
-        isFoil: introFoilSet.contains(i + 1),
+        isFoil: true,
         pageNumber: 0,
         positionInPage: i + 1,
         label: intro[i],
@@ -434,9 +387,7 @@ class WC2026Seed {
         number: 'FWC${9 + i}',
         nationCode: null,
         type: 'legend',
-        // Legends moms moveram pra não-foil pra alinhar com o álbum oficial
-        // (a lista metalizada da Panini não inclui essas figurinhas).
-        isFoil: false,
+        isFoil: true,
         pageNumber: 100, // sits AFTER the nations in display order
         positionInPage: i,
         label: legends[i],

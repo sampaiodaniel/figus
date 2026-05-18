@@ -32,6 +32,10 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
   // ones render as "✓ Trocada" and stay around for context, but no longer
   // offer the confirm button.
   final Set<int> _confirmedIdx = {};
+  // Other offers that share a sticker with a confirmed one — they'd let
+  // the user double-give or double-receive the same card, so we grey them
+  // out as soon as a conflicting trade is marked done.
+  final Set<int> _invalidatedIdx = {};
 
   @override
   void initState() {
@@ -87,7 +91,9 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
                 _OfferCard(
                   offer: _offers![i],
                   confirmed: _confirmedIdx.contains(i),
-                  onConfirm: _confirmedIdx.contains(i)
+                  invalidated: _invalidatedIdx.contains(i),
+                  onConfirm: (_confirmedIdx.contains(i) ||
+                          _invalidatedIdx.contains(i))
                       ? null
                       : () => _confirmOffer(i),
                 ),
@@ -136,6 +142,21 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
     // user navigates back.
     ref.read(collectionVersionProvider.notifier).state++;
     if (!mounted) return;
+    // Invalidate any other suggestion that shares a sticker (give OR
+    // receive). After this trade is done, the matcher's siblings would
+    // tell the user to give the same dupe twice or receive the same
+    // missing twice — which Daniel rightly called out as a bug.
+    final giveSet = offer.youGive.keys.toSet();
+    final receiveSet = offer.youReceive.keys.toSet();
+    for (var i = 0; i < _offers!.length; i++) {
+      if (i == index ||
+          _confirmedIdx.contains(i) ||
+          _invalidatedIdx.contains(i)) continue;
+      final other = _offers![i];
+      final shares = other.youGive.keys.any(giveSet.contains) ||
+          other.youReceive.keys.any(receiveSet.contains);
+      if (shares) _invalidatedIdx.add(i);
+    }
     setState(() => _confirmedIdx.add(index));
     messenger
       ..clearSnackBars()
@@ -347,50 +368,59 @@ class _Hero extends StatelessWidget {
 class _OfferCard extends StatelessWidget {
   final TradeOffer offer;
   final bool confirmed;
+  final bool invalidated;
   final VoidCallback? onConfirm;
 
   const _OfferCard({
     required this.offer,
     this.confirmed = false,
+    this.invalidated = false,
     this.onConfirm,
   });
 
   @override
   Widget build(BuildContext context) {
     final c = context.fc;
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      // When the trade is confirmed, dim the card so the user can see at a
-      // glance which suggestions have already been actioned.
-      color: confirmed ? c.cardAlt.withValues(alpha: 0.4) : null,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: confirmed
-                        ? const Color(0xFF22C58A)
-                        : (offer.kind == 'same' ? c.accent : Colors.orange),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    confirmed
-                        ? '✓ Trocada'
-                        : (offer.kind == 'same'
-                            ? '1×1 mesmo tipo'
-                            : '1 brilhante × 2 normais'),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
+    return Opacity(
+      // Invalidated offers stay visible (so the user understands the
+      // matcher had OTHER options too) but dim out so they read as
+      // "not actionable" at a glance.
+      opacity: invalidated ? 0.45 : 1.0,
+      child: Card(
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        color: confirmed ? c.cardAlt.withValues(alpha: 0.4) : null,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: confirmed
+                          ? const Color(0xFF22C58A)
+                          : invalidated
+                              ? c.textMuted
+                              : (offer.kind == 'same' ? c.accent : Colors.orange),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      confirmed
+                          ? '✓ Trocada'
+                          : invalidated
+                              ? '✕ Já usado em outra troca'
+                              : (offer.kind == 'same'
+                                  ? '1×1 mesmo tipo'
+                                  : '1 brilhante × 2 normais'),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                ),
                 const Spacer(),
                 Text('score ${offer.score.toStringAsFixed(0)}',
                     style: TextStyle(fontSize: 11, color: c.textMuted)),
@@ -436,6 +466,7 @@ class _OfferCard extends StatelessWidget {
               ),
             ],
           ],
+          ),
         ),
       ),
     );

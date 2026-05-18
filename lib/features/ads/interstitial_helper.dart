@@ -3,12 +3,12 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-// Standard Google test interstitial. The prod unit was a placeholder
-// (TODO: create interstitial unit on AdMob console) so release builds
-// silently failed and the once-per-30-taps interstitial never showed.
-// Until the real unit is provisioned, use the test ID everywhere — it
-// always fills with a test creative.
-const _adUnitId = 'ca-app-pub-3940256099942544/1033173712';
+// Provisioned interstitial unit from Daniel's AdMob account. Debug
+// builds still use the Google test ID so we don't burn impressions
+// during development.
+const _adUnitId = kDebugMode
+    ? 'ca-app-pub-3940256099942544/1033173712'
+    : 'ca-app-pub-7319987062749834/9304321163';
 
 class InterstitialHelper {
   static InterstitialAd? _ad;

@@ -9,19 +9,17 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 /// The adaptive test IDs serve creatives that fill the requested AdSize —
 /// the standard banner test IDs always return 320x50, masking the real
 /// adaptive sizing on tablets.
-const _prodBannerAdUnitId = 'ca-app-pub-7319987062749834/4232418305';
-// Standard test unit IDs for 320x50/468x60 banners. These ALWAYS fill so
-// the slot is never empty during dev/internal-testing.
+// Provisioned banner unit from Daniel's AdMob account (Android only; iOS
+// will need a separate unit when the app ships there).
+const _prodBannerAdUnitId = 'ca-app-pub-7319987062749834/4243566179';
 const _testBannerUnitIdAndroid = 'ca-app-pub-3940256099942544/6300978111';
 const _testBannerUnitIdIos = 'ca-app-pub-3940256099942544/2934735716';
 
 String _bannerAdUnitId() {
-  // The prod AdMob unit hasn't been provisioned for this app yet, so
-  // release builds were getting 100% NO_FILL and showing nothing. Until
-  // the AdMob app is fully registered + linked, fall back to the standard
-  // test unit in release too. Switch back to _prodBannerAdUnitId when
-  // AdMob fills properly.
-  return Platform.isIOS ? _testBannerUnitIdIos : _testBannerUnitIdAndroid;
+  if (kDebugMode) {
+    return Platform.isIOS ? _testBannerUnitIdIos : _testBannerUnitIdAndroid;
+  }
+  return _prodBannerAdUnitId;
 }
 
 class BannerAdWidget extends StatefulWidget {
@@ -51,10 +49,16 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   Future<void> _loadAd() async {
     if (_loadStarted) return;
     _loadStarted = true;
-    // Full banner (468x60) — Daniel's preferred slot. Cabe bem em tablet
-    // e em telas de celular acima de ~480dp; pra device mais estreito o
-    // wrapping container já clampa via FittedBox fora.
-    final AdSize size = AdSize.fullBanner;
+    // Anchored adaptive banner: pega largura cheia do device e altura
+    // auto (~50-90 px). No tablet vira ~728x90, em celular ~360x50.
+    // Substitui o fullBanner 468x60 fixo que dava NO_FILL em devices
+    // estreitos e teto baixo em tablet.
+    final width = MediaQuery.of(context).size.width.truncate();
+    final adaptive = await AdSize.getAnchoredAdaptiveBannerAdSize(
+      Orientation.portrait,
+      width,
+    );
+    final AdSize size = adaptive ?? AdSize.banner;
     final ad = BannerAd(
       adUnitId: _bannerAdUnitId(),
       request: const AdRequest(),
