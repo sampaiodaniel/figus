@@ -177,7 +177,7 @@ class PaywallSheet extends ConsumerWidget {
             // Buy CTA
             OutlinedButton.icon(
               icon: const Icon(Icons.workspace_premium_rounded),
-              label: const Text('Comprar Pro — R\$ 9,90 uma vez'),
+              label: const Text('Ver planos Pro — a partir de R\$ 6,90/mês'),
               onPressed: () {
                 Navigator.pop(context);
                 context.push('/upgrade');

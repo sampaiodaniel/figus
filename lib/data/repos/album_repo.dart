@@ -76,30 +76,53 @@ class AlbumRepo {
           (v.playerName?.toLowerCase().contains(q) ?? false);
     }
 
-    final views = stickerRows.map(toView).where(matchesFilter).where(matchesSearch).toList();
+    // Build BOTH a filtered and an unfiltered list of views. Sections need
+    // both: the filtered list drives which stickers are visible, while the
+    // section counts (ownedCount/totalCount) must come from the full set,
+    // otherwise "9/9 COMPLETO" shows for every nation when filtering by
+    // duplicates (because every visible sticker is non-missing by definition).
+    final allViews = stickerRows.map(toView).toList();
+    final views = allViews.where(matchesFilter).where(matchesSearch).toList();
 
-    // Specials by pageNumber range:
-    //   0        → FWC intro (FWC00–FWC8)
-    //   100–199  → FWC9+ legends
-    //   200–299  → CC (Coca-Cola)
-    //   300+     → Lendários (LGD)
-    final introSpecials = views
-        .where((v) => v.nationCode == null && v.pageNumber == 0)
-        .toList()
-      ..sort((a, b) => a.positionInPage.compareTo(b.positionInPage));
-    final legendSpecials = views
-        .where((v) => v.nationCode == null && v.pageNumber >= 100 && v.pageNumber < 200)
-        .toList()
-      ..sort((a, b) => a.positionInPage.compareTo(b.positionInPage));
-    final ccSpecials = views
-        .where((v) => v.nationCode == null && v.pageNumber >= 200 && v.pageNumber < 300)
-        .toList()
-      ..sort((a, b) => a.positionInPage.compareTo(b.positionInPage));
-    final legendaryStickers = views
-        .where((v) => v.nationCode == null && v.pageNumber >= 300)
-        .toList()
-      ..sort((a, b) => a.positionInPage.compareTo(b.positionInPage));
+    // Section counts come from `allViews` (entire album) so the COMPLETO
+    // badge and "X/Y" reflect the section's true progress regardless of
+    // which filter is active.
+    List<StickerView> filterAndSort(
+      bool Function(StickerView) keep, {
+      required List<StickerView> source,
+    }) {
+      final list = source.where(keep).toList()
+        ..sort((a, b) => a.positionInPage.compareTo(b.positionInPage));
+      return list;
+    }
 
+    final introAll = filterAndSort(
+        (v) => v.nationCode == null && v.pageNumber == 0,
+        source: allViews);
+    final legendAll = filterAndSort(
+        (v) => v.nationCode == null && v.pageNumber >= 100 && v.pageNumber < 200,
+        source: allViews);
+    final ccAll = filterAndSort(
+        (v) => v.nationCode == null && v.pageNumber >= 200 && v.pageNumber < 300,
+        source: allViews);
+    final lgdAll = filterAndSort(
+        (v) => v.nationCode == null && v.pageNumber >= 300,
+        source: allViews);
+
+    final introVisible = filterAndSort(
+        (v) => v.nationCode == null && v.pageNumber == 0,
+        source: views);
+    final legendVisible = filterAndSort(
+        (v) => v.nationCode == null && v.pageNumber >= 100 && v.pageNumber < 200,
+        source: views);
+    final ccVisible = filterAndSort(
+        (v) => v.nationCode == null && v.pageNumber >= 200 && v.pageNumber < 300,
+        source: views);
+    final lgdVisible = filterAndSort(
+        (v) => v.nationCode == null && v.pageNumber >= 300,
+        source: views);
+
+    // Per-nation maps: visible (post-filter) + total (pre-filter).
     final byNation = <String, List<StickerView>>{};
     for (final v in views.where((v) => v.nationCode != null)) {
       byNation.putIfAbsent(v.nationCode!, () => []).add(v);
@@ -107,69 +130,73 @@ class AlbumRepo {
     for (final list in byNation.values) {
       list.sort((a, b) => a.positionInPage.compareTo(b.positionInPage));
     }
+    final allByNation = <String, List<StickerView>>{};
+    for (final v in allViews.where((v) => v.nationCode != null)) {
+      allByNation.putIfAbsent(v.nationCode!, () => []).add(v);
+    }
 
     final sections = <AlbumSection>[];
 
-    if (introSpecials.isNotEmpty) {
-      final owned = introSpecials.where((v) => v.status != StickerOwnership.missing).length;
+    int ownedOf(List<StickerView> all) =>
+        all.where((v) => v.status != StickerOwnership.missing).length;
+
+    if (introVisible.isNotEmpty) {
       sections.add(AlbumSection(
         key: 'FWC',
         title: 'FWC — FIFA WC 2026',
         flag: '🏆',
-        ownedCount: owned,
-        totalCount: introSpecials.length,
-        stickers: introSpecials,
+        ownedCount: ownedOf(introAll),
+        totalCount: introAll.length,
+        stickers: introVisible,
       ));
     }
 
-    final orderedNations = nationRows.toList()..sort((a, b) => a.orderInAlbum.compareTo(b.orderInAlbum));
+    final orderedNations = nationRows.toList()
+      ..sort((a, b) => a.orderInAlbum.compareTo(b.orderInAlbum));
     for (final n in orderedNations) {
-      final list = byNation[n.code];
-      if (list == null || list.isEmpty) continue;
-      final owned = list.where((v) => v.status != StickerOwnership.missing).length;
+      final visible = byNation[n.code];
+      if (visible == null || visible.isEmpty) continue;
+      final all = allByNation[n.code] ?? const <StickerView>[];
       sections.add(AlbumSection(
         key: n.code,
         title: '${n.code} - ${n.name}',
         flag: n.flag,
-        ownedCount: owned,
-        totalCount: list.length,
-        stickers: list,
+        ownedCount: ownedOf(all),
+        totalCount: all.length,
+        stickers: visible,
       ));
     }
 
-    if (legendSpecials.isNotEmpty) {
-      final owned = legendSpecials.where((v) => v.status != StickerOwnership.missing).length;
+    if (legendVisible.isNotEmpty) {
       sections.add(AlbumSection(
         key: 'FWC9+',
         title: 'FWC9+ — Lendas da Copa',
         flag: '⭐',
-        ownedCount: owned,
-        totalCount: legendSpecials.length,
-        stickers: legendSpecials,
+        ownedCount: ownedOf(legendAll),
+        totalCount: legendAll.length,
+        stickers: legendVisible,
       ));
     }
 
-    if (ccSpecials.isNotEmpty) {
-      final owned = ccSpecials.where((v) => v.status != StickerOwnership.missing).length;
+    if (ccVisible.isNotEmpty) {
       sections.add(AlbumSection(
         key: 'CC',
         title: 'CC — Coca-Cola',
         flag: '🥤',
-        ownedCount: owned,
-        totalCount: ccSpecials.length,
-        stickers: ccSpecials,
+        ownedCount: ownedOf(ccAll),
+        totalCount: ccAll.length,
+        stickers: ccVisible,
       ));
     }
 
-    if (legendaryStickers.isNotEmpty) {
-      final owned = legendaryStickers.where((v) => v.status != StickerOwnership.missing).length;
+    if (lgdVisible.isNotEmpty) {
       sections.add(AlbumSection(
         key: 'LGD',
         title: 'LGD — Lendários',
         flag: '💎',
-        ownedCount: owned,
-        totalCount: legendaryStickers.length,
-        stickers: legendaryStickers,
+        ownedCount: ownedOf(lgdAll),
+        totalCount: lgdAll.length,
+        stickers: lgdVisible,
       ));
     }
 
@@ -190,6 +217,8 @@ class AlbumRepo {
     var duplicates = 0;
     var foilOwned = 0;
     var foilTotal = 0;
+    var foilDuplicateStickers = 0;
+    var foilExtraCopies = 0;
     for (final s in stickerRows) {
       if (s.isFoil) foilTotal++;
       final c = statusBySticker[s.id];
@@ -198,7 +227,13 @@ class AlbumRepo {
         owned++;
         if (s.isFoil) foilOwned++;
       }
-      if (c.status == 'duplicate') duplicates += c.duplicateCount;
+      if (c.status == 'duplicate') {
+        duplicates += c.duplicateCount;
+        if (s.isFoil) {
+          foilDuplicateStickers++;
+          foilExtraCopies += c.duplicateCount;
+        }
+      }
     }
 
     // Temporal stats — only owned/duplicate entries have meaningful timestamps
@@ -241,6 +276,27 @@ class AlbumRepo {
       }
     }
 
+    // Last 4 weeks of activity (week 0 = current week).
+    final weeklyHistory = <int>[0, 0, 0, 0];
+    for (final c in activeRows) {
+      final ts = DateTime(c.updatedAt.year, c.updatedAt.month, c.updatedAt.day);
+      final daysAgo = today.difference(ts).inDays;
+      if (daysAgo < 0 || daysAgo >= 28) continue;
+      final weekIndex = 3 - (daysAgo ~/ 7).clamp(0, 3);
+      weeklyHistory[weekIndex]++;
+    }
+
+    // Day-of-week distribution (1=Mon … 7=Sun) → best day all-time.
+    final dowCounts = <int, int>{};
+    for (final c in activeRows) {
+      final dow = c.updatedAt.weekday;
+      dowCounts[dow] = (dowCounts[dow] ?? 0) + 1;
+    }
+    MapEntry<int, int>? bestDow;
+    for (final e in dowCounts.entries) {
+      if (bestDow == null || e.value > bestDow.value) bestDow = e;
+    }
+
     return AlbumStats(
       total: stickerRows.length,
       owned: owned,
@@ -248,10 +304,15 @@ class AlbumRepo {
       duplicates: duplicates,
       foilOwned: foilOwned,
       foilTotal: foilTotal,
+      foilDuplicateStickers: foilDuplicateStickers,
+      foilExtraCopies: foilExtraCopies,
       collectedThisWeek: collectedThisWeek,
       activeDays: activeDays,
       daysCollecting: daysCollecting,
       streak: streak,
+      weeklyHistory: weeklyHistory,
+      bestDayOfWeek: bestDow?.key,
+      bestDayOfWeekCount: bestDow?.value ?? 0,
     );
   }
 }

@@ -1,10 +1,12 @@
 import 'package:drift/drift.dart';
 
 import '../db/database.dart';
+import 'sync_repo.dart';
 
 class ProfileRepo {
   final AppDatabase db;
-  ProfileRepo(this.db);
+  final SyncRepo? sync;
+  ProfileRepo(this.db, {this.sync});
 
   Future<List<Profile>> all() => db.select(db.profiles).get();
 
@@ -32,9 +34,20 @@ class ProfileRepo {
     });
   }
 
-  Future<void> rename(int id, String name) async {
+  /// [pushToCloud] is false when applying a name pulled from the cloud,
+  /// so we don't bounce it right back.
+  Future<void> rename(int id, String name, {bool pushToCloud = true}) async {
     await (db.update(db.profiles)..where((p) => p.id.equals(id)))
         .write(ProfilesCompanion(name: Value(name)));
+    if (pushToCloud && sync != null) {
+      // Only the active profile name is mirrored to the cloud — that's the
+      // identity the user sees on the other devices.
+      final activeProfile = await active();
+      if (activeProfile.id == id) {
+        // ignore: discarded_futures
+        sync!.pushUserSettings(profileName: name);
+      }
+    }
   }
 
   /// Returns the current set of nation codes favorited by the active profile.
@@ -43,11 +56,28 @@ class ProfileRepo {
     return _parseFavorites(p.favoriteNations);
   }
 
-  Future<void> setFavoriteNations(Set<String> codes) async {
+  Future<void> setFavoriteNations(Set<String> codes, {bool pushToCloud = true}) async {
     final p = await active();
     await (db.update(db.profiles)..where((x) => x.id.equals(p.id))).write(
       ProfilesCompanion(favoriteNations: Value(codes.join(','))),
     );
+    if (pushToCloud && sync != null) {
+      // ignore: discarded_futures
+      sync!.pushUserSettings(favoriteNations: codes.toList());
+    }
+  }
+
+  /// Set the avatar id for the active profile. Auto-syncs to cloud when
+  /// signed in so the choice follows the user across devices.
+  Future<void> setAvatarEmoji(String emoji, {bool pushToCloud = true}) async {
+    final p = await active();
+    await (db.update(db.profiles)..where((x) => x.id.equals(p.id))).write(
+      ProfilesCompanion(avatarEmoji: Value(emoji)),
+    );
+    if (pushToCloud && sync != null) {
+      // ignore: discarded_futures
+      sync!.pushUserSettings(avatar: emoji);
+    }
   }
 
   Future<void> toggleFavoriteNation(String code) async {

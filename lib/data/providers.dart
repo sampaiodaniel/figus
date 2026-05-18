@@ -19,7 +19,10 @@ final collectionRepoProvider = Provider<CollectionRepo>((ref) => CollectionRepo(
   ref.watch(databaseProvider),
   sync: ref.watch(syncRepoProvider),
 ));
-final profileRepoProvider = Provider<ProfileRepo>((ref) => ProfileRepo(ref.watch(databaseProvider)));
+final profileRepoProvider = Provider<ProfileRepo>((ref) => ProfileRepo(
+      ref.watch(databaseProvider),
+      sync: ref.watch(syncRepoProvider),
+    ));
 
 /// Bumped manually after every mutation to invalidate album/stats queries.
 final collectionVersionProvider = StateProvider<int>((_) => 0);

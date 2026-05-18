@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,6 +8,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/theme/figus_colors.dart';
 import 'paywall_sheet.dart';
 import 'pro_service.dart';
+import 'theme_preview.dart';
 import 'theme_service.dart';
 
 class ThemePickerPage extends ConsumerStatefulWidget {
@@ -23,6 +25,13 @@ class _ThemePickerPageState extends ConsumerState<ThemePickerPage> {
   @override
   void dispose() {
     _previewTimer?.cancel();
+    // If the user leaves mid-preview (back button, swipe, route change), the
+    // preview seed could otherwise stay applied forever — the app would keep
+    // showing the Pro theme they don't own, while the picker thinks the saved
+    // theme is still active. Clear it on the way out.
+    // ref.read is allowed in dispose for ConsumerState — Riverpod keeps the
+    // container alive even as the widget tears down.
+    ref.read(previewThemeSeedProvider.notifier).state = null;
     super.dispose();
   }
 
@@ -51,17 +60,32 @@ class _ThemePickerPageState extends ConsumerState<ThemePickerPage> {
 
   void _endPreview({bool openPaywall = false}) {
     _previewTimer?.cancel();
-    ref.read(previewThemeSeedProvider.notifier).state = null;
+    // Clear preview override BEFORE rebuilding our own state and BEFORE
+    // opening the paywall. `invalidate` forces every watcher to re-resolve,
+    // including FigusApp's themeMode/theme builders.
+    ref.invalidate(previewThemeSeedProvider);
+    if (!mounted) return;
     setState(() {
       _previewing = null;
       _previewSecsLeft = 0;
     });
-    if (openPaywall && mounted) {
-      showPaywall(context, trigger: PaywallContext.theme);
+    if (openPaywall) {
+      // Defer until the theme rebuild lands so the paywall opens on top of
+      // the restored theme, not the preview one.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) showPaywall(context, trigger: PaywallContext.theme);
+      });
     }
   }
 
-  Future<void> _selectTheme(AppThemeSeed seed, bool isPro) async {
+  Future<void> _selectTheme(AppThemeSeed seed) async {
+    // Read fresh from the provider — passing it through the widget tree had
+    // a habit of going stale after the debug Pro toggle.
+    final proState = ref.read(proProvider);
+    final isPro = proState.isActive;
+    debugPrint('[ThemePicker] tap seed=${seed.name} proOnly=${seed.proOnly} '
+        'isPro=$isPro isActive=$isPro isTrial=${proState.isTrial} '
+        'trialDaysLeft=${proState.trialDaysLeft}');
     if (!seed.proOnly || isPro) {
       // Apply directly
       await ref.read(themeSeedProvider.notifier).set(seed);
@@ -75,8 +99,14 @@ class _ThemePickerPageState extends ConsumerState<ThemePickerPage> {
 
   @override
   Widget build(BuildContext context) {
-    final currentSeed = ref.watch(themeSeedProvider);
+    final savedSeed = ref.watch(themeSeedProvider);
     final isPro = ref.watch(proProvider).isActive;
+    // Show as "current" whichever seed is actually rendering — matches
+    // app.dart's enforcedSaved gating so the picker doesn't claim a Pro
+    // theme is active while the app is silently rendering Dourado/Manhã.
+    final currentSeed = (savedSeed.proOnly && !isPro)
+        ? ref.read(themeSeedProvider.notifier).lastFreeSeed
+        : savedSeed;
 
     return Scaffold(
       appBar: AppBar(
@@ -111,6 +141,28 @@ class _ThemePickerPageState extends ConsumerState<ThemePickerPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (kDebugMode)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isPro
+                    ? const Color(0xFFE5B14B).withValues(alpha: 0.20)
+                    : context.fc.cardAlt,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                'DEBUG · Pro state: ${isPro ? "ATIVO (trial ou Pro)" : "INATIVO"}'
+                ' · proOnly check ${isPro ? "BYPASS" : "ATIVO"}',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontFamily: 'monospace',
+                  fontWeight: FontWeight.w700,
+                  color: context.fc.text,
+                ),
+              ),
+            ),
           if (!isPro)
             Container(
               width: double.infinity,
@@ -142,14 +194,41 @@ class _ThemePickerPageState extends ConsumerState<ThemePickerPage> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
               children: [
-                for (final seed in AppThemeSeed.values) ...[
+                _SectionHeader(title: 'Grátis para todos'),
+                for (final seed in AppThemeSeed.values.where((s) => !s.proOnly)) ...[
                   _ThemeTile(
                     seed: seed,
                     isSelected: currentSeed == seed,
                     isPro: isPro,
                     isPreviewing: _previewing == seed,
                     previewSecsLeft: _previewSecsLeft,
-                    onTap: () => _selectTheme(seed, isPro),
+                    onTap: () => _selectTheme(seed),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                const SizedBox(height: 16),
+                _SectionHeader(title: 'Pro · modo escuro'),
+                for (final seed in AppThemeSeed.values.where((s) => s.proOnly && s.isDark)) ...[
+                  _ThemeTile(
+                    seed: seed,
+                    isSelected: currentSeed == seed,
+                    isPro: isPro,
+                    isPreviewing: _previewing == seed,
+                    previewSecsLeft: _previewSecsLeft,
+                    onTap: () => _selectTheme(seed),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                const SizedBox(height: 16),
+                _SectionHeader(title: 'Pro · modo claro ☀️'),
+                for (final seed in AppThemeSeed.values.where((s) => s.proOnly && !s.isDark)) ...[
+                  _ThemeTile(
+                    seed: seed,
+                    isSelected: currentSeed == seed,
+                    isPro: isPro,
+                    isPreviewing: _previewing == seed,
+                    previewSecsLeft: _previewSecsLeft,
+                    onTap: () => _selectTheme(seed),
                   ),
                   const SizedBox(height: 8),
                 ],
@@ -200,23 +279,10 @@ class _ThemeTile extends StatelessWidget {
               : Theme.of(context).colorScheme.surfaceContainer,
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Color swatch
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: seed.color,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: seed.color.withValues(alpha: 0.35),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-            ),
+            // Mini mockup do app no tema — vale 1000 swatches
+            ThemePreview(seed: seed, width: 70),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -292,3 +358,24 @@ class _ThemeTile extends StatelessWidget {
 
 // Temporary override during theme preview (does NOT persist to disk)
 final previewThemeSeedProvider = StateProvider<AppThemeSeed?>((ref) => null);
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  const _SectionHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8, top: 4),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 1.2,
+          color: context.fc.textMuted,
+        ),
+      ),
+    );
+  }
+}

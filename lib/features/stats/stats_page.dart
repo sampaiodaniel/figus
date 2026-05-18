@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/figus_colors.dart';
 import '../../data/providers.dart';
 import '../../domain/models/album_view_models.dart';
+import '../pro/pro_badge.dart';
+import '../pro/pro_service.dart';
 
 class StatsPage extends ConsumerWidget {
   const StatsPage({super.key});
@@ -13,6 +16,7 @@ class StatsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statsAsync = ref.watch(albumStatsProvider);
+    final isPro = ref.watch(proProvider).isActive;
     final c = context.fc;
     return Scaffold(
       backgroundColor: c.bg,
@@ -32,7 +36,7 @@ class StatsPage extends ConsumerWidget {
       body: statsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Erro: $e')),
-        data: (s) => _StatsBody(stats: s),
+        data: (s) => _StatsBody(stats: s, isPro: isPro),
       ),
     );
   }
@@ -40,7 +44,8 @@ class StatsPage extends ConsumerWidget {
 
 class _StatsBody extends StatelessWidget {
   final AlbumStats stats;
-  const _StatsBody({required this.stats});
+  final bool isPro;
+  const _StatsBody({required this.stats, required this.isPro});
 
   @override
   Widget build(BuildContext context) {
@@ -244,6 +249,9 @@ class _StatsBody extends StatelessWidget {
                   iconColor: AppTheme.goldSoft,
                   label: 'BRILHANTES',
                   value: '${stats.foilOwned}/${stats.foilTotal}',
+                  sub: stats.foilExtraCopies > 0
+                      ? '${stats.foilExtraCopies} repetida${stats.foilExtraCopies == 1 ? '' : 's'}'
+                      : null,
                 ),
               ),
             ],
@@ -328,8 +336,411 @@ class _StatsBody extends StatelessWidget {
               ),
             ],
           ),
+
+          const SizedBox(height: 24),
+          _AdvancedStatsSection(stats: stats, isPro: isPro),
         ],
       ),
+    );
+  }
+}
+
+class _AdvancedStatsSection extends StatelessWidget {
+  final AlbumStats stats;
+  final bool isPro;
+  const _AdvancedStatsSection({required this.stats, required this.isPro});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.fc;
+    // Derived numbers from the existing stats — keeps this section meaningful
+    // without adding new SQL queries this sprint.
+    final pace = stats.collectedThisWeek;
+    final remaining = stats.total - stats.owned;
+    final weeksToFinish = pace > 0 ? (remaining / pace).ceil() : null;
+    final avgPerDay =
+        stats.daysCollecting > 0 ? stats.owned / stats.daysCollecting : 0.0;
+    final foilPct = stats.foilTotal > 0
+        ? (stats.foilOwned / stats.foilTotal * 100).round()
+        : 0;
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.gold.withValues(alpha: 0.10),
+            AppTheme.gold.withValues(alpha: 0.02),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.gold.withValues(alpha: 0.3)),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'ESTATÍSTICAS AVANÇADAS',
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.gold,
+                  letterSpacing: 0.6,
+                ),
+              ),
+              const SizedBox(width: 6),
+              const ProBadge(compact: true),
+            ],
+          ),
+          const SizedBox(height: 14),
+          if (!isPro)
+            _AdvancedTeaser()
+          else
+            _AdvancedRealView(
+              stats: stats,
+              pace: pace,
+              weeksToFinish: weeksToFinish,
+              avgPerDay: avgPerDay,
+              foilPct: foilPct,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Pro view — uses real numbers derived from AlbumStats.
+class _AdvancedRealView extends StatelessWidget {
+  final AlbumStats stats;
+  final int pace;
+  final int? weeksToFinish;
+  final double avgPerDay;
+  final int foilPct;
+
+  const _AdvancedRealView({
+    required this.stats,
+    required this.pace,
+    required this.weeksToFinish,
+    required this.avgPerDay,
+    required this.foilPct,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.fc;
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _StatTile(
+                icon: Icons.speed_rounded,
+                iconColor: AppTheme.gold,
+                label: 'RITMO',
+                value: '${pace}/sem',
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _StatTile(
+                icon: Icons.flag_rounded,
+                iconColor: AppTheme.goldSoft,
+                label: weeksToFinish == null ? 'PREVISÃO' : 'CONCLUSÃO',
+                value: weeksToFinish == null ? '—' : '~${weeksToFinish}sem',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _StatTile(
+                icon: Icons.trending_up_rounded,
+                iconColor: AppTheme.gold,
+                label: 'MÉDIA/DIA',
+                value: avgPerDay.toStringAsFixed(1),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _StatTile(
+                icon: Icons.calendar_today_rounded,
+                iconColor: AppTheme.goldSoft,
+                label: 'MELHOR DIA',
+                value: _shortDay(stats.bestDayOfWeek),
+                sub: stats.bestDayOfWeek == null
+                    ? null
+                    : '${stats.bestDayOfWeekCount} marcações',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        _WeeklyChart(history: stats.weeklyHistory),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: c.card,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: c.border),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.lightbulb_outline_rounded,
+                  size: 18, color: AppTheme.gold),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  weeksToFinish == null
+                      ? 'Marque uma figurinha pra começarmos a estimar quando você completa.'
+                      : 'Mantendo o ritmo, você completa o álbum em ~$weeksToFinish semana${weeksToFinish == 1 ? '' : 's'}.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: c.textMuted,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  static String _shortDay(int? dow) {
+    if (dow == null) return '—';
+    const labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+    return labels[(dow - 1).clamp(0, 6)];
+  }
+}
+
+/// 4-bar weekly history. Index 0 = 4 weeks ago, index 3 = this week.
+class _WeeklyChart extends StatelessWidget {
+  final List<int> history;
+  const _WeeklyChart({required this.history});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.fc;
+    final maxValue = history.fold<int>(0, (m, v) => v > m ? v : m);
+    final labels = const ['-3 sem', '-2 sem', '-1 sem', 'Esta'];
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 14, 12, 10),
+      decoration: BoxDecoration(
+        color: c.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: c.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'HISTÓRICO SEMANAL',
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.gold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              if (maxValue > 0)
+                Text(
+                  '+${history[3]} esta semana',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: c.textMuted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 60,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                for (var i = 0; i < history.length; i++)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text(
+                            '${history[i]}',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: c.text,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Container(
+                            height: maxValue == 0
+                                ? 4
+                                : (history[i] / maxValue) * 38 + 4,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppTheme.gold,
+                                  AppTheme.gold.withValues(alpha: 0.5),
+                                ],
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                              ),
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              for (final l in labels)
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      l,
+                      style: TextStyle(fontSize: 9, color: c.textMuted),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Free view — same layout as Pro but with realistic example numbers + a
+/// mock weekly chart, so the user sees exactly what they unlock.
+class _AdvancedTeaser extends StatelessWidget {
+  static const _mockHistory = <int>[8, 14, 11, 18];
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.fc;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Visualização exemplo · ative Pro pra ver seus números reais',
+          style: TextStyle(
+            fontSize: 11,
+            color: c.textMuted,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Opacity(
+          opacity: 0.6,
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: _StatTile(
+                      icon: Icons.speed_rounded,
+                      iconColor: AppTheme.gold,
+                      label: 'RITMO',
+                      value: '18/sem',
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _StatTile(
+                      icon: Icons.flag_rounded,
+                      iconColor: AppTheme.goldSoft,
+                      label: 'CONCLUSÃO',
+                      value: '~6 sem',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: _StatTile(
+                      icon: Icons.trending_up_rounded,
+                      iconColor: AppTheme.gold,
+                      label: 'MÉDIA/DIA',
+                      value: '2.3',
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _StatTile(
+                      icon: Icons.calendar_today_rounded,
+                      iconColor: AppTheme.goldSoft,
+                      label: 'MELHOR DIA',
+                      value: 'Dom',
+                      sub: '12 marcações',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _WeeklyChart(history: _mockHistory),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: c.card,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: c.border),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.lightbulb_outline_rounded,
+                        size: 18, color: AppTheme.gold),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Mantendo o ritmo, você completa o álbum em ~6 semanas.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: c.textMuted,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        FilledButton.icon(
+          onPressed: () => context.push('/upgrade'),
+          icon: const Icon(Icons.lock_open_rounded, size: 18),
+          label: const Text('Desbloquear meus dados (Pro)'),
+          style: FilledButton.styleFrom(
+            backgroundColor: AppTheme.gold,
+            foregroundColor: AppTheme.inkDeep,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -339,12 +750,14 @@ class _StatTile extends StatelessWidget {
   final Color iconColor;
   final String label;
   final String value;
+  final String? sub;
 
   const _StatTile({
     required this.icon,
     required this.iconColor,
     required this.label,
     required this.value,
+    this.sub,
   });
 
   @override
@@ -393,6 +806,18 @@ class _StatTile extends StatelessWidget {
                     height: 1.1,
                   ),
                 ),
+                if (sub != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      sub!,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: c.textMuted,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),

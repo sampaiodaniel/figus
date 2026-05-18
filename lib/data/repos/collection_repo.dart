@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
 
 import '../db/database.dart';
@@ -9,6 +11,12 @@ class CollectionRepo {
   final AppDatabase db;
   final SyncRepo? sync;
   CollectionRepo(this.db, {this.sync});
+
+  /// Per-sticker debounce timers. Tap rapid-fire (mark→unmark) doesn't burn
+  /// HTTP round-trips — we only push to Supabase after the user has held
+  /// the same end state for [_pushDebounce]. Last write wins.
+  final _pendingPushTimers = <int, Timer>{};
+  static const _pushDebounce = Duration(seconds: 10);
 
   Future<int> _activeProfileId() async {
     final p = await (db.select(db.profiles)..where((t) => t.isActive.equals(true))).getSingleOrNull();
@@ -43,13 +51,55 @@ class CollectionRepo {
 
   Future<void> _upsert(int profileId, int stickerId, String status, int dupCount) async {
     await _localUpsert(profileId, stickerId, status, dupCount);
-    if (sync != null) {
-      final sticker = await (db.select(db.stickers)..where((s) => s.id.equals(stickerId)))
-          .getSingleOrNull();
-      if (sticker != null) {
-        sync!.pushEntry(sticker.number, status, dupCount);
-      }
+    _schedulePush(stickerId);
+  }
+
+  /// Cancel any pending push for [stickerId] and schedule a fresh one 10s
+  /// from now. If the user keeps tapping (toggle/correction), we keep
+  /// resetting — only the stable end state hits the wire.
+  void _schedulePush(int stickerId) {
+    if (sync == null || !sync!.isSignedIn) return;
+    _pendingPushTimers[stickerId]?.cancel();
+    _pendingPushTimers[stickerId] = Timer(_pushDebounce, () => _flushPush(stickerId));
+  }
+
+  Future<void> _flushPush(int stickerId) async {
+    _pendingPushTimers.remove(stickerId);
+    final sticker = await (db.select(db.stickers)..where((s) => s.id.equals(stickerId)))
+        .getSingleOrNull();
+    if (sticker == null) return;
+    final pid = await _activeProfileId();
+    final entry = await _entry(pid, stickerId);
+    if (entry == null) return;
+    sync!.pushEntry(sticker.number, entry.status, entry.duplicateCount);
+  }
+
+  /// Push every pending sticker immediately — called from lifecycle hooks
+  /// when the app is being backgrounded, so we don't lose mutations from
+  /// the debounce window. Uses [SyncRepo.pushEntriesBulk] for efficiency.
+  Future<void> flushPendingPushes() async {
+    if (_pendingPushTimers.isEmpty || sync == null || !sync!.isSignedIn) return;
+    final stickerIds = _pendingPushTimers.keys.toList();
+    for (final t in _pendingPushTimers.values) {
+      t.cancel();
     }
+    _pendingPushTimers.clear();
+    final pid = await _activeProfileId();
+    final stickers = await (db.select(db.stickers)
+          ..where((s) => s.id.isIn(stickerIds)))
+        .get();
+    final byId = {for (final s in stickers) s.id: s};
+    final entries = await (db.select(db.collections)
+          ..where((c) => c.profileId.equals(pid) & c.stickerId.isIn(stickerIds)))
+        .get();
+    final payload = <({String stickerNumber, String status, int dupCount})>[];
+    for (final e in entries) {
+      final s = byId[e.stickerId];
+      if (s == null) continue;
+      payload.add((stickerNumber: s.number, status: e.status, dupCount: e.duplicateCount));
+    }
+    if (payload.isEmpty) return;
+    await sync!.pushEntriesBulk(payload);
   }
 
   /// Apply remote entries pulled from Supabase without re-pushing them (avoids loop).

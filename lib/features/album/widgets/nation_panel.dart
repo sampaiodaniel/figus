@@ -11,12 +11,18 @@ import 'sticker_card.dart';
 
 /// An expandable panel for a single album section (FWC, FWC9+, nation, …).
 /// Tap header → expand inline grid; tap again → collapse.
+/// What the section header should emphasize in its count area. Album list
+/// is filter-aware: showing "14/20 COMPLETO" inside the Repetidas filter
+/// (where the user only cares about extra copies) is confusing.
+enum NationPanelCountMode { progress, duplicates, missing }
+
 class NationPanel extends StatelessWidget {
   final AlbumSection section;
   final bool expanded;
   final VoidCallback onToggle;
   final void Function(StickerView) onTapSticker;
   final void Function(StickerView) onLongPressSticker;
+  final NationPanelCountMode countMode;
 
   const NationPanel({
     super.key,
@@ -25,6 +31,7 @@ class NationPanel extends StatelessWidget {
     required this.onToggle,
     required this.onTapSticker,
     required this.onLongPressSticker,
+    this.countMode = NationPanelCountMode.progress,
   });
 
   static String _nameFromTitle(String title) {
@@ -39,10 +46,15 @@ class NationPanel extends StatelessWidget {
     final owned = section.ownedCount;
     final total = section.totalCount;
     final progress = total == 0 ? 0.0 : owned / total;
-    final complete = owned == total && total > 0;
+    // COMPLETO badge is suppressed in filter views — a section can be 100%
+    // complete and still have duplicates to show, the badge there is noise.
+    final complete = countMode == NationPanelCountMode.progress &&
+        owned == total &&
+        total > 0;
     final dupes = section.stickers
         .where((s) => s.status == StickerOwnership.duplicate)
         .fold<int>(0, (sum, s) => sum + s.duplicateCount);
+    final missingInSection = total - owned;
 
     final iso = paniniToIso2[section.key];
     final nameOnly = _nameFromTitle(section.title);
@@ -123,19 +135,28 @@ class NationPanel extends StatelessWidget {
                           ),
                         ),
 
-                        // Count + dupes
+                        // Count area — adapts to the active filter so the
+                        // user sees the number that matches the screen.
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              '$owned/$total',
+                              switch (countMode) {
+                                NationPanelCountMode.progress =>
+                                  '$owned/$total',
+                                NationPanelCountMode.duplicates =>
+                                  '$dupes rep',
+                                NationPanelCountMode.missing =>
+                                  '$missingInSection fal',
+                              },
                               style: GoogleFonts.jetBrainsMono(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
                                 color: c.text,
                               ),
                             ),
-                            if (dupes > 0)
+                            if (countMode == NationPanelCountMode.progress &&
+                                dupes > 0)
                               Text(
                                 '+$dupes rep',
                                 style: GoogleFonts.jetBrainsMono(

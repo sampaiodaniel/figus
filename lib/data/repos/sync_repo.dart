@@ -165,6 +165,75 @@ class SyncRepo {
     }
   }
 
+  // ── User settings (theme, favorites, profile name) ───────────────────────
+  //
+  // We piggyback on Supabase Auth's `user_metadata` JSON column instead of
+  // creating a dedicated table. Zero migration cost and the data follows the
+  // user automatically across devices via the session token.
+
+  /// Merge-push user settings to Supabase. Only the fields you pass are
+  /// updated; the rest of user_metadata is preserved.
+  Future<bool> pushUserSettings({
+    String? theme,
+    List<String>? favoriteNations,
+    String? profileName,
+    String? avatar,
+  }) async {
+    if (!isSignedIn) return false;
+    try {
+      final current = _client!.auth.currentUser?.userMetadata ?? const {};
+      final merged = <String, dynamic>{...current};
+      if (theme != null) merged['theme'] = theme;
+      if (favoriteNations != null) merged['favorite_nations'] = favoriteNations;
+      if (profileName != null) merged['profile_name'] = profileName;
+      if (avatar != null) merged['avatar'] = avatar;
+      merged['settings_updated_at'] =
+          DateTime.now().toUtc().toIso8601String();
+      await _client!.auth.updateUser(UserAttributes(data: merged));
+      return true;
+    } catch (e) {
+      debugPrint('[SyncRepo] pushUserSettings error: $e');
+      return false;
+    }
+  }
+
+  /// Fetch fresh user settings from the server. Issues a network call to
+  /// /auth/v1/user so we get up-to-date metadata (cached version may be
+  /// stale if another device updated it after this session started).
+  Future<
+      ({
+        String? theme,
+        List<String>? favoriteNations,
+        String? profileName,
+        String? avatar,
+      })> pullUserSettings() async {
+    const empty = (
+      theme: null,
+      favoriteNations: null,
+      profileName: null,
+      avatar: null,
+    );
+    if (!isSignedIn) return empty;
+    try {
+      final res = await _client!.auth.getUser();
+      final meta = res.user?.userMetadata;
+      if (meta == null) return empty;
+      final favRaw = meta['favorite_nations'];
+      final favs = favRaw is List
+          ? favRaw.map((e) => e.toString()).toList()
+          : null;
+      return (
+        theme: meta['theme'] as String?,
+        favoriteNations: favs,
+        profileName: meta['profile_name'] as String?,
+        avatar: meta['avatar'] as String?,
+      );
+    } catch (e) {
+      debugPrint('[SyncRepo] pullUserSettings error: $e');
+      return empty;
+    }
+  }
+
   Stream<AuthState> get authStateChanges =>
       _client?.auth.onAuthStateChange ?? const Stream.empty();
 }

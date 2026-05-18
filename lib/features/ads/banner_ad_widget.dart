@@ -4,7 +4,21 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-const _bannerAdUnitId = 'ca-app-pub-7319987062749834/4232418305';
+/// AdMob serves no real ads in debug mode for the app's own ID, so we swap
+/// in Google's adaptive-banner test units when running under flutter run.
+/// The adaptive test IDs serve creatives that fill the requested AdSize —
+/// the standard banner test IDs always return 320x50, masking the real
+/// adaptive sizing on tablets.
+const _prodBannerAdUnitId = 'ca-app-pub-7319987062749834/4232418305';
+const _testAdaptiveBannerUnitIdAndroid = 'ca-app-pub-3940256099942544/9214589741';
+const _testAdaptiveBannerUnitIdIos = 'ca-app-pub-3940256099942544/2435281174';
+
+String _bannerAdUnitId() {
+  if (kDebugMode) {
+    return Platform.isIOS ? _testAdaptiveBannerUnitIdIos : _testAdaptiveBannerUnitIdAndroid;
+  }
+  return _prodBannerAdUnitId;
+}
 
 class BannerAdWidget extends StatefulWidget {
   const BannerAdWidget({super.key});
@@ -16,27 +30,49 @@ class BannerAdWidget extends StatefulWidget {
 class _BannerAdWidgetState extends State<BannerAdWidget> {
   BannerAd? _ad;
   bool _loaded = false;
+  bool _loadStarted = false;
 
   @override
   void initState() {
     super.initState();
     if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      _loadAd();
+      // Defer to post-frame so MediaQuery is available for the
+      // adaptive-banner size calculation.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _loadAd();
+      });
     }
   }
 
-  void _loadAd() {
-    _ad = BannerAd(
-      adUnitId: _bannerAdUnitId,
+  Future<void> _loadAd() async {
+    if (_loadStarted) return;
+    _loadStarted = true;
+    // Anchored adaptive banner: full device width, height auto-calculated
+    // (~50–90px). Mais alto que o 320x50 fixo, suportado pelo test unit, e
+    // não exige hooks pós-load.
+    final width = MediaQuery.of(context).size.width.truncate();
+    final adaptive = await AdSize.getAnchoredAdaptiveBannerAdSize(
+      Orientation.portrait,
+      width,
+    );
+    final AdSize size = adaptive ?? AdSize.banner;
+    final ad = BannerAd(
+      adUnitId: _bannerAdUnitId(),
       request: const AdRequest(),
-      size: AdSize.banner,
+      size: size,
       listener: BannerAdListener(
         onAdLoaded: (_) {
           if (mounted) setState(() => _loaded = true);
         },
-        onAdFailedToLoad: (ad, _) => ad.dispose(),
+        onAdFailedToLoad: (ad, err) {
+          // Log so we can tell NO_FILL apart from misconfigured unit IDs.
+          debugPrint('[BannerAd] failed: code=${err.code} domain=${err.domain} msg=${err.message}');
+          ad.dispose();
+        },
       ),
-    )..load();
+    );
+    _ad = ad;
+    await ad.load();
   }
 
   @override

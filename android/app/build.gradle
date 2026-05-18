@@ -8,7 +8,10 @@ plugins {
 android {
     namespace = "com.danielsampaio.figus"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // Plugins (sqlite3_flutter_libs, google_mlkit, etc.) require NDK 27. The
+    // Flutter SDK default is 26.x — pin to the highest required version so
+    // each build doesn't print the version-mismatch warning.
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

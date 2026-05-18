@@ -41,15 +41,26 @@ class _AlbumPageState extends ConsumerState<AlbumPage> {
     final filter = ref.watch(albumFilterProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Coleção'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.ios_share_rounded),
-            tooltip: 'Compartilhar',
-            onPressed: _showShareSheet,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(36),
+        child: AppBar(
+          toolbarHeight: 36,
+          titleSpacing: 16,
+          title: const Text(
+            'Coleção',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           ),
-        ],
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.ios_share_rounded, size: 20),
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+              tooltip: 'Compartilhar',
+              onPressed: _showShareSheet,
+            ),
+            const SizedBox(width: 8),
+          ],
+        ),
       ),
       body: Column(
         children: [
@@ -102,6 +113,12 @@ class _AlbumPageState extends ConsumerState<AlbumPage> {
     if (data.isEmpty) {
       return const Center(child: Text('Nenhuma seleção encontrada'));
     }
+    final filter = ref.watch(albumFilterProvider);
+    final countMode = switch (filter) {
+      AlbumFilter.all => NationPanelCountMode.progress,
+      AlbumFilter.duplicates => NationPanelCountMode.duplicates,
+      AlbumFilter.missing => NationPanelCountMode.missing,
+    };
     return ListView.builder(
       key: const PageStorageKey('nations-list'),
       controller: _scrollCtrl,
@@ -111,6 +128,7 @@ class _AlbumPageState extends ConsumerState<AlbumPage> {
         return NationPanel(
           section: s,
           expanded: _expanded.contains(s.key),
+          countMode: countMode,
           onToggle: () => setState(() {
             if (!_expanded.add(s.key)) _expanded.remove(s.key);
           }),
@@ -325,34 +343,46 @@ class _FilterChips extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.fc;
     final primary = c.accent;
-    const items = <(AlbumFilter, String, IconData)>[
-      (AlbumFilter.all, 'Todas', Icons.apps_rounded),
-      (AlbumFilter.missing, 'Me faltam', Icons.radar_rounded),
-      (AlbumFilter.duplicates, 'Repetidas', Icons.copy_all_rounded),
+    const items = <(AlbumFilter, String)>[
+      (AlbumFilter.all, 'Todas'),
+      (AlbumFilter.missing, 'Me faltam'),
+      (AlbumFilter.duplicates, 'Repetidas'),
     ];
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+    // Row of equal-width chips — each takes 1/3 of the width so labels
+    // never truncate, and the bar uses minimal vertical space.
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
       child: Row(
         children: [
-          for (final (f, label, icon) in items)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: FilterChip(
-                selected: current == f,
-                onSelected: (_) => onChanged(f),
-                avatar: Icon(icon,
-                    size: 16,
-                    color: current == f ? Colors.white : c.textMuted),
-                label: Text(label),
-                labelStyle: TextStyle(
-                  color: current == f ? Colors.white : c.textMuted,
-                  fontWeight: FontWeight.w600,
+          for (var i = 0; i < items.length; i++)
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(right: i == items.length - 1 ? 0 : 6),
+                child: FilterChip(
+                  selected: current == items[i].$1,
+                  onSelected: (_) => onChanged(items[i].$1),
+                  label: SizedBox(
+                    width: double.infinity,
+                    child: Text(
+                      items[i].$2,
+                      textAlign: TextAlign.center,
+                      overflow: TextOverflow.visible,
+                      softWrap: false,
+                    ),
+                  ),
+                  labelStyle: TextStyle(
+                    color: current == items[i].$1 ? Colors.white : c.textMuted,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                  selectedColor: primary,
+                  backgroundColor: c.cardAlt,
+                  showCheckmark: false,
+                  side: BorderSide.none,
+                  visualDensity: VisualDensity.compact,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 ),
-                selectedColor: primary,
-                backgroundColor: c.cardAlt,
-                showCheckmark: false,
-                side: BorderSide.none,
               ),
             ),
         ],

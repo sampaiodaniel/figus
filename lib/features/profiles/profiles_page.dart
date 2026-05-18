@@ -37,15 +37,9 @@ class ProfilesPage extends ConsumerWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        icon: Icon(
-                          isPro ? Icons.edit_outlined : Icons.lock_outline_rounded,
-                          size: 18,
-                          color: isPro ? null : c.textMuted,
-                        ),
-                        tooltip: isPro ? 'Renomear' : 'Renomear (Pro)',
-                        onPressed: isPro
-                            ? () => _renameProfile(context, ref, p.id, p.name)
-                            : () => showPaywall(context),
+                        icon: const Icon(Icons.edit_outlined, size: 18),
+                        tooltip: 'Renomear',
+                        onPressed: () => _renameProfile(context, ref, p.id, p.name),
                       ),
                       if (p.isActive)
                         const Chip(
@@ -93,7 +87,7 @@ class ProfilesPage extends ConsumerWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Perfis extras e renomear são Pro. O 1º perfil é sempre grátis. '
+                        'Renomear e o 1º perfil são grátis. Perfis extras (família) são Pro. '
                         'Sync na nuvem segue grátis pra todo mundo.',
                         style: TextStyle(color: c.textMuted, fontSize: 13, height: 1.4),
                       ),

@@ -3,16 +3,32 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/theme/figus_colors.dart';
+import '../../data/repos/sync_repo.dart';
+import 'pro_service.dart';
 
 enum AppThemeSeed {
-  // free
-  blue('Azul', Color(0xFF1F66FF), false, true),
-  // pro — dark
-  gold('Dourado', Color(0xFFE5B14B), true, true),
+  // ── free (2 — 1 escuro + 1 claro) ────────────────────────────────────────
+  gold('Dourado', Color(0xFFE5B14B), false, true),
+  morning('Manhã', Color(0xFF1AB4D3), false, false),
+
+  // ── pro · dark (8) ───────────────────────────────────────────────────────
+  blue('Azul', Color(0xFF1F66FF), true, true),
   crimson('Vermelho', Color(0xFFCC1126), true, true),
-  // pro — light
+  forest('Selva', Color(0xFF22A87E), true, true),
+  navy('Profundo', Color(0xFF3F7AE0), true, true),
+  royal('Realeza', Color(0xFF8A3FFC), true, true),
+  sunset('Pôr-do-Sol', Color(0xFFFF7B3D), true, true),
+  neon('Neon', Color(0xFFFF2D87), true, true),
+  graphite('Grafite', Color(0xFF8C9099), true, true),
+
+  // ── pro · light warm (3) ─────────────────────────────────────────────────
   emerald('Copa', Color(0xFF1A7A4A), true, false),
-  violet('Papel', Color(0xFF6B3FA0), true, false);
+  sand('Areia', Color(0xFFB8843D), true, false),
+  coffee('Café', Color(0xFF6E422A), true, false),
+
+  // ── pro · light cool (2) ─────────────────────────────────────────────────
+  violet('Papel', Color(0xFF6B3FA0), true, false),
+  mint('Menta', Color(0xFF2A9E6F), true, false);
 
   final String label;
   final Color color;
@@ -23,48 +39,113 @@ enum AppThemeSeed {
 
   const AppThemeSeed(this.label, this.color, this.proOnly, this.isDark);
 
+  /// Cool-toned light themes use the lavender [coolLight] palette; warm-toned
+  /// light themes use the cream [warmLight] palette.
+  static const _coolLightSeeds = {
+    AppThemeSeed.morning,
+    AppThemeSeed.violet,
+    AppThemeSeed.mint,
+  };
+
   FigusColors get figusColors {
-    if (!isDark) {
-      return this == AppThemeSeed.violet
-          ? FigusColors.coolLight
-          : FigusColors.warmLight;
-    }
-    return FigusColors.dark;
+    if (isDark) return FigusColors.dark;
+    return _coolLightSeeds.contains(this)
+        ? FigusColors.coolLight
+        : FigusColors.warmLight;
   }
 
   String get description {
     switch (this) {
-      case AppThemeSeed.blue:    return 'Clássico · modo escuro';
-      case AppThemeSeed.gold:    return 'Dourado quente · modo escuro';
-      case AppThemeSeed.crimson: return 'Vermelho vibrante · modo escuro';
-      case AppThemeSeed.emerald: return 'Copa verde · modo claro ☀️';
-      case AppThemeSeed.violet:  return 'Papel roxo · modo claro ☀️';
+      // free
+      case AppThemeSeed.gold:     return 'Dourado Figus · modo escuro';
+      case AppThemeSeed.morning:  return 'Manhã turquesa · modo claro ☀️';
+      // pro · dark
+      case AppThemeSeed.blue:     return 'Azul clássico · modo escuro';
+      case AppThemeSeed.crimson:  return 'Vermelho vibrante · modo escuro';
+      case AppThemeSeed.forest:   return 'Verde selva · modo escuro';
+      case AppThemeSeed.navy:     return 'Azul profundo · modo escuro';
+      case AppThemeSeed.royal:    return 'Roxo real · modo escuro';
+      case AppThemeSeed.sunset:   return 'Laranja pôr-do-sol · modo escuro';
+      case AppThemeSeed.neon:     return 'Rosa neon · modo escuro';
+      case AppThemeSeed.graphite: return 'Cinza neutro · modo escuro';
+      // pro · light warm
+      case AppThemeSeed.emerald:  return 'Copa verde · modo claro ☀️';
+      case AppThemeSeed.sand:     return 'Areia quente · modo claro ☀️';
+      case AppThemeSeed.coffee:   return 'Café tostado · modo claro ☀️';
+      // pro · light cool
+      case AppThemeSeed.violet:   return 'Papel roxo · modo claro ☀️';
+      case AppThemeSeed.mint:     return 'Menta fresca · modo claro ☀️';
     }
   }
 }
 
 class ThemeSeedNotifier extends StateNotifier<AppThemeSeed> {
-  ThemeSeedNotifier() : super(AppThemeSeed.blue) {
+  final Ref ref;
+  ThemeSeedNotifier(this.ref) : super(AppThemeSeed.gold) {
     _load();
   }
 
   static const _key = 'theme_seed';
+  // Remembers the most recent FREE theme the user picked, so when a Pro
+  // theme can no longer be honored (trial expired, debug Pro off, etc.)
+  // we fall back to what they were used to — not the default Dourado.
+  static const _keyLastFree = 'theme_last_free_seed';
+  AppThemeSeed _lastFreeSeed = AppThemeSeed.gold;
+  AppThemeSeed get lastFreeSeed => _lastFreeSeed;
 
   Future<void> _load() async {
     final p = await SharedPreferences.getInstance();
+    // Last free first — we may need it as the fallback below.
+    final lastFree = p.getString(_keyLastFree);
+    if (lastFree != null) {
+      final match = AppThemeSeed.values
+          .where((t) => t.name == lastFree && !t.proOnly)
+          .firstOrNull;
+      if (match != null) _lastFreeSeed = match;
+    }
     final saved = p.getString(_key);
-    if (saved == null) return;
-    final match = AppThemeSeed.values.where((t) => t.name == saved).firstOrNull;
-    if (match != null) state = match;
+    if (saved != null) {
+      final match =
+          AppThemeSeed.values.where((t) => t.name == saved).firstOrNull;
+      if (match != null) {
+        // Don't restore a Pro seed for a user who isn't (or isn't anymore)
+        // Pro — fall back to the last free choice instead so the picker
+        // stays in sync with what the app actually renders.
+        final isPro = ref.read(proProvider).isActive;
+        if (match.proOnly && !isPro) {
+          state = _lastFreeSeed;
+        } else {
+          state = match;
+        }
+      }
+    }
   }
 
-  Future<void> set(AppThemeSeed seed) async {
+  /// Apply a theme. Set [pushToCloud] false when applying a value that came
+  /// FROM the cloud (avoids pushing it right back and creating a loop).
+  Future<void> set(AppThemeSeed seed, {bool pushToCloud = true}) async {
+    // Defense in depth: never persist a Pro theme for a non-Pro user, no
+    // matter the call site (picker, paywall sheet, remote settings apply,
+    // auto-sync). app.dart enforces visually too, but stopping the write
+    // keeps the persisted state honest.
+    final isPro = ref.read(proProvider).isActive;
+    if (seed.proOnly && !isPro) {
+      return;
+    }
     state = seed;
     final p = await SharedPreferences.getInstance();
     await p.setString(_key, seed.name);
+    if (!seed.proOnly) {
+      _lastFreeSeed = seed;
+      await p.setString(_keyLastFree, seed.name);
+    }
+    if (pushToCloud) {
+      // ignore: discarded_futures
+      ref.read(syncRepoProvider).pushUserSettings(theme: seed.name);
+    }
   }
 }
 
 final themeSeedProvider = StateNotifierProvider<ThemeSeedNotifier, AppThemeSeed>(
-  (_) => ThemeSeedNotifier(),
+  (ref) => ThemeSeedNotifier(ref),
 );

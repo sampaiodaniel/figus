@@ -44,6 +44,45 @@ class Profiles extends Table {
   // trade suggestions.
   TextColumn get favoriteNations => text().withDefault(const Constant(''))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  // Avatar identifier — `avatar_01`..`avatar_11` map to SVG assets shipped
+  // in assets/avatars/. Legacy emoji strings ('⚽', '🏆', …) still render
+  // via AvatarImage's text fallback, so v8 profiles keep working.
+  TextColumn get avatarEmoji => text().withDefault(const Constant('avatar_01'))();
+}
+
+/// Streak state per profile. One row per profile; updated on each app open.
+class Streaks extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get profileId => integer().references(Profiles, #id)();
+  IntColumn get currentStreak => integer().withDefault(const Constant(0))();
+  IntColumn get longestStreak => integer().withDefault(const Constant(0))();
+  DateTimeColumn get lastOpenAt => dateTime().nullable()();
+  IntColumn get freezesUsedThisMonth =>
+      integer().withDefault(const Constant(0))();
+  // 'YYYY-MM' — used to reset freezesUsedThisMonth at month boundary.
+  TextColumn get freezesMonthKey =>
+      text().withDefault(const Constant(''))();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {profileId},
+      ];
+}
+
+/// Earned badges per profile. badgeId is a stable string like
+/// 'streak_7', 'completed_BRA', 'first_scan', so listing/migrations are
+/// safe even as definitions evolve.
+class Badges extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get profileId => integer().references(Profiles, #id)();
+  TextColumn get badgeId => text()();
+  DateTimeColumn get earnedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {profileId, badgeId},
+      ];
 }
 
 class Collections extends Table {

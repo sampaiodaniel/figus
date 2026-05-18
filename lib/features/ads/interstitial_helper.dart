@@ -11,7 +11,9 @@ const _adUnitId = kDebugMode
 class InterstitialHelper {
   static InterstitialAd? _ad;
   static int _sessionTaps = 0;
-  static const _tapsPerAd = 12;
+  // Phase 1 (lançamento): conservative — interstitial 1 a cada 30 taps.
+  // Bumps to 15 in phase 2 (>1k MAU) and 10 in phase 3 (>10k MAU).
+  static const _tapsPerAd = 30;
 
   static void preload() {
     if (kIsWeb) return;

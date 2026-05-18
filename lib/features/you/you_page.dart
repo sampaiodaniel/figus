@@ -1,14 +1,19 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../core/debug/mobile_preview.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/figus_colors.dart';
 import '../../data/providers.dart';
 import '../../data/repos/sync_repo.dart';
+import '../profiles/avatars.dart';
 import '../pro/pro_service.dart';
+import '../pro/theme_service.dart';
+import '../streak/streak_service.dart';
 
 Future<void> _showSyncOptions(BuildContext context, WidgetRef ref, String email) async {
   final messenger = ScaffoldMessenger.of(context);
@@ -61,16 +66,50 @@ Future<void> _showSyncOptions(BuildContext context, WidgetRef ref, String email)
               // whenever this device hadn't refreshed in a while.
               // Initial backfill of pre-login marks happens in AuthPage._verifyOtp.
               final repo = ref.read(collectionRepoProvider);
-              final remote = await ref.read(syncRepoProvider).pullAll();
+              final sync = ref.read(syncRepoProvider);
+              final remote = await sync.pullAll();
+              final settings = await sync.pullUserSettings();
               final applyStats = await repo.applyRemoteEntries(remote);
+              // Apply theme / favorite nations / profile name from cloud too.
+              if (settings.theme != null) {
+                final seed = AppThemeSeed.values
+                    .where((t) => t.name == settings.theme)
+                    .firstOrNull;
+                if (seed != null) {
+                  await ref.read(themeSeedProvider.notifier)
+                      .set(seed, pushToCloud: false);
+                }
+              }
+              if (settings.favoriteNations != null) {
+                await ref.read(profileRepoProvider).setFavoriteNations(
+                      settings.favoriteNations!.toSet(),
+                      pushToCloud: false,
+                    );
+              }
+              if (settings.profileName != null &&
+                  settings.profileName!.trim().isNotEmpty) {
+                final active = await ref.read(profileRepoProvider).active();
+                if (active.name != settings.profileName) {
+                  await ref.read(profileRepoProvider).rename(
+                        active.id,
+                        settings.profileName!,
+                        pushToCloud: false,
+                      );
+                }
+              }
+              if (settings.avatar != null && settings.avatar!.isNotEmpty) {
+                await ref.read(profileRepoProvider)
+                    .setAvatarEmoji(settings.avatar!, pushToCloud: false);
+              }
               // Bump the version (same pattern used by tapSticker / import) so
               // all autoDispose stat/section providers re-fetch. Invalidate
               // directly too just to make sure cached AsyncValues clear.
               ref.read(collectionVersionProvider.notifier).state++;
               ref.invalidate(albumStatsProvider);
               ref.invalidate(albumSectionsProvider);
+              ref.invalidate(profilesListProvider);
               // ignore: avoid_print
-              print('[Sync] remoteRows=${remote.length} apply=$applyStats');
+              print('[Sync] remoteRows=${remote.length} apply=$applyStats settings=$settings');
               messenger
                 ..clearSnackBars()
                 ..showSnackBar(SnackBar(
@@ -108,11 +147,13 @@ class YouPage extends ConsumerWidget {
     final statsAsync = ref.watch(albumStatsProvider);
     final pro = ref.watch(proProvider);
 
-    final profileName = profileAsync.maybeWhen(
+    final activeProfile = profileAsync.maybeWhen(
       data: (list) =>
-          list.firstWhere((p) => p.isActive, orElse: () => list.first).name,
-      orElse: () => '...',
+          list.firstWhere((p) => p.isActive, orElse: () => list.first),
+      orElse: () => null,
     );
+    final profileName = activeProfile?.name ?? '...';
+    final avatarId = activeProfile?.avatarEmoji ?? kDefaultAvatarId;
 
     // Watch for reactivity on sign-in / sign-out
     ref.watch(syncAuthStateProvider);
@@ -163,11 +204,16 @@ class YouPage extends ConsumerWidget {
           // ── Profile card ───────────────────────────────────────────────────
           _ProfileCard(
             name: profileName,
+            avatarId: avatarId,
             isPro: pro.isActive,
             isTrial: pro.isTrial,
             trialDaysLeft: pro.trialDaysLeft,
             onTap: () => context.push('/profiles'),
           ),
+          const SizedBox(height: 12),
+
+          // ── Streak card ─────────────────────────────────────────────────────
+          const _StreakBanner(),
           const SizedBox(height: 12),
 
           // ── Progress card ──────────────────────────────────────────────────
@@ -235,29 +281,35 @@ class YouPage extends ConsumerWidget {
                     Expanded(
                       child: Column(
                         children: [
-                          _StatRow(color: c.text,        label: 'TENHO',     value: owned.toString()),
+                          _StatRow(color: c.text,            label: 'TENHO',     value: owned.toString()),
                           const SizedBox(height: 8),
                           _StatRow(color: AppTheme.pulpSoft, label: 'FALTAM',    value: missing.toString()),
                           const SizedBox(height: 8),
                           _StatRow(color: c.accent,          label: 'REPETIDAS', value: '${stats?.duplicates ?? 0}'),
+                          const SizedBox(height: 8),
+                          _StatRow(
+                            color: AppTheme.gold,
+                            label: 'BRILHANTES',
+                            value: stats == null
+                                ? '0'
+                                : '${stats.foilOwned}' +
+                                    (stats.foilExtraCopies > 0
+                                        ? ' · ${stats.foilExtraCopies} rep'
+                                        : ''),
+                          ),
                         ],
                       ),
                     ),
                   ],
                 ),
                 Divider(color: c.border, height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${stats?.foilOwned ?? 0} brilhantes',
-                      style: TextStyle(fontSize: 11, color: c.textMuted),
-                    ),
-                    Text(
-                      isSignedIn ? '☁ ${syncEmail ?? "Sync ativo"}' : '○ Local',
-                      style: TextStyle(fontSize: 11, color: c.textMuted),
-                    ),
-                  ],
+                // Apenas o status de sync — sem juntar com brilhantes.
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    isSignedIn ? '☁ ${syncEmail ?? "Sync ativo"}' : '○ Coleção salva neste aparelho',
+                    style: TextStyle(fontSize: 11, color: c.textMuted),
+                  ),
                 ),
               ],
             ),
@@ -298,6 +350,12 @@ class YouPage extends ConsumerWidget {
                 onTap: () => context.push('/themes'),
               ),
               _MenuRow(
+                icon: Icons.face_outlined,
+                title: 'Avatar',
+                iconColor: c.accent,
+                onTap: () => context.push('/avatars'),
+              ),
+              _MenuRow(
                 icon: Icons.star_outline_rounded,
                 title: 'Seleções favoritas',
                 iconColor: c.accent,
@@ -310,7 +368,7 @@ class YouPage extends ConsumerWidget {
               ),
               _MenuRow(
                 icon: Icons.help_outline_rounded,
-                title: 'Como usar',
+                title: 'Ajuda',
                 onTap: () => context.push('/help'),
               ),
             ],
@@ -337,7 +395,7 @@ class YouPage extends ConsumerWidget {
           ),
           const SizedBox(height: 10),
 
-          // ── Debug Pro toggle (remove before public release) ────────────────
+          // ── Debug toggles (remove before public release) ───────────────────
           _MenuGroup(
             children: [
               _MenuRow(
@@ -357,6 +415,28 @@ class YouPage extends ConsumerWidget {
                   }
                 },
               ),
+              if (kDebugMode)
+                _MenuRow(
+                  icon: ref.watch(mobilePreviewProvider)
+                      ? Icons.smartphone_rounded
+                      : Icons.tablet_rounded,
+                  iconColor: ref.watch(mobilePreviewProvider)
+                      ? c.accent
+                      : c.textMuted,
+                  title: ref.watch(mobilePreviewProvider)
+                      ? 'Voltar à largura real (debug)'
+                      : 'Simular celular (debug)',
+                  subtitle: 'Trava a UI em 420px pra prever layout no celular',
+                  onTap: () => ref.read(mobilePreviewProvider.notifier).toggle(),
+                ),
+              if (kDebugMode)
+                _MenuRow(
+                  icon: Icons.view_carousel_outlined,
+                  iconColor: c.textMuted,
+                  title: 'Galeria de banners (debug)',
+                  subtitle: 'Compara tamanhos lado a lado',
+                  onTap: () => context.push('/debug/banners'),
+                ),
             ],
           ),
           const SizedBox(height: 10),
@@ -378,16 +458,132 @@ class YouPage extends ConsumerWidget {
   }
 }
 
+// ── _StreakBanner ─────────────────────────────────────────────────────────────
+
+class _StreakBanner extends ConsumerWidget {
+  const _StreakBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.fc;
+    final streakAsync = ref.watch(currentStreakProvider);
+    final streak = streakAsync.valueOrNull;
+    if (streak == null || streak.currentStreak == 0) {
+      // First-time / inactive profile — keep UI calm, hide the banner.
+      return const SizedBox.shrink();
+    }
+    final days = streak.currentStreak;
+    final freezesLeft = 3 - streak.freezesUsedThisMonth;
+    final nextMilestone = _nextMilestone(days);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            c.accent.withValues(alpha: 0.18),
+            c.accent.withValues(alpha: 0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: c.accent.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          Text(
+            days >= 7 ? '🔥' : '🌱',
+            style: const TextStyle(fontSize: 28),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  days == 1 ? '1 dia seguido' : '$days dias seguidos',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: c.text,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  nextMilestone != null
+                      ? 'Faltam ${nextMilestone - days} pra desbloquear marco de $nextMilestone'
+                      : 'Maior streak: ${streak.longestStreak} dias',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: c.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Tooltip(
+            message:
+                'Escudos protegem seu streak — perdeu um dia, um escudo é gasto automaticamente. Renova mensalmente.',
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: c.cardAlt,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      const Text('🛡️', style: TextStyle(fontSize: 14)),
+                      const SizedBox(width: 4),
+                      Text(
+                        '$freezesLeft',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: c.text,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    'escudo${freezesLeft == 1 ? '' : 's'}',
+                    style: GoogleFonts.inter(
+                      fontSize: 9,
+                      color: c.textMuted,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  int? _nextMilestone(int days) {
+    for (final m in const [3, 7, 14, 30, 60]) {
+      if (m > days) return m;
+    }
+    return null;
+  }
+}
+
 // ── _ProfileCard ──────────────────────────────────────────────────────────────
 
 class _ProfileCard extends StatelessWidget {
   final String name;
+  final String avatarId;
   final bool isPro;
   final bool isTrial;
   final int trialDaysLeft;
   final VoidCallback onTap;
   const _ProfileCard({
     required this.name,
+    required this.avatarId,
     required this.isPro,
     required this.isTrial,
     required this.trialDaysLeft,
@@ -417,7 +613,7 @@ class _ProfileCard extends StatelessWidget {
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
-                    color: c.accent,
+                    color: c.accent.withValues(alpha: 0.10),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
@@ -427,15 +623,8 @@ class _ProfileCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    name.isNotEmpty ? name[0].toUpperCase() : '?',
-                    style: GoogleFonts.inter(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: AvatarImage(id: avatarId, size: 56),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -573,8 +762,8 @@ class _ProCard extends StatelessWidget {
                     isTrial
                         ? 'Trial expira em ${trialDaysLeft}d · toque pra assinar'
                         : (isPro
-                            ? 'Ativo · Sem anúncios · Temas premium desbloqueados'
-                            : 'Remove anúncios · Temas premium · Sync multi-device'),
+                            ? 'Ativo · Sem anúncios · Temas e avatares premium'
+                            : 'Sem anúncios · Temas e avatares premium · Estatísticas avançadas'),
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.white.withValues(alpha: 0.85),

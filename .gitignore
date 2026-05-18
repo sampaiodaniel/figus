@@ -25,6 +25,10 @@ pubspec.lock
 .DS_Store
 Thumbs.db
 
+# Claude Design handoff zip + extraction folder (local only)
+.handoff-extract/
+Figus-handoff.zip
+
 # Android
 android/.gradle/
 android/captures/

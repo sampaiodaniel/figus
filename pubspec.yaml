@@ -22,6 +22,7 @@ dependencies:
 
   # Database
   drift: ^2.26.1
+  sqlite3_flutter_libs: ^0.5.27
   path_provider: ^2.1.4
   path: ^1.9.0
 
@@ -57,6 +58,9 @@ dependencies:
   # Mobile ads (Android / iOS — no-op on web)
   google_mobile_ads: ^5.1.0
 
+  # Google Play / App Store billing for donations (and future Pro upgrade).
+  in_app_purchase: ^3.2.0
+
   # Supabase — multi-device sync (auth + realtime)
   supabase_flutter: ^2.8.1
 
@@ -87,6 +91,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icon/
+    - assets/avatars/
     - assets/figus-logo-transparent.png
     - assets/figus-logo-square.png
     - assets/figus-logo-dark.png

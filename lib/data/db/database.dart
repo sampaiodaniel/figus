@@ -6,13 +6,13 @@ import 'tables.dart';
 
 part 'database.g.dart';
 
-@DriftDatabase(tables: [Albums, Nations, Stickers, Profiles, Collections, Wishlist])
+@DriftDatabase(tables: [Albums, Nations, Stickers, Profiles, Collections, Wishlist, Streaks, Badges])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(conn.openConnection());
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -148,6 +148,12 @@ class AppDatabase extends _$AppDatabase {
                 updates: {stickers},
               );
             }
+          }
+          if (from < 9) {
+            // Avatar emoji column + streak/badges tables.
+            await m.addColumn(profiles, profiles.avatarEmoji);
+            await m.createTable(streaks);
+            await m.createTable(badges);
           }
         },
       );

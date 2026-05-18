@@ -87,10 +87,25 @@ class AlbumStats {
   final int duplicates;
   final int foilOwned;
   final int foilTotal;
+  /// Number of foil stickers that the user has marked as `duplicate`
+  /// (i.e. they have spares). Important for trades — foils are usually
+  /// worth 2 commons.
+  final int foilDuplicateStickers;
+  /// Sum of `duplicateCount` across foil duplicate entries — the *extra*
+  /// copies, not the base owned one. Used to label "X repetidas brilhantes".
+  final int foilExtraCopies;
   final int collectedThisWeek;
   final int activeDays;
   final int daysCollecting;
   final int streak;
+  /// Count of stickers acquired per week for the last 4 weeks, oldest first.
+  /// Index 0 = 4 weeks ago, index 3 = current week.
+  final List<int> weeklyHistory;
+  /// DateTime.weekday (1=Mon … 7=Sun) of the day-of-week the user marks
+  /// the most stickers. Null when no activity yet.
+  final int? bestDayOfWeek;
+  /// How many stickers were marked on the best day of week (total, all-time).
+  final int bestDayOfWeekCount;
 
   const AlbumStats({
     required this.total,
@@ -99,10 +114,15 @@ class AlbumStats {
     required this.duplicates,
     required this.foilOwned,
     required this.foilTotal,
+    this.foilDuplicateStickers = 0,
+    this.foilExtraCopies = 0,
     this.collectedThisWeek = 0,
     this.activeDays = 0,
     this.daysCollecting = 0,
     this.streak = 0,
+    this.weeklyHistory = const [0, 0, 0, 0],
+    this.bestDayOfWeek,
+    this.bestDayOfWeekCount = 0,
   });
 
   double get percentComplete => total == 0 ? 0 : owned / total;

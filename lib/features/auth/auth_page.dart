@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/theme/figus_colors.dart';
 import '../../data/providers.dart';
 import '../../data/repos/sync_repo.dart';
+import '../pro/theme_service.dart';
 
 enum _Step { email, otp, done }
 
@@ -65,7 +66,6 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       _loading = false;
       if (err == null) {
         _step = _Step.done;
-        widget.onSignedIn?.call();
       } else {
         _error = err;
       }
@@ -73,17 +73,70 @@ class _AuthPageState extends ConsumerState<AuthPage> {
     if (err == null) {
       // First push everything we have locally (in case user marked stickers
       // before logging in), then pull to merge whatever else is on the
-      // server.
+      // server. We hold off on widget.onSignedIn until AFTER sync finishes,
+      // because that callback can navigate away and dispose this widget,
+      // which would kill subsequent ref.read calls mid-sync.
       final repo = ref.read(collectionRepoProvider);
+      final sync = ref.read(syncRepoProvider);
       await repo.pushAllLocal();
-      final remote = await ref.read(syncRepoProvider).pullAll();
-      if (remote.isNotEmpty && mounted) {
-        await repo.applyRemoteEntries(remote);
-        // Use the increment-bump pattern so autoDispose stat providers refresh.
-        ref.read(collectionVersionProvider.notifier).state++;
-        ref.invalidate(albumStatsProvider);
-        ref.invalidate(albumSectionsProvider);
+      final remote = await sync.pullAll();
+      final settings = await sync.pullUserSettings();
+      if (!mounted) {
+        // Widget was disposed (e.g. user backed out). Skip applying — local
+        // state already has its pre-login marks, and the next manual sync
+        // will reconcile.
+        return;
       }
+      if (remote.isNotEmpty) {
+        await repo.applyRemoteEntries(remote);
+      }
+      await _applyRemoteSettings(settings);
+      if (!mounted) return;
+      // Use the increment-bump pattern so autoDispose stat providers refresh.
+      ref.read(collectionVersionProvider.notifier).state++;
+      ref.invalidate(albumStatsProvider);
+      ref.invalidate(albumSectionsProvider);
+      ref.invalidate(profilesListProvider);
+      // Now it's safe to navigate away — sync is done, providers refreshed.
+      widget.onSignedIn?.call();
+    }
+  }
+
+  Future<void> _applyRemoteSettings(
+      ({
+        String? theme,
+        List<String>? favoriteNations,
+        String? profileName,
+        String? avatar,
+      }) s) async {
+    if (s.theme != null) {
+      final seed = AppThemeSeed.values
+          .where((t) => t.name == s.theme)
+          .firstOrNull;
+      if (seed != null) {
+        await ref.read(themeSeedProvider.notifier)
+            .set(seed, pushToCloud: false);
+      }
+    }
+    if (s.favoriteNations != null) {
+      await ref.read(profileRepoProvider).setFavoriteNations(
+            s.favoriteNations!.toSet(),
+            pushToCloud: false,
+          );
+    }
+    if (s.profileName != null && s.profileName!.trim().isNotEmpty) {
+      final active = await ref.read(profileRepoProvider).active();
+      if (active.name != s.profileName) {
+        await ref.read(profileRepoProvider).rename(
+              active.id,
+              s.profileName!,
+              pushToCloud: false,
+            );
+      }
+    }
+    if (s.avatar != null && s.avatar!.isNotEmpty) {
+      await ref.read(profileRepoProvider)
+          .setAvatarEmoji(s.avatar!, pushToCloud: false);
     }
   }
 

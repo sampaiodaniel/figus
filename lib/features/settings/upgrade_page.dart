@@ -452,7 +452,8 @@ class _ComparisonTable extends StatelessWidget {
     // ── Exclusivo Pro ────────────────────────────────────────────────────────
     ('Sem anúncios no app', false, true),
     ('Temas de cor exclusivos · modo claro e escuro', false, true),
-    ('Perfis adicionais (família) + renomear perfis', false, true),
+    ('Renomear perfil', true, true),
+    ('Perfis adicionais (família)', false, true),
     ('Scan OCR ilimitado', false, true),
     ('Troca por Bluetooth (em breve)', false, true),
   ];
