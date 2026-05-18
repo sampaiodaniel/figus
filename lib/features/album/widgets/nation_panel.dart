@@ -100,15 +100,32 @@ class NationPanel extends StatelessWidget {
                         Expanded(
                           child: Row(
                             children: [
+                              // Sigla (BRA, ARG, FWC, LGD...) na frente do
+                              // nome — bate com o que aparece nas figurinhas
+                              // físicas e ajuda a encontrar rápido.
                               Flexible(
-                                child: Text(
-                                  nameOnly,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: c.text,
-                                  ),
+                                child: RichText(
                                   overflow: TextOverflow.ellipsis,
+                                  text: TextSpan(
+                                    style: GoogleFonts.inter(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: c.text,
+                                    ),
+                                    children: [
+                                      TextSpan(
+                                        text: section.key,
+                                        style: GoogleFonts.jetBrainsMono(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w800,
+                                          color: c.textMuted,
+                                          letterSpacing: 0.4,
+                                        ),
+                                      ),
+                                      const TextSpan(text: '  ·  '),
+                                      TextSpan(text: nameOnly),
+                                    ],
+                                  ),
                                 ),
                               ),
                               if (complete)

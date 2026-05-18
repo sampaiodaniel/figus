@@ -467,14 +467,32 @@ class _MissingSectionsState extends State<_MissingSections> {
               ),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(
-                name,
-                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: c.text),
+              child: RichText(
                 overflow: TextOverflow.ellipsis,
+                text: TextSpan(
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: c.text,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: section.key,
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: c.textMuted,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                    const TextSpan(text: '  ·  '),
+                    TextSpan(text: name),
+                  ],
+                ),
               ),
             ),
             Text(
-              '${section.totalCount} faltam',
+              section.totalCount == 1 ? '1 falta' : '${section.totalCount} faltam',
               style: GoogleFonts.jetBrainsMono(fontSize: 10, color: c.textMuted),
             ),
             const SizedBox(width: 6),

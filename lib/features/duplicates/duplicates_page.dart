@@ -213,18 +213,32 @@ class _NationGroup extends StatelessWidget {
                   ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    name,
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: c.text,
-                    ),
+                  child: RichText(
                     overflow: TextOverflow.ellipsis,
+                    text: TextSpan(
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: c.text,
+                      ),
+                      children: [
+                        TextSpan(
+                          text: section.key,
+                          style: GoogleFonts.jetBrainsMono(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: c.textMuted,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                        const TextSpan(text: '  ·  '),
+                        TextSpan(text: name),
+                      ],
+                    ),
                   ),
                 ),
                 Text(
-                  '$totalCopies cópias',
+                  totalCopies == 1 ? '1 cópia' : '$totalCopies cópias',
                   style: GoogleFonts.jetBrainsMono(
                     fontSize: 11,
                     color: AppTheme.pulpSoft,
