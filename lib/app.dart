@@ -27,6 +27,7 @@ import 'features/scan/scan_page.dart';
 import 'features/settings/upgrade_page.dart';
 import 'features/stats/stats_page.dart';
 import 'features/trades/compare_friend_page.dart';
+import 'features/trades/trade_qr_page.dart';
 import 'features/trades/trades_page.dart';
 import 'features/auth/auth_page.dart';
 import 'features/donate/donate_page.dart';
@@ -97,7 +98,18 @@ class FigusApp extends ConsumerWidget {
         GoRoute(path: '/upgrade', builder: (_, __) => const UpgradePage()),
         GoRoute(path: '/favorites', builder: (_, __) => const FavoriteNationsPage()),
         GoRoute(path: '/names-import', builder: (_, __) => const PlayerNamesImportPage()),
-        GoRoute(path: '/compare', builder: (_, __) => const CompareFriendPage()),
+        GoRoute(
+          path: '/compare',
+          builder: (_, state) => CompareFriendPage(
+            initialFriendJson: state.extra is Map ? state.extra as Map : null,
+          ),
+        ),
+        GoRoute(
+          path: '/trade-qr',
+          builder: (_, state) => TradeQrPage(
+            mode: state.uri.queryParameters['mode'] ?? 'show',
+          ),
+        ),
         GoRoute(path: '/donate', builder: (_, __) => const DonatePage()),
         GoRoute(path: '/how-to', builder: (_, __) => const HelpPage()),
         GoRoute(path: '/help', builder: (_, __) => const HelpPage()),

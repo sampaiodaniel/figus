@@ -153,6 +153,59 @@ class CollectionRepo {
   /// missing markers needed for sync correctness), plus the total extra
   /// copies (duplicate_count sum) so the UI can show "X figurinhas + Y
   /// repetidas".
+  /// Applies a confirmed trade to the active profile: subtracts the
+  /// `youGive` stickers from local duplicates and adds the `youReceive`
+  /// stickers (filling the missing slot first, then stacking extras as
+  /// duplicates). Both sides are scheduled for cloud push.
+  Future<({int gaveOk, int receivedOk})> applyTrade({
+    required Map<String, int> youGive,
+    required Map<String, int> youReceive,
+  }) async {
+    final pid = await _activeProfileId();
+    final stickers = await db.select(db.stickers).get();
+    final byNumber = {for (final s in stickers) s.number: s};
+    var gaveOk = 0;
+    var receivedOk = 0;
+
+    for (final entry in youGive.entries) {
+      final s = byNumber[entry.key];
+      if (s == null) continue;
+      final col = await _entry(pid, s.id);
+      if (col == null || col.status == 'missing') continue;
+      final newDup =
+          (col.duplicateCount - entry.value).clamp(0, 1 << 30).toInt();
+      if (newDup == 0) {
+        await _localUpsert(pid, s.id, 'owned', 0);
+      } else {
+        await _localUpsert(pid, s.id, 'duplicate', newDup);
+      }
+      _schedulePush(s.id);
+      gaveOk++;
+    }
+
+    for (final entry in youReceive.entries) {
+      final s = byNumber[entry.key];
+      if (s == null) continue;
+      final col = await _entry(pid, s.id);
+      var status = col?.status ?? 'missing';
+      var dupCount = col?.duplicateCount ?? 0;
+      var remaining = entry.value;
+      if (status == 'missing') {
+        status = 'owned';
+        remaining -= 1;
+      }
+      if (remaining > 0) {
+        status = 'duplicate';
+        dupCount += remaining;
+      }
+      await _localUpsert(pid, s.id, status, dupCount);
+      _schedulePush(s.id);
+      receivedOk++;
+    }
+
+    return (gaveOk: gaveOk, receivedOk: receivedOk);
+  }
+
   /// Lightweight summary of a profile's local collection — used by the
   /// sync conflict dialog so the UI can show "you have X here, cloud has
   /// Y" before deciding to overwrite either side.

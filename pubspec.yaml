@@ -61,6 +61,11 @@ dependencies:
   # Google Play / App Store billing for donations (and future Pro upgrade).
   in_app_purchase: ^3.2.0
 
+  # QR code render + scan for in-person trades (no internet needed).
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^5.2.3
+  archive: ^3.6.1
+
   # Supabase — multi-device sync (auth + realtime)
   supabase_flutter: ^2.8.1
 

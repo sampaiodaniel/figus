@@ -129,15 +129,15 @@ class TradesPage extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
 
-            // ── QR code — em breve ────────────────────────────────────────
+            // ── QR code ───────────────────────────────────────────────────
             _TradeActionTile(
               icon: Icons.qr_code_scanner_rounded,
               title: 'Trocar por QR Code',
-              subtitle: 'Mostre seu QR ou escaneie o de outro colecionador · em breve',
+              subtitle:
+                  'Mostre seu QR ou escaneie o de outro colecionador',
               accent: c.accent,
-              enabled: false,
-              comingSoon: true,
-              onTap: null,
+              enabled: true,
+              onTap: () => context.push('/trade-qr'),
             ),
             const SizedBox(height: 24),
             _SectionHeader(

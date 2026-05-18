@@ -6,13 +6,10 @@ import '../../core/theme/app_theme.dart';
 import '../../core/theme/figus_colors.dart';
 import '../../data/providers.dart';
 import '../../data/repos/sync_repo.dart';
+import '../../data/sync_conflict.dart';
 import '../pro/theme_service.dart';
 
 enum _Step { email, otp, done }
-
-/// What the user picked when local and cloud both had data and they
-/// didn't match. Drives whichever side overwrites the other.
-enum _SyncDecision { cancel, useCloud, useLocal, identical, autoPull, autoPush }
 
 class AuthPage extends ConsumerStatefulWidget {
   final VoidCallback? onSignedIn;
@@ -132,7 +129,9 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       print('[Auth] local marked=${local.marked} extras=${local.extras} · '
           'remote marked=$remoteMarked extras=$remoteExtras');
 
-      final decision = await _decideMergeAction(
+      if (!mounted) return;
+      final decision = await decideSyncAction(
+        context: context,
         localMarked: local.marked,
         localExtras: local.extras,
         remoteMarked: remoteMarked,
@@ -146,20 +145,26 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       var unmatched = 0;
       String actionTaken;
       switch (decision) {
-        case _SyncDecision.cancel:
+        case SyncDecision.cancel:
+          // User declined to sync. Don't leave them signed in — the
+          // session would silently auto-sync (and potentially clobber the
+          // local DB) on the next app open. Sign them out so the only way
+          // forward is a deliberate re-login.
+          setState(() => _syncStage = 'Encerrando sessão...');
+          await sync.signOut();
           actionTaken = 'cancel';
-        case _SyncDecision.useCloud:
+        case SyncDecision.useCloud:
           setState(() => _syncStage = 'Substituindo dados locais...');
           final r = await repo.replaceLocalFromRemote(remote);
           appliedMarks = remoteMarked;
           appliedExtras = remoteExtras;
           unmatched = r.unmatched;
           actionTaken = 'useCloud';
-        case _SyncDecision.useLocal:
+        case SyncDecision.useLocal:
           setState(() => _syncStage = 'Substituindo nuvem...');
           await repo.replaceCloudWithLocal();
           actionTaken = 'useLocal';
-        case _SyncDecision.autoPull:
+        case SyncDecision.autoPull:
           // Local was empty — pull silently is safe.
           setState(() => _syncStage = 'Aplicando...');
           if (remote.isNotEmpty) {
@@ -169,12 +174,13 @@ class _AuthPageState extends ConsumerState<AuthPage> {
             unmatched = r.unmatched;
           }
           actionTaken = 'autoPull';
-        case _SyncDecision.autoPush:
+        case SyncDecision.autoPush:
           // Cloud was empty — push silently is safe (cloud only gains).
           setState(() => _syncStage = 'Subindo...');
           await repo.pushAllLocal();
           actionTaken = 'autoPush';
-        case _SyncDecision.identical:
+        case SyncDecision.silentMerge:
+        case SyncDecision.identical:
           setState(() => _syncStage = 'Aplicando...');
           if (remote.isNotEmpty) {
             final r = await repo.applyRemoteEntries(remote);
@@ -183,7 +189,7 @@ class _AuthPageState extends ConsumerState<AuthPage> {
             unmatched = r.unmatched;
           }
           await repo.pushAllLocal();
-          actionTaken = 'identical';
+          actionTaken = 'silentMerge';
       }
 
       // ── 5. User settings always come from the cloud (preferences are
@@ -233,36 +239,6 @@ class _AuthPageState extends ConsumerState<AuthPage> {
         _step = _Step.done;
       });
     }
-  }
-
-  /// Picks the merge action based on local vs cloud counts. Auto-picks
-  /// when there's no risk of data loss (one side empty) and only opens the
-  /// dialog when both sides have data and they don't match — that's the
-  /// case where silent merge could clobber something the user cares about.
-  Future<_SyncDecision> _decideMergeAction({
-    required int localMarked,
-    required int localExtras,
-    required int remoteMarked,
-    required int remoteExtras,
-  }) async {
-    if (localMarked == 0 && remoteMarked == 0) return _SyncDecision.identical;
-    if (localMarked == 0) return _SyncDecision.autoPull;
-    if (remoteMarked == 0) return _SyncDecision.autoPush;
-    if (localMarked == remoteMarked && localExtras == remoteExtras) {
-      return _SyncDecision.identical;
-    }
-    if (!mounted) return _SyncDecision.cancel;
-    final picked = await showDialog<_SyncDecision>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => _SyncConflictDialog(
-        localMarked: localMarked,
-        localExtras: localExtras,
-        remoteMarked: remoteMarked,
-        remoteExtras: remoteExtras,
-      ),
-    );
-    return picked ?? _SyncDecision.cancel;
   }
 
   Future<void> _applyRemoteSettings(
@@ -575,7 +551,7 @@ class _SyncSummary {
   final bool hasAvatar;
   final bool hasProfileName;
   final bool hasFavorites;
-  final _SyncDecision decision;
+  final SyncDecision decision;
 
   const _SyncSummary({
     required this.email,
@@ -602,150 +578,9 @@ class _SyncSummary {
       hasProfileName ||
       hasFavorites;
 
-  bool get wasCancelled => decision == _SyncDecision.cancel;
+  bool get wasCancelled => decision == SyncDecision.cancel;
 }
 
-/// Dialog shown when local and cloud both have data and they don't match.
-/// The user is offered three exits — cancel (sync stays partial), keep
-/// device (clobber cloud), or use cloud (clobber local). No automatic
-/// merge happens behind the user's back.
-class _SyncConflictDialog extends StatelessWidget {
-  final int localMarked;
-  final int localExtras;
-  final int remoteMarked;
-  final int remoteExtras;
-
-  const _SyncConflictDialog({
-    required this.localMarked,
-    required this.localExtras,
-    required this.remoteMarked,
-    required this.remoteExtras,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.fc;
-    return AlertDialog(
-      title: const Text('Conflito de sincronização'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Os dados deste dispositivo e da nuvem são diferentes. '
-            'Para evitar perder algo, escolha o que fazer.',
-            style: TextStyle(color: c.text, height: 1.4, fontSize: 13),
-          ),
-          const SizedBox(height: 16),
-          _SideStat(
-            icon: Icons.phone_android_rounded,
-            label: 'Neste dispositivo',
-            marked: localMarked,
-            extras: localExtras,
-            color: c.accent,
-          ),
-          const SizedBox(height: 8),
-          _SideStat(
-            icon: Icons.cloud_done_rounded,
-            label: 'Na nuvem',
-            marked: remoteMarked,
-            extras: remoteExtras,
-            color: const Color(0xFF1AB4D3),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: c.cardAlt,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: c.border),
-            ),
-            child: Text(
-              'A opção escolhida sobrescreve totalmente o lado oposto.',
-              style: TextStyle(fontSize: 11, color: c.textMuted, height: 1.4),
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, _SyncDecision.cancel),
-          child: const Text('Sem sync agora'),
-        ),
-        OutlinedButton(
-          onPressed: () => Navigator.pop(context, _SyncDecision.useLocal),
-          child: const Text('Manter dispositivo'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, _SyncDecision.useCloud),
-          child: const Text('Usar nuvem'),
-        ),
-      ],
-    );
-  }
-}
-
-class _SideStat extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final int marked;
-  final int extras;
-  final Color color;
-
-  const _SideStat({
-    required this.icon,
-    required this.label,
-    required this.marked,
-    required this.extras,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.fc;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: c.textMuted,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.6,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '$marked figurinhas'
-                  '${extras > 0 ? "  ·  $extras repetidas" : ""}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    color: c.text,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _DoneView extends StatelessWidget {
   final VoidCallback onClose;
@@ -768,25 +603,34 @@ class _DoneView extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.fc;
     final s = summary;
+    final cancelled = s?.wasCancelled ?? false;
+
+    // Pick the headline icon/title based on what actually happened.
+    final IconData headerIcon;
+    final Color headerColor;
+    final String headerTitle;
+    if (syncError != null) {
+      headerIcon = Icons.warning_amber_rounded;
+      headerColor = const Color(0xFFE5B14B);
+      headerTitle = 'Conta conectada, mas...';
+    } else if (cancelled) {
+      headerIcon = Icons.do_not_disturb_on_outlined;
+      headerColor = const Color(0xFFB85450);
+      headerTitle = 'Sincronização cancelada';
+    } else {
+      headerIcon = Icons.check_circle_rounded;
+      headerColor = const Color(0xFF22C58A);
+      headerTitle = 'Conta conectada!';
+    }
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Center(
-          child: Icon(
-            syncError != null
-                ? Icons.warning_amber_rounded
-                : Icons.check_circle_rounded,
-            size: 72,
-            color: syncError != null
-                ? const Color(0xFFE5B14B)
-                : const Color(0xFF22C58A),
-          ),
-        ),
+        Center(child: Icon(headerIcon, size: 72, color: headerColor)),
         const SizedBox(height: 16),
         Text(
-          syncError != null ? 'Conta conectada, mas...' : 'Conta conectada!',
+          headerTitle,
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
         ),
@@ -811,6 +655,39 @@ class _DoneView extends StatelessWidget {
             style: TextStyle(color: c.textMuted, fontSize: 13),
           ),
           const SizedBox(height: 24),
+        ]
+        // ── CANCELLED ──────────────────────────────────────────────────────
+        else if (cancelled) ...[
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: c.cardAlt,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: c.border),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  'Você escolheu não sincronizar agora.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: c.text,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Sua sessão foi encerrada — nada foi alterado neste dispositivo '
+                  'nem na nuvem. Você pode entrar de novo quando quiser pra '
+                  'sincronizar.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: c.textMuted, fontSize: 12, height: 1.4),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
         ]
         // ── ERROR ──────────────────────────────────────────────────────────
         else if (syncError != null) ...[

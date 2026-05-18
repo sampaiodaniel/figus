@@ -10,10 +10,73 @@ import '../../core/theme/app_theme.dart';
 import '../../core/theme/figus_colors.dart';
 import '../../data/providers.dart';
 import '../../data/repos/sync_repo.dart';
+import '../../data/sync_conflict.dart';
 import '../profiles/avatars.dart';
 import '../pro/pro_service.dart';
 import '../pro/theme_service.dart';
 import '../streak/streak_service.dart';
+
+/// Runs a conflict-aware sync from the active profile against the cloud
+/// `remote` already pulled by the caller. Returns the apply stats on
+/// success, or null when the user cancelled the conflict dialog. Settings
+/// (theme/avatar/etc) are intentionally skipped — caller handles them.
+Future<({int applied, int unmatched, int markedApplied, int extrasApplied})?>
+    _runConflictAwareSync({
+  required BuildContext context,
+  required WidgetRef ref,
+  required Map<String, ({String status, int dupCount})> remote,
+}) async {
+  final repo = ref.read(collectionRepoProvider);
+  final pid = (await ref.read(profileRepoProvider).active()).id;
+  final local = await repo.localCounts(pid);
+  final remoteMarked = remote.values
+      .where((v) => v.status == 'owned' || v.status == 'duplicate')
+      .length;
+  final remoteExtras = remote.values
+      .where((v) => v.status == 'duplicate')
+      .fold<int>(0, (sum, v) => sum + v.dupCount);
+
+  if (!context.mounted) return null;
+  final decision = await decideSyncAction(
+    context: context,
+    localMarked: local.marked,
+    localExtras: local.extras,
+    remoteMarked: remoteMarked,
+    remoteExtras: remoteExtras,
+  );
+
+  switch (decision) {
+    case SyncDecision.cancel:
+      return null;
+    case SyncDecision.useCloud:
+      final r = await repo.replaceLocalFromRemote(remote);
+      return (
+        applied: r.applied,
+        unmatched: r.unmatched,
+        markedApplied: remoteMarked,
+        extrasApplied: remoteExtras,
+      );
+    case SyncDecision.useLocal:
+      await repo.replaceCloudWithLocal();
+      return (applied: 0, unmatched: 0, markedApplied: 0, extrasApplied: 0);
+    case SyncDecision.autoPull:
+    case SyncDecision.silentMerge:
+      var applyStats =
+          (applied: 0, unmatched: 0, markedApplied: 0, extrasApplied: 0);
+      if (remote.isNotEmpty) {
+        applyStats = await repo.applyRemoteEntries(remote);
+      }
+      if (decision == SyncDecision.silentMerge) {
+        await repo.pushAllLocal();
+      }
+      return applyStats;
+    case SyncDecision.autoPush:
+      await repo.pushAllLocal();
+      return (applied: 0, unmatched: 0, markedApplied: 0, extrasApplied: 0);
+    case SyncDecision.identical:
+      return (applied: 0, unmatched: 0, markedApplied: 0, extrasApplied: 0);
+  }
+}
 
 Future<void> _showSyncOptions(BuildContext context, WidgetRef ref, String email) async {
   final messenger = ScaffoldMessenger.of(context);
@@ -82,7 +145,26 @@ Future<void> _showSyncOptions(BuildContext context, WidgetRef ref, String email)
                   ));
                 return;
               }
-              final applyStats = await repo.applyRemoteEntries(remote);
+              // Conflict gating: same rule as on first login — never silently
+              // clobber a side that has data with one that doesn't match. The
+              // helper handles the easy cases (one side empty, identical
+              // counts) automatically and only opens the dialog when both
+              // sides have non-matching data.
+              final outcome = await _runConflictAwareSync(
+                context: context,
+                ref: ref,
+                remote: remote,
+              );
+              if (outcome == null) {
+                messenger
+                  ..clearSnackBars()
+                  ..showSnackBar(const SnackBar(
+                    content: Text('Sincronização cancelada — nada foi alterado.'),
+                    duration: Duration(seconds: 4),
+                  ));
+                return;
+              }
+              final applyStats = outcome;
               // Apply theme / favorite nations / profile name from cloud too.
               if (settings.theme != null) {
                 final seed = AppThemeSeed.values
