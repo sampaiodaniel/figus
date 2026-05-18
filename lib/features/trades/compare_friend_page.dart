@@ -262,11 +262,11 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
       '',
       'Comparei nossas figurinhas e as possíveis trocas são:',
       '',
-      'Você usa:',
-      _formatCodeMap(youUse),
+      'Ou você traz:',
+      ..._formatCodeLines(youUse),
       '',
-      'E eu troco por:',
-      _formatCodeMap(iSwap),
+      'E eu trago:',
+      ..._formatCodeLines(iSwap),
       '',
       'O que acha?',
       '',
@@ -279,14 +279,15 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
     );
   }
 
-  String _formatCodeMap(Map<String, int> m) {
-    if (m.isEmpty) return '—';
-    // Sort by code so the list reads predictable (BRA before FRA etc).
+  /// One code per line for the WhatsApp message — easier to read on a phone
+  /// than a comma-joined wrap. Alphabetical so it's predictable.
+  List<String> _formatCodeLines(Map<String, int> m) {
+    if (m.isEmpty) return const ['—'];
     final entries = m.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
     return entries
         .map((e) => e.value > 1 ? '${e.key} ×${e.value}' : e.key)
-        .join(', ');
+        .toList();
   }
 
   Future<void> _pasteInventory() async {
