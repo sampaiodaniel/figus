@@ -146,7 +146,7 @@ class PaywallSheet extends ConsumerWidget {
             if (!pro.hasUsedTrial && !pro.isActive) ...[
               FilledButton.icon(
                 icon: const Icon(Icons.lock_open_rounded),
-                label: const Text('Experimentar 7 dias grátis'),
+                label: const Text('Experimentar 3 dias grátis'),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF22C58A),
                   foregroundColor: Colors.white,
@@ -157,7 +157,7 @@ class PaywallSheet extends ConsumerWidget {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('🎉 Pro ativado! 7 dias grátis.'),
+                        content: Text('🎉 Pro ativado! 3 dias grátis.'),
                         backgroundColor: Color(0xFF22C58A),
                       ),
                     );
