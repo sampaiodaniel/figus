@@ -84,8 +84,10 @@ void main() {
       }
     });
 
-    test('2×1 normals→foil fires when user has many dupes + missing a foil',
-        () {
+    test('only same-type 1×1 — mixed trades are not emitted', () {
+      // Daniel: "Cada figurinha tem q ter contrapartida". Even when a
+      // 2×1 normals→foil would technically be value-equivalent, the
+      // matcher refuses it and emits no offer — keeps the list paired.
       final stickers = {
         'BRA5': _normal('BRA5', 'BRA'),
         'BRA6': _normal('BRA6', 'BRA'),
@@ -103,12 +105,12 @@ void main() {
         stickers: stickers,
       );
       final offers = TradeMatcher.match(me: me, friend: friend);
-      // Should produce at least one mixed offer giving 2 normals for the foil.
-      expect(offers.where((o) => o.kind == 'mixed').isNotEmpty, true,
-          reason: 'Expected a 2-normals × 1-foil offer in: $offers');
-      final mixed = offers.firstWhere((o) => o.kind == 'mixed');
-      expect(mixed.youReceive, {'FWC2': 1});
-      expect(mixed.totalGive, 2);
+      // No 'mixed' kind allowed. Same-type wasn't possible either (no
+      // foils on my side / no normals on friend's side that match), so
+      // the list comes back empty.
+      for (final o in offers) {
+        expect(o.kind, 'same');
+      }
     });
 
     test(
@@ -268,30 +270,32 @@ void main() {
       expect(giveCodes, {'BRA1', 'BRA2'});
     });
 
-    test('1×2 foil-given-for-2-normals fires (Daniel: foil pile burning)',
-        () {
-      // I have a stack of foil dupes, friend needs lots of normals + has 2
-      // normals I'm missing. Should produce a 1×2 mixed.
+    test('all offers are strict 1×1 (no mixed kind anywhere)', () {
+      // Sanity: even with a setup that USED to produce mixed, every
+      // offer comes back as same-type 1×1.
       final stickers = {
         'FWC1': _foil('FWC1'),
+        'FWC2': _foil('FWC2'),
         'BRA5': _normal('BRA5', 'BRA'),
         'BRA6': _normal('BRA6', 'BRA'),
       };
       final me = _inv(
-        dupes: {'FWC1': 2},
-        missing: {'BRA5', 'BRA6'},
+        dupes: {'FWC1': 1, 'BRA5': 1},
+        missing: {'FWC2', 'BRA6'},
         stickers: stickers,
       );
       final friend = _inv(
-        dupes: {'BRA5': 1, 'BRA6': 1},
-        missing: {'FWC1'},
+        dupes: {'FWC2': 1, 'BRA6': 1},
+        missing: {'FWC1', 'BRA5'},
         stickers: stickers,
       );
       final offers = TradeMatcher.match(me: me, friend: friend);
-      final mixed1x2 =
-          offers.where((o) => o.kind == 'mixed' && o.totalGive == 1).toList();
-      expect(mixed1x2, isNotEmpty);
-      expect(mixed1x2.first.totalReceive, 2);
+      for (final o in offers) {
+        expect(o.kind, 'same',
+            reason: 'No mixed offers should be emitted: ${o.youGive} → ${o.youReceive}');
+        expect(o.totalGive, 1);
+        expect(o.totalReceive, 1);
+      }
     });
 
     test('score: same-type ranks above mixed', () {
@@ -314,7 +318,11 @@ void main() {
       expect(offers.first.kind, 'same');
     });
 
-    test('score: foil received outranks normal received within same kind', () {
+    test('no offer when only cross-type pairing would help', () {
+      // Daniel's rule: same-type only. I have normal dupes, friend has
+      // foil dupes — strict 1×1 produces NO offer because we never pair
+      // a normal with a foil. (Before the rule change, mixed 2×1 would
+      // have surfaced; not anymore.)
       final stickers = {
         'BRA5': _normal('BRA5', 'BRA'),
         'ARG3': _normal('ARG3', 'ARG'),
@@ -332,9 +340,7 @@ void main() {
         stickers: stickers,
       );
       final offers = TradeMatcher.match(me: me, friend: friend);
-      // No same-type foil↔foil possible (my dupes are normal). All offers
-      // should be mixed 2×1 — and they should at least exist.
-      expect(offers, isNotEmpty);
+      expect(offers, isEmpty);
     });
 
     test('large duplicate stack is fully consumed before moving on', () {

@@ -588,7 +588,7 @@ class _OfferCard extends StatelessWidget {
                           ? const Color(0xFF22C58A)
                           : invalidated
                               ? c.textMuted
-                              : (offer.kind == 'same' ? c.accent : Colors.orange),
+                              : c.accent,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -596,9 +596,7 @@ class _OfferCard extends StatelessWidget {
                           ? '✓ Trocada'
                           : invalidated
                               ? '✕ Já usado em outra troca'
-                              : (offer.kind == 'same'
-                                  ? '1×1 mesmo tipo'
-                                  : '1 brilhante × 2 normais'),
+                              : 'Troca 1×1',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 11,
