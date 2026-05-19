@@ -254,7 +254,15 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
       (o.kind == 'mixed' ? mixedOffers : sameOffers).add(o);
     }
 
+    // URL first so WhatsApp/Telegram pick up the og:image preview card
+    // (Figus logo + title + description from web/index.html). Putting it
+    // at the top maximizes the chance the chat client renders the card
+    // above the text instead of inline. The text below is still sent in
+    // the same payload — modern WhatsApp shows BOTH preview and body.
+    const figusUrl = 'https://sampaiodaniel.github.io/figus/';
     final lines = <String>[
+      figusUrl,
+      '',
       '🤝 Trocas sugeridas — Figus',
       '',
       'Comparei nossas figurinhas e as possíveis trocas são:',
@@ -292,11 +300,7 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
 
     lines
       ..add('')
-      ..add('O que acha?')
-      ..add('')
-      // Without the https:// prefix WhatsApp doesn't grab the whole text
-      // as a "shared link" and end up keeping only the URL.
-      ..add('Baixe o Figus em appfigus.com');
+      ..add('O que acha?');
 
     await Share.share(lines.join('\n'));
   }
