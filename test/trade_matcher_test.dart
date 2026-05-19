@@ -527,15 +527,46 @@ void main() {
       expect(offers, isEmpty);
     });
 
-    test('alphabetical strategy: BRA1 before BRA10 (natural sort)', () {
-      // Both sides have lots of dupes; with alphabetical strategy, the
-      // earliest-numbered codes should pair first.
+    test('alphabetical strategy sorts by nation NAME, not code', () {
+      // GER = Alemanha (A), BRA = Brasil (B). Code order is BRA < GER,
+      // but by Portuguese nation name Alemanha < Brasil — that's what
+      // the user expects (Daniel: "alfabética de seleções, não códigos").
+      final stickers = {
+        'BRA1': _normal('BRA1', 'BRA'),
+        'GER1': _normal('GER1', 'GER'),
+        'ARG1': _normal('ARG1', 'ARG'),
+        'MEX1': _normal('MEX1', 'MEX'),
+      };
+      final me = _inv(
+        dupes: {'BRA1': 1, 'GER1': 1},
+        missing: {'ARG1', 'MEX1'},
+        stickers: stickers,
+      );
+      final friend = _inv(
+        dupes: {'ARG1': 1, 'MEX1': 1},
+        missing: {'BRA1', 'GER1'},
+        stickers: stickers,
+      );
+      final offers = TradeMatcher.match(
+        me: me,
+        friend: friend,
+        rules: const TradeRules(giveStrategy: GiveStrategy.alphabetical),
+      );
+      // Of my dupes (BRA1 / GER1), GER1 (Alemanha) should pair first,
+      // not BRA1 (Brasil). Code order would put BRA before GER.
+      expect(offers.first.youGive.keys.first, 'GER1');
+    });
+
+    test('alphabetical: numbers within same nation still sort numerically',
+        () {
+      // Same nation (BRA) → fall back to numeric tiebreaker. BRA1 before
+      // BRA10 even though "BRA10" sorts before "BRA2" lexically.
       final stickers = {
         for (final c in ['BRA1', 'BRA2', 'BRA10', 'ARG1', 'ARG2', 'ARG10'])
           c: _normal(c, c.substring(0, 3)),
       };
       final me = _inv(
-        dupes: {'BRA1': 1, 'BRA10': 1, 'BRA2': 1},
+        dupes: {'BRA10': 1, 'BRA1': 1, 'BRA2': 1},
         missing: {'ARG1', 'ARG2', 'ARG10'},
         stickers: stickers,
       );
@@ -549,7 +580,6 @@ void main() {
         friend: friend,
         rules: const TradeRules(giveStrategy: GiveStrategy.alphabetical),
       );
-      // First give should be BRA1 (numerically lowest BRA code), not BRA10.
       expect(offers.first.youGive.keys.first, 'BRA1');
     });
 

@@ -87,8 +87,9 @@ class TradeRulesPage extends ConsumerWidget {
           _StrategyTile(
             value: GiveStrategy.alphabetical,
             current: rules.giveStrategy,
-            title: 'Ordem alfabética',
-            sub: 'BRA1 antes de BRA10. Bom pra confirmar com o álbum físico na mão.',
+            title: 'Ordem alfabética (por seleção)',
+            sub:
+                'Alemanha antes de Brasil, Coreia do Sul antes de Egito. Bom pra confirmar com o álbum físico na mão.',
             onTap: () => notifier.update(
                 rules.copyWith(giveStrategy: GiveStrategy.alphabetical)),
           ),

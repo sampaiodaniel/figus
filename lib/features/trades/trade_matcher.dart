@@ -8,6 +8,7 @@
 ///  * Favorited nations weigh more in the ranking so they bubble up first.
 library;
 
+import '../../core/country_codes.dart';
 import 'trade_rules.dart';
 
 class TradeSticker {
@@ -313,18 +314,45 @@ class TradeMatcher {
     return owner.favoriteNations.contains(nation);
   }
 
-  /// Compare strings like "BRA1" / "BRA10" so that the numeric suffix
-  /// sorts numerically (BRA1 → BRA2 → BRA10), not lexicographically
-  /// (which would put BRA10 before BRA2).
+  /// Compare two sticker codes by the Portuguese NAME of their nation
+  /// (Alemanha < Brasil < Coreia do Sul), then by sticker number within
+  /// the nation (BRA1 < BRA2 < BRA10).
+  ///
+  /// Falls back to plain code comparison for stickers without a nation
+  /// (FWC, LGD, CC, etc.) so they still order deterministically.
   static int _naturalCompare(String a, String b) {
     final ra = RegExp(r'^([A-Za-z]+)(\d*)$').firstMatch(a);
     final rb = RegExp(r'^([A-Za-z]+)(\d*)$').firstMatch(b);
     if (ra == null || rb == null) return a.compareTo(b);
-    final letterCmp = ra.group(1)!.compareTo(rb.group(1)!);
-    if (letterCmp != 0) return letterCmp;
+    final codeA = ra.group(1)!;
+    final codeB = rb.group(1)!;
+    // Prefer the human-readable nation name when available, so a user
+    // who picked "alphabetical" actually sees Alemanha < Brasil instead
+    // of GER < BRA (G < B in raw code order). Daniel: "Por ordem
+    // alfabética de seleções, não de nomes de jogadores".
+    final nameA = nationNamePtByCode[codeA] ?? codeA;
+    final nameB = nationNamePtByCode[codeB] ?? codeB;
+    final nameCmp = _stripDiacritics(nameA)
+        .toLowerCase()
+        .compareTo(_stripDiacritics(nameB).toLowerCase());
+    if (nameCmp != 0) return nameCmp;
     final na = int.tryParse(ra.group(2) ?? '') ?? 0;
     final nb = int.tryParse(rb.group(2) ?? '') ?? 0;
     return na.compareTo(nb);
+  }
+
+  /// Quick & dirty diacritic strip so "Áustria" sorts next to "Austrália"
+  /// instead of being thrown to the end of the alphabet.
+  static String _stripDiacritics(String s) {
+    const accents = 'áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ';
+    const plain = 'aaaaaeeeeiiiiooooouuuucAAAAAEEEEIIIIOOOOOUUUUC';
+    final buf = StringBuffer();
+    for (var i = 0; i < s.length; i++) {
+      final ch = s[i];
+      final idx = accents.indexOf(ch);
+      buf.write(idx >= 0 ? plain[idx] : ch);
+    }
+    return buf.toString();
   }
 
   static Map<String, int> _combine(List<String> codes) {
