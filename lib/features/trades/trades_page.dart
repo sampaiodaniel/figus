@@ -27,7 +27,16 @@ class TradesPage extends ConsumerWidget {
     final c = context.fc;
 
     return Scaffold(
-      appBar: const FigusAppBar(title: 'Trocas'),
+      appBar: FigusAppBar(
+        title: 'Trocas',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.tune_rounded),
+            tooltip: 'Configurações de trocas',
+            onPressed: () => context.push('/trade-rules'),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
