@@ -23,33 +23,24 @@ $bgColor = [System.Drawing.Color]::FromArgb(255, 19, 16, 14)
 $bgBrush = New-Object System.Drawing.SolidBrush $bgColor
 $g.FillRectangle($bgBrush, 0, 0, 1200, 630)
 
-# Subtle gold ring on the left half (like a stadium spotlight) so the
-# layout feels designed, not flat.
-$ringColor = [System.Drawing.Color]::FromArgb(40, 229, 177, 75)
-$ringBrush = New-Object System.Drawing.SolidBrush $ringColor
-$g.FillEllipse($ringBrush, -120, 65, 500, 500)
-
-# Logo on the left.
-$logoSize = 280
-$logoX = 80
+# Logo on the left, no decorative halo behind it — Daniel asked for the
+# logo to read clean, not framed.
+$logoSize = 360
+$logoX = 110
 $logoY = (630 - $logoSize) / 2
 $g.DrawImage($logo, $logoX, $logoY, $logoSize, $logoSize)
 
-# Brand text on the right.
-$titleFont = New-Object System.Drawing.Font ("Segoe UI", 72, [System.Drawing.FontStyle]::Bold)
-$subFont = New-Object System.Drawing.Font ("Segoe UI", 30, [System.Drawing.FontStyle]::Regular)
-$mutedFont = New-Object System.Drawing.Font ("Segoe UI", 22, [System.Drawing.FontStyle]::Regular)
+# Brand text on the right: just "Figus" + slogan. No subline crowd.
+$titleFont = New-Object System.Drawing.Font ("Segoe UI", 108, [System.Drawing.FontStyle]::Bold)
+$sloganFont = New-Object System.Drawing.Font ("Segoe UI", 38, [System.Drawing.FontStyle]::Italic)
 
 $goldBrush = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 229, 177, 75))
 $whiteBrush = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 245, 240, 232))
-$mutedBrush = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 154, 143, 130))
 
-$textX = 440
+$textX = 555
 
-$g.DrawString("Figus", $titleFont, $goldBrush, $textX, 175)
-$g.DrawString("Controle sua coleção", $subFont, $whiteBrush, $textX, 285)
-$g.DrawString("de figurinhas", $subFont, $whiteBrush, $textX, 330)
-$g.DrawString("Copa 2026  ·  grátis  ·  offline", $mutedFont, $mutedBrush, $textX, 410)
+$g.DrawString("Figus", $titleFont, $goldBrush, $textX, 200)
+$g.DrawString("Paixão por colecionar", $sloganFont, $whiteBrush, $textX + 8, 350)
 
 # Save (twice — assets for the app, web for the OG preview).
 $bmp.Save($outAssets, [System.Drawing.Imaging.ImageFormat]::Png)
