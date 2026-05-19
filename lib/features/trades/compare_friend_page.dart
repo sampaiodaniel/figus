@@ -301,6 +301,37 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
     await Share.share(lines.join('\n'));
   }
 
+  /// Sticker order on the shared text: group by nation (alphabetical PT
+  /// name) then sort numerically within each nation. So the recipient
+  /// reads BIH6 → BIH10 → BIH15 → CPV10 → JOR15 etc. — easy to find on
+  /// the printed album because all of one country sits together.
+  static int _compareByNationThenNumber(String a, String b) {
+    final ra = RegExp(r'^([A-Za-z]+)(\d*)$').firstMatch(a);
+    final rb = RegExp(r'^([A-Za-z]+)(\d*)$').firstMatch(b);
+    if (ra == null || rb == null) return a.compareTo(b);
+    final codeA = ra.group(1)!;
+    final codeB = rb.group(1)!;
+    final nameA = (nationNamePtByCode[codeA] ?? codeA).toLowerCase();
+    final nameB = (nationNamePtByCode[codeB] ?? codeB).toLowerCase();
+    final nameCmp = _stripAccents(nameA).compareTo(_stripAccents(nameB));
+    if (nameCmp != 0) return nameCmp;
+    final na = int.tryParse(ra.group(2) ?? '') ?? 0;
+    final nb = int.tryParse(rb.group(2) ?? '') ?? 0;
+    return na.compareTo(nb);
+  }
+
+  static String _stripAccents(String s) {
+    const accents = 'áàâãäéèêëíìîïóòôõöúùûüç';
+    const plain = 'aaaaaeeeeiiiiooooouuuuc';
+    final buf = StringBuffer();
+    for (var i = 0; i < s.length; i++) {
+      final ch = s[i];
+      final idx = accents.indexOf(ch);
+      buf.write(idx >= 0 ? plain[idx] : ch);
+    }
+    return buf.toString();
+  }
+
   Future<void> _pasteInventory() async {
     final ctrl = TextEditingController();
     final c = context.fc;
