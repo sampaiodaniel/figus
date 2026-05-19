@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../core/country_codes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/figus_colors.dart';
 import '../../data/providers.dart';
@@ -260,10 +261,15 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
     ];
 
     if (sameOffers.isNotEmpty) {
-      // Each line on left corresponds 1×1 to the line on right at the
-      // same position — keep the order from the matcher.
-      final youTrocas = sameOffers.map((o) => o.youReceive.keys.first).toList();
-      final euTrocoPor = sameOffers.map((o) => o.youGive.keys.first).toList();
+      // Each list is sorted by nation name then numerically so the
+      // recipient can flip through the album page-by-page picking out
+      // what to bring. The 1×1 pairing-by-position is lost (offers are
+      // independent anyway), but findability wins — Daniel: "assim o
+      // usuário consegue separar mais facilmente as que precisa pegar".
+      final youTrocas = sameOffers.map((o) => o.youReceive.keys.first).toList()
+        ..sort(_compareByNationThenNumber);
+      final euTrocoPor = sameOffers.map((o) => o.youGive.keys.first).toList()
+        ..sort(_compareByNationThenNumber);
       lines
         ..add('')
         ..add('Você troca:')
