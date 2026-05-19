@@ -39,6 +39,16 @@ class TradeRules {
   /// Selection strategy for picking which of my dupes to offer.
   final GiveStrategy giveStrategy;
 
+  /// When true, mixed trades that send my foils run BEFORE same-type
+  /// normal-normal pairing — useful when the user wants to clear out
+  /// foil dupes even at a cost.
+  final bool prioritizeSendFoils;
+
+  /// When true, mixed trades that pull the friend's foils run BEFORE
+  /// same-type normal-normal pairing — useful when the user is
+  /// chasing missing foils.
+  final bool prioritizeReceiveFoils;
+
   const TradeRules({
     this.normalGive = 1,
     this.normalReceive = 1,
@@ -46,6 +56,8 @@ class TradeRules {
     this.foilReceive = 1,
     this.foilToNormalRatio = 2,
     this.giveStrategy = GiveStrategy.random,
+    this.prioritizeSendFoils = false,
+    this.prioritizeReceiveFoils = false,
   });
 
   TradeRules copyWith({
@@ -55,6 +67,8 @@ class TradeRules {
     int? foilReceive,
     int? foilToNormalRatio,
     GiveStrategy? giveStrategy,
+    bool? prioritizeSendFoils,
+    bool? prioritizeReceiveFoils,
   }) =>
       TradeRules(
         normalGive: normalGive ?? this.normalGive,
@@ -63,6 +77,9 @@ class TradeRules {
         foilReceive: foilReceive ?? this.foilReceive,
         foilToNormalRatio: foilToNormalRatio ?? this.foilToNormalRatio,
         giveStrategy: giveStrategy ?? this.giveStrategy,
+        prioritizeSendFoils: prioritizeSendFoils ?? this.prioritizeSendFoils,
+        prioritizeReceiveFoils:
+            prioritizeReceiveFoils ?? this.prioritizeReceiveFoils,
       );
 }
 
@@ -77,6 +94,8 @@ class TradeRulesNotifier extends StateNotifier<TradeRules> {
   static const _keyFoilRecv = 'trade.foil_receive';
   static const _keyFoilNormal = 'trade.foil_normal_ratio';
   static const _keyStrategy = 'trade.give_strategy';
+  static const _keyPrioSend = 'trade.prio_send_foils';
+  static const _keyPrioRecv = 'trade.prio_recv_foils';
 
   Future<void> _load() async {
     final p = await SharedPreferences.getInstance();
@@ -87,6 +106,8 @@ class TradeRulesNotifier extends StateNotifier<TradeRules> {
       foilReceive: p.getInt(_keyFoilRecv) ?? 1,
       foilToNormalRatio: p.getInt(_keyFoilNormal) ?? 2,
       giveStrategy: _strategyFromString(p.getString(_keyStrategy)),
+      prioritizeSendFoils: p.getBool(_keyPrioSend) ?? false,
+      prioritizeReceiveFoils: p.getBool(_keyPrioRecv) ?? false,
     );
   }
 
@@ -99,6 +120,8 @@ class TradeRulesNotifier extends StateNotifier<TradeRules> {
     await p.setInt(_keyFoilRecv, rules.foilReceive);
     await p.setInt(_keyFoilNormal, rules.foilToNormalRatio);
     await p.setString(_keyStrategy, rules.giveStrategy.name);
+    await p.setBool(_keyPrioSend, rules.prioritizeSendFoils);
+    await p.setBool(_keyPrioRecv, rules.prioritizeReceiveFoils);
   }
 
   Future<void> reset() => update(const TradeRules());

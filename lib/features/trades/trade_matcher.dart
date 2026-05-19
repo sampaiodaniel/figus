@@ -116,7 +116,7 @@ class TradeMatcher {
 
     final offers = <TradeOffer>[];
 
-    // Same-type pairings respect the configured ratios (defaults to 1×1).
+    // Foil ↔ foil same-type always runs first — never a downside.
     _pairSameType(
       giveFoil,
       getFoil,
@@ -128,6 +128,36 @@ class TradeMatcher {
       offers: offers,
       strategy: rules.giveStrategy,
     );
+
+    // If the user wants to prioritize sending/receiving foils, run those
+    // mixed pairings BEFORE consuming normais via normal-normal same-type.
+    // Otherwise, normal-normal goes first (default).
+    void doMixedSend() => _pairMixed(
+          giveFoil,
+          getNorm,
+          giveCount: 1,
+          receiveCount: rules.foilToNormalRatio,
+          me: me,
+          friend: friend,
+          offers: offers,
+          strategy: rules.giveStrategy,
+          rules: rules,
+        );
+    void doMixedReceive() => _pairMixed(
+          giveNorm,
+          getFoil,
+          giveCount: rules.foilToNormalRatio,
+          receiveCount: 1,
+          me: me,
+          friend: friend,
+          offers: offers,
+          strategy: rules.giveStrategy,
+          rules: rules,
+        );
+
+    if (rules.prioritizeSendFoils) doMixedSend();
+    if (rules.prioritizeReceiveFoils) doMixedReceive();
+
     _pairSameType(
       giveNorm,
       getNorm,
@@ -139,27 +169,9 @@ class TradeMatcher {
       offers: offers,
       strategy: rules.giveStrategy,
     );
-    // Mixed pairings respect the foil↔normais ratio (default 2).
-    _pairMixed(
-      giveFoil,
-      getNorm,
-      giveCount: 1,
-      receiveCount: rules.foilToNormalRatio,
-      me: me,
-      friend: friend,
-      offers: offers,
-      strategy: rules.giveStrategy,
-    );
-    _pairMixed(
-      giveNorm,
-      getFoil,
-      giveCount: rules.foilToNormalRatio,
-      receiveCount: 1,
-      me: me,
-      friend: friend,
-      offers: offers,
-      strategy: rules.giveStrategy,
-    );
+
+    if (!rules.prioritizeSendFoils) doMixedSend();
+    if (!rules.prioritizeReceiveFoils) doMixedReceive();
 
     offers.sort((a, b) => b.score.compareTo(a.score));
     return offers;
@@ -220,6 +232,7 @@ class TradeMatcher {
     required TradeInventory friend,
     required List<TradeOffer> offers,
     required GiveStrategy strategy,
+    required TradeRules rules,
   }) {
     final giveList = _expand(giveSide, strategy, me);
     final getList = _expand(getSide, strategy, friend);
@@ -241,6 +254,7 @@ class TradeMatcher {
             me: me,
             friend: friend,
             kind: 'mixed',
+            rules: rules,
           ),
         ));
         gi++;
@@ -263,6 +277,7 @@ class TradeMatcher {
             me: me,
             friend: friend,
             kind: 'mixed',
+            rules: rules,
           ),
         ));
         gi += giveCount;
@@ -369,6 +384,7 @@ class TradeMatcher {
     required TradeInventory me,
     required TradeInventory friend,
     required String kind,
+    TradeRules rules = const TradeRules(),
   }) {
     // Base: same-type 1-for-1 is the cleanest, score 100.
     // Mixed is less ideal, base 60.
@@ -397,6 +413,21 @@ class TradeMatcher {
     for (final c in give) {
       final st = me.stickersByCode[c] ?? friend.stickersByCode[c];
       if (st?.isFoil ?? false) score -= 5;
+    }
+    // Big bumps when the user explicitly asked to prioritize foils on
+    // either side — these flags exist precisely to override the default
+    // "1×1 first, mixed last" ordering for chasers and pile-burners.
+    if (rules.prioritizeReceiveFoils) {
+      for (final c in receive) {
+        final st = friend.stickersByCode[c] ?? me.stickersByCode[c];
+        if (st?.isFoil ?? false) score += 100;
+      }
+    }
+    if (rules.prioritizeSendFoils) {
+      for (final c in give) {
+        final st = me.stickersByCode[c] ?? friend.stickersByCode[c];
+        if (st?.isFoil ?? false) score += 100;
+      }
     }
     return score;
   }

@@ -583,6 +583,71 @@ void main() {
       expect(offers.first.youGive.keys.first, 'BRA1');
     });
 
+    test('prioritizeReceiveFoils ranks foil-receiving offers on top', () {
+      // I have normals + one foil dupe. Friend has normals + one foil
+      // dupe. Without prio, same-type normal would tie or win on score;
+      // with prio, the offer that receives a foil bubbles to the top.
+      final stickers = {
+        'BRA5': _normal('BRA5', 'BRA'),
+        'BRA6': _normal('BRA6', 'BRA'),
+        'FWC2': _foil('FWC2'),
+        'FWC3': _foil('FWC3'),
+      };
+      final me = _inv(
+        dupes: {'BRA5': 1, 'BRA6': 1},
+        missing: {'FWC2', 'FWC3'},
+        stickers: stickers,
+      );
+      final friend = _inv(
+        dupes: {'FWC2': 1, 'FWC3': 1},
+        missing: {'BRA5', 'BRA6'},
+        stickers: stickers,
+      );
+      final offers = TradeMatcher.match(
+        me: me,
+        friend: friend,
+        rules: const TradeRules(prioritizeReceiveFoils: true),
+      );
+      expect(offers, isNotEmpty);
+      // The very first offer must hand the user a foil — that's the
+      // whole point of the flag.
+      final firstReceive = offers.first.youReceive.keys.first;
+      final firstReceiveSticker = stickers[firstReceive];
+      expect(firstReceiveSticker?.isFoil, true,
+          reason: 'Top-ranked offer must give the user a foil with '
+              'prioritizeReceiveFoils=true');
+    });
+
+    test('prioritizeSendFoils ranks foil-sending offers on top', () {
+      final stickers = {
+        'BRA5': _normal('BRA5', 'BRA'),
+        'BRA6': _normal('BRA6', 'BRA'),
+        'FWC2': _foil('FWC2'),
+        'FWC3': _foil('FWC3'),
+      };
+      final me = _inv(
+        dupes: {'BRA5': 1, 'FWC2': 1},
+        missing: {'BRA6', 'FWC3'},
+        stickers: stickers,
+      );
+      final friend = _inv(
+        dupes: {'BRA6': 1, 'FWC3': 1},
+        missing: {'BRA5', 'FWC2'},
+        stickers: stickers,
+      );
+      final offers = TradeMatcher.match(
+        me: me,
+        friend: friend,
+        rules: const TradeRules(prioritizeSendFoils: true),
+      );
+      expect(offers, isNotEmpty);
+      // Top offer should be the one I give away a foil in.
+      final firstGive = offers.first.youGive.keys.first;
+      expect(stickers[firstGive]?.isFoil, true,
+          reason: 'Top-ranked offer must send a foil with '
+              'prioritizeSendFoils=true');
+    });
+
     test('randomKeepFavorites: favorites sink to the bottom', () {
       // I have 2 dupes — BRA10 (favorite nation BRA) and ARG10 (not
       // favorite). Friend missing both, but only has 1 sticker I want

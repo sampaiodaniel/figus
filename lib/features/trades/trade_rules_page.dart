@@ -103,14 +103,104 @@ class TradeRulesPage extends ConsumerWidget {
             onTap: () => notifier.update(rules.copyWith(
                 giveStrategy: GiveStrategy.randomKeepFavorites)),
           ),
+          const SizedBox(height: 24),
+
+          _SectionHeader(
+            icon: Icons.auto_awesome_rounded,
+            label: 'PRIORIZAR BRILHANTES',
+            subtitle:
+                'Liga essas chaves quando você prefere puxar/queimar brilhantes na frente, mesmo em trocas 2×1.',
+          ),
+          const SizedBox(height: 12),
+          _PrioritySwitch(
+            value: rules.prioritizeSendFoils,
+            title: 'Priorizar enviar brilhantes',
+            sub:
+                'Suas repetidas brilhantes vão na frente das trocas — útil quando você tem muitas repetidas metalizadas pra escoar.',
+            onChanged: (v) =>
+                notifier.update(rules.copyWith(prioritizeSendFoils: v)),
+          ),
+          const SizedBox(height: 8),
+          _PrioritySwitch(
+            value: rules.prioritizeReceiveFoils,
+            title: 'Priorizar receber brilhantes',
+            sub:
+                'As brilhantes do amigo viram prioridade — útil pra completar metalizadas que faltam.',
+            onChanged: (v) =>
+                notifier.update(rules.copyWith(prioritizeReceiveFoils: v)),
+          ),
+
           const SizedBox(height: 28),
 
           OutlinedButton.icon(
             icon: const Icon(Icons.refresh_rounded),
-            label: const Text('Restaurar padrões (1×1 e 1 × 2)'),
+            label: const Text('Restaurar padrões'),
             onPressed: notifier.reset,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PrioritySwitch extends StatelessWidget {
+  final bool value;
+  final String title;
+  final String sub;
+  final ValueChanged<bool> onChanged;
+  const _PrioritySwitch({
+    required this.value,
+    required this.title,
+    required this.sub,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.fc;
+    return InkWell(
+      onTap: () => onChanged(!value),
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+        decoration: BoxDecoration(
+          color: value ? c.accent.withValues(alpha: 0.10) : c.card,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: value ? c.accent : c.border,
+            width: value ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: c.text,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    sub,
+                    style: TextStyle(
+                      color: c.textMuted,
+                      fontSize: 12,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Switch(value: value, onChanged: onChanged),
+          ],
+        ),
       ),
     );
   }
