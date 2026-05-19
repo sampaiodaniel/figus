@@ -5,6 +5,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:figus/features/trades/trade_matcher.dart';
+import 'package:figus/features/trades/trade_rules.dart';
 
 TradeSticker _normal(String code, [String? nation]) =>
     TradeSticker(code: code, nationCode: nation, isFoil: false);
@@ -467,6 +468,122 @@ void main() {
 
     test('inventory profileName is null by default', () {
       expect(_inv().profileName, null);
+    });
+
+    test('custom foilToNormalRatio: 1 foil for 3 normais', () {
+      // Daniel: "no prédio do meu amigo 1 brilhante está sendo trocada por
+      // 3 normais. Se isso for configurável, consegue fazer trocas em qq
+      // lugar."
+      final stickers = {
+        'FWC1': _foil('FWC1'),
+        'BRA5': _normal('BRA5', 'BRA'),
+        'BRA6': _normal('BRA6', 'BRA'),
+        'BRA7': _normal('BRA7', 'BRA'),
+      };
+      final me = _inv(
+        dupes: {'FWC1': 1},
+        missing: {'BRA5', 'BRA6', 'BRA7'},
+        stickers: stickers,
+      );
+      final friend = _inv(
+        dupes: {'BRA5': 1, 'BRA6': 1, 'BRA7': 1},
+        missing: {'FWC1'},
+        stickers: stickers,
+      );
+      final offers = TradeMatcher.match(
+        me: me,
+        friend: friend,
+        rules: const TradeRules(foilToNormalRatio: 3),
+      );
+      final mixed = offers.where((o) => o.kind == 'mixed').toList();
+      expect(mixed, isNotEmpty);
+      expect(mixed.first.youGive, {'FWC1': 1});
+      expect(mixed.first.totalReceive, 3);
+    });
+
+    test('custom foilToNormalRatio=3 too few normals → no mixed', () {
+      // Friend only has 2 normals I'm missing — with ratio 3 the matcher
+      // can't form a complete trade, so no offer is emitted.
+      final stickers = {
+        'FWC1': _foil('FWC1'),
+        'BRA5': _normal('BRA5', 'BRA'),
+        'BRA6': _normal('BRA6', 'BRA'),
+      };
+      final me = _inv(
+        dupes: {'FWC1': 1},
+        missing: {'BRA5', 'BRA6'},
+        stickers: stickers,
+      );
+      final friend = _inv(
+        dupes: {'BRA5': 1, 'BRA6': 1},
+        missing: {'FWC1'},
+        stickers: stickers,
+      );
+      final offers = TradeMatcher.match(
+        me: me,
+        friend: friend,
+        rules: const TradeRules(foilToNormalRatio: 3),
+      );
+      expect(offers, isEmpty);
+    });
+
+    test('alphabetical strategy: BRA1 before BRA10 (natural sort)', () {
+      // Both sides have lots of dupes; with alphabetical strategy, the
+      // earliest-numbered codes should pair first.
+      final stickers = {
+        for (final c in ['BRA1', 'BRA2', 'BRA10', 'ARG1', 'ARG2', 'ARG10'])
+          c: _normal(c, c.substring(0, 3)),
+      };
+      final me = _inv(
+        dupes: {'BRA1': 1, 'BRA10': 1, 'BRA2': 1},
+        missing: {'ARG1', 'ARG2', 'ARG10'},
+        stickers: stickers,
+      );
+      final friend = _inv(
+        dupes: {'ARG1': 1, 'ARG10': 1, 'ARG2': 1},
+        missing: {'BRA1', 'BRA2', 'BRA10'},
+        stickers: stickers,
+      );
+      final offers = TradeMatcher.match(
+        me: me,
+        friend: friend,
+        rules: const TradeRules(giveStrategy: GiveStrategy.alphabetical),
+      );
+      // First give should be BRA1 (numerically lowest BRA code), not BRA10.
+      expect(offers.first.youGive.keys.first, 'BRA1');
+    });
+
+    test('randomKeepFavorites: favorites sink to the bottom', () {
+      // I have 2 dupes — BRA10 (favorite nation BRA) and ARG10 (not
+      // favorite). Friend missing both, but only has 1 sticker I want
+      // available. With the keep-favorites strategy, the matcher should
+      // give ARG10 first (non-favorite).
+      final stickers = {
+        'BRA10': _normal('BRA10', 'BRA'),
+        'ARG10': _normal('ARG10', 'ARG'),
+        'FRA1': _normal('FRA1', 'FRA'),
+      };
+      final me = _inv(
+        dupes: {'BRA10': 1, 'ARG10': 1},
+        missing: {'FRA1'},
+        stickers: stickers,
+        favorites: {'BRA'},
+      );
+      final friend = _inv(
+        dupes: {'FRA1': 1},
+        missing: {'BRA10', 'ARG10'},
+        stickers: stickers,
+      );
+      final offers = TradeMatcher.match(
+        me: me,
+        friend: friend,
+        rules: const TradeRules(
+            giveStrategy: GiveStrategy.randomKeepFavorites),
+      );
+      expect(offers, hasLength(1));
+      // With the keep-favorites strategy, the non-favorite dupe should
+      // have been given (ARG10), not the favorite (BRA10).
+      expect(offers.first.youGive.keys.first, 'ARG10');
     });
   });
 }

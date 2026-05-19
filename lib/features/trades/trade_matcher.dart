@@ -2,11 +2,13 @@
 /// a prioritized list of trade suggestions.
 ///
 /// Rules (per user spec):
-///  * Foil stickers are worth 2 normals.
-///  * Prefer same-type, 1-for-1 (normal↔normal, foil↔foil).
-///  * When that's exhausted, mixed trades: 1 foil for 2 normals.
+///  * Same-type pairing (normal↔normal, foil↔foil) is preferred.
+///  * Mixed trades use a configurable ratio (default: 1 foil = 2 normais,
+///    settable per user in `TradeRules`).
 ///  * Favorited nations weigh more in the ranking so they bubble up first.
 library;
+
+import 'trade_rules.dart';
 
 class TradeSticker {
   final String code; // BRA10, FWC9, ...
@@ -74,9 +76,12 @@ class TradeOffer {
 class TradeMatcher {
   /// Compute trade suggestions between `me` and `friend`.
   /// Returns a list of [TradeOffer] sorted by descending score.
+  /// [rules] lets the user tweak ratios and selection strategy via the
+  /// Ajustes → Trocas page (default is 1×1 same-type + 1 foil ↔ 2 normais).
   static List<TradeOffer> match({
     required TradeInventory me,
     required TradeInventory friend,
+    TradeRules rules = const TradeRules(),
   }) {
     // Stickers I can hand over (my dupes that the friend is missing). We
     // cap to 1 per code because the friend only needs ONE copy — handing
@@ -110,22 +115,50 @@ class TradeMatcher {
 
     final offers = <TradeOffer>[];
 
-    // Pairing rules (cap-to-1 per code enforced above):
-    //   1×1 foil↔foil
-    //   1×1 normal↔normal
-    //   2×1 mixed (2 normais ↔ 1 foil) — only when same-type isn't
-    //   possible on that side. Daniel: "Pode ser 1x1 e pode ser foil
-    //   2x1. Se só tenho normal e amigo foil, ok ser 2x1".
-    _pairSameType(giveFoil, getFoil, true, me, friend, offers);
-    _pairSameType(giveNorm, getNorm, false, me, friend, offers);
-    // After same-type runs and trims its maps, anything left in giveFoil
-    // pairs with getNorm (1 foil mine for 2 normals of theirs), and
-    // anything left in giveNorm pairs with getFoil (2 normals mine for
-    // 1 foil of theirs).
-    _pairMixed(giveFoil, getNorm,
-        giveIsFoil: true, me: me, friend: friend, offers: offers);
-    _pairMixed(giveNorm, getFoil,
-        giveIsFoil: false, me: me, friend: friend, offers: offers);
+    // Same-type pairings respect the configured ratios (defaults to 1×1).
+    _pairSameType(
+      giveFoil,
+      getFoil,
+      giveCount: rules.foilGive,
+      receiveCount: rules.foilReceive,
+      isFoil: true,
+      me: me,
+      friend: friend,
+      offers: offers,
+      strategy: rules.giveStrategy,
+    );
+    _pairSameType(
+      giveNorm,
+      getNorm,
+      giveCount: rules.normalGive,
+      receiveCount: rules.normalReceive,
+      isFoil: false,
+      me: me,
+      friend: friend,
+      offers: offers,
+      strategy: rules.giveStrategy,
+    );
+    // Mixed pairings respect the foil↔normais ratio (default 2).
+    _pairMixed(
+      giveFoil,
+      getNorm,
+      giveCount: 1,
+      receiveCount: rules.foilToNormalRatio,
+      me: me,
+      friend: friend,
+      offers: offers,
+      strategy: rules.giveStrategy,
+    );
+    _pairMixed(
+      giveNorm,
+      getFoil,
+      giveCount: rules.foilToNormalRatio,
+      receiveCount: 1,
+      me: me,
+      friend: friend,
+      offers: offers,
+      strategy: rules.giveStrategy,
+    );
 
     offers.sort((a, b) => b.score.compareTo(a.score));
     return offers;
@@ -133,26 +166,45 @@ class TradeMatcher {
 
   static void _pairSameType(
     Map<String, int> give,
-    Map<String, int> get,
-    bool isFoil,
-    TradeInventory me,
-    TradeInventory friend,
-    List<TradeOffer> offers,
-  ) {
-    final giveList = _expand(give);
-    final getList = _expand(get);
-    final n = giveList.length < getList.length ? giveList.length : getList.length;
-    for (var i = 0; i < n; i++) {
-      final g = giveList[i];
-      final r = getList[i];
+    Map<String, int> get, {
+    required int giveCount,
+    required int receiveCount,
+    required bool isFoil,
+    required TradeInventory me,
+    required TradeInventory friend,
+    required List<TradeOffer> offers,
+    required GiveStrategy strategy,
+  }) {
+    final giveList = _expand(give, strategy, me);
+    final getList = _expand(get, strategy, friend);
+    // We can only build whole offers: each one needs `giveCount` items on
+    // the give side and `receiveCount` on the receive side. Stop when
+    // either side runs short.
+    var gi = 0;
+    var ri = 0;
+    while (gi + giveCount <= giveList.length &&
+        ri + receiveCount <= getList.length) {
+      final giveChunk = giveList.sublist(gi, gi + giveCount);
+      final getChunk = getList.sublist(ri, ri + receiveCount);
       offers.add(TradeOffer(
-        youGive: {g: 1},
-        youReceive: {r: 1},
+        youGive: _combine(giveChunk),
+        youReceive: _combine(getChunk),
         kind: 'same',
-        score: _score(give: [g], receive: [r], me: me, friend: friend, kind: 'same'),
+        score: _score(
+            give: giveChunk,
+            receive: getChunk,
+            me: me,
+            friend: friend,
+            kind: 'same'),
       ));
-      give[g] = (give[g] ?? 1) - 1;
-      get[r] = (get[r] ?? 1) - 1;
+      for (final c in giveChunk) {
+        give[c] = (give[c] ?? 1) - 1;
+      }
+      for (final c in getChunk) {
+        get[c] = (get[c] ?? 1) - 1;
+      }
+      gi += giveCount;
+      ri += receiveCount;
     }
     give.removeWhere((_, v) => v <= 0);
     get.removeWhere((_, v) => v <= 0);
@@ -161,68 +213,91 @@ class TradeMatcher {
   static void _pairMixed(
     Map<String, int> giveSide,
     Map<String, int> getSide, {
-    required bool giveIsFoil,
+    required int giveCount,
+    required int receiveCount,
     required TradeInventory me,
     required TradeInventory friend,
     required List<TradeOffer> offers,
+    required GiveStrategy strategy,
   }) {
-    final giveList = _expand(giveSide);
-    final getList = _expand(getSide);
-    if (giveIsFoil) {
-      // 1 foil for 2 normals.
+    final giveList = _expand(giveSide, strategy, me);
+    final getList = _expand(getSide, strategy, friend);
+    if (giveCount == 1) {
+      // 1 foil for N normals (where N = receiveCount, default 2, settable
+      // up to whatever the user chose in the rules).
       var gi = 0;
       var ri = 0;
-      while (gi < giveList.length && ri + 1 < getList.length) {
+      while (gi < giveList.length && ri + receiveCount <= getList.length) {
         final g = giveList[gi];
-        final r1 = getList[ri];
-        final r2 = getList[ri + 1];
+        final receivedChunk = getList.sublist(ri, ri + receiveCount);
         offers.add(TradeOffer(
           youGive: {g: 1},
-          youReceive: _combine([r1, r2]),
+          youReceive: _combine(receivedChunk),
           kind: 'mixed',
           score: _score(
             give: [g],
-            receive: [r1, r2],
+            receive: receivedChunk,
             me: me,
             friend: friend,
             kind: 'mixed',
           ),
         ));
         gi++;
-        ri += 2;
+        ri += receiveCount;
       }
     } else {
-      // 2 normals for 1 foil.
+      // N normals for 1 foil (giveCount = N, receiveCount = 1).
       var gi = 0;
       var ri = 0;
-      while (gi + 1 < giveList.length && ri < getList.length) {
-        final g1 = giveList[gi];
-        final g2 = giveList[gi + 1];
+      while (gi + giveCount <= giveList.length && ri < getList.length) {
+        final giveChunk = giveList.sublist(gi, gi + giveCount);
         final r = getList[ri];
         offers.add(TradeOffer(
-          youGive: _combine([g1, g2]),
+          youGive: _combine(giveChunk),
           youReceive: {r: 1},
           kind: 'mixed',
           score: _score(
-            give: [g1, g2],
+            give: giveChunk,
             receive: [r],
             me: me,
             friend: friend,
             kind: 'mixed',
           ),
         ));
-        gi += 2;
+        gi += giveCount;
         ri++;
       }
     }
   }
 
-  // Expand map to flat list, highest-duplicate codes first.
-  // Stickers with more copies are prioritised for 1×1 pairing so the user
-  // gets rid of their biggest pile first.
-  static List<String> _expand(Map<String, int> m) {
-    final entries = m.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+  /// Flattens a (code → count) map to a list, ordered per the user's
+  /// [strategy]:
+  ///   * random — shuffled (good for "spread the love" feel).
+  ///   * alphabetical — natural-sort by code (BRA1 before BRA10).
+  ///   * randomKeepFavorites — shuffled, but codes from the owner's
+  ///     favorite nations sink to the end (we'd rather not give those
+  ///     away first).
+  static List<String> _expand(
+    Map<String, int> m,
+    GiveStrategy strategy,
+    TradeInventory owner,
+  ) {
+    final entries = m.entries.toList();
+    switch (strategy) {
+      case GiveStrategy.random:
+        entries.shuffle();
+      case GiveStrategy.alphabetical:
+        entries.sort((a, b) => _naturalCompare(a.key, b.key));
+      case GiveStrategy.randomKeepFavorites:
+        entries.shuffle();
+        // Stable partition: non-favorites first, favorites last.
+        entries.sort((a, b) {
+          final aFav = _isFavorite(a.key, owner);
+          final bFav = _isFavorite(b.key, owner);
+          if (aFav == bFav) return 0;
+          return aFav ? 1 : -1;
+        });
+    }
     final out = <String>[];
     for (final e in entries) {
       for (var i = 0; i < e.value; i++) {
@@ -230,6 +305,26 @@ class TradeMatcher {
       }
     }
     return out;
+  }
+
+  static bool _isFavorite(String code, TradeInventory owner) {
+    final nation = owner.stickersByCode[code]?.nationCode;
+    if (nation == null) return false;
+    return owner.favoriteNations.contains(nation);
+  }
+
+  /// Compare strings like "BRA1" / "BRA10" so that the numeric suffix
+  /// sorts numerically (BRA1 → BRA2 → BRA10), not lexicographically
+  /// (which would put BRA10 before BRA2).
+  static int _naturalCompare(String a, String b) {
+    final ra = RegExp(r'^([A-Za-z]+)(\d*)$').firstMatch(a);
+    final rb = RegExp(r'^([A-Za-z]+)(\d*)$').firstMatch(b);
+    if (ra == null || rb == null) return a.compareTo(b);
+    final letterCmp = ra.group(1)!.compareTo(rb.group(1)!);
+    if (letterCmp != 0) return letterCmp;
+    final na = int.tryParse(ra.group(2) ?? '') ?? 0;
+    final nb = int.tryParse(rb.group(2) ?? '') ?? 0;
+    return na.compareTo(nb);
   }
 
   static Map<String, int> _combine(List<String> codes) {

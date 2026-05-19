@@ -30,6 +30,7 @@ import 'features/trades/compare_friend_page.dart';
 import 'features/trades/trade_bt_page.dart';
 import 'features/trades/trade_matcher.dart';
 import 'features/trades/trade_qr_page.dart';
+import 'features/trades/trade_rules_page.dart';
 import 'features/trades/trades_page.dart';
 import 'features/auth/auth_page.dart';
 import 'features/donate/donate_page.dart';
@@ -115,6 +116,7 @@ class FigusApp extends ConsumerWidget {
           ),
         ),
         GoRoute(path: '/trade-bt', builder: (_, __) => const TradeBtPage()),
+        GoRoute(path: '/trade-rules', builder: (_, __) => const TradeRulesPage()),
         GoRoute(path: '/donate', builder: (_, __) => const DonatePage()),
         GoRoute(path: '/how-to', builder: (_, __) => const HelpPage()),
         GoRoute(path: '/help', builder: (_, __) => const HelpPage()),

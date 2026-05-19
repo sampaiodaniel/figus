@@ -10,6 +10,7 @@ import '../../data/providers.dart';
 import '../import/figuritas_parser.dart';
 import 'inventory_codec.dart';
 import 'trade_matcher.dart';
+import 'trade_rules.dart';
 
 /// "Comparar com amigo" — accepts the friend's inventory (pasted JSON for
 /// now; Bluetooth/QR plug in later) and shows the suggested trades.
@@ -496,10 +497,14 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
       _friendName = null;
       _offers = null;
       _confirmedIdx.clear();
+      _invalidatedIdx.clear();
     });
     try {
       final me = await InventoryCodec.myInventory(ref.read(databaseProvider));
-      final offers = TradeMatcher.match(me: me, friend: friend);
+      // Pull the user's tuned rules — defaults to 1×1 + 1×2 mixed when
+      // the user hasn't touched the settings.
+      final rules = ref.read(tradeRulesProvider);
+      final offers = TradeMatcher.match(me: me, friend: friend, rules: rules);
       if (!mounted) return;
       setState(() {
         _busy = false;

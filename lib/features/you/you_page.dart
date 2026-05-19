@@ -452,6 +452,13 @@ class YouPage extends ConsumerWidget {
                 onTap: () => context.push('/achievements'),
               ),
               _MenuRow(
+                icon: Icons.swap_horiz_rounded,
+                title: 'Trocas',
+                subtitle: 'Proporções e como sortear repetidas',
+                iconColor: c.accent,
+                onTap: () => context.push('/trade-rules'),
+              ),
+              _MenuRow(
                 icon: Icons.palette_outlined,
                 title: 'Temas de cor',
                 iconColor: c.accent,
