@@ -39,6 +39,12 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
   // the user double-give or double-receive the same card, so we grey them
   // out as soon as a conflicting trade is marked done.
   final Set<int> _invalidatedIdx = {};
+  // Cached inventories. Kept around so the per-offer "swap this card"
+  // sheet can show what alternatives exist (friend's other dupes I'm
+  // missing, or my other dupes the friend is missing) without re-running
+  // the matcher.
+  TradeInventory? _me;
+  TradeInventory? _friend;
 
   @override
   void initState() {
@@ -138,6 +144,14 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
                           _invalidatedIdx.contains(i))
                       ? null
                       : () => _confirmOffer(i),
+                  onSwapReceive: (_confirmedIdx.contains(i) ||
+                          _invalidatedIdx.contains(i))
+                      ? null
+                      : (code) => _swapReceive(i, code),
+                  onSwapGive: (_confirmedIdx.contains(i) ||
+                          _invalidatedIdx.contains(i))
+                      ? null
+                      : (code) => _swapGive(i, code),
                 ),
             ],
           ],
@@ -303,6 +317,181 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
       ..add('O que acha?');
 
     await Share.share(lines.join('\n'));
+  }
+
+  /// "Trocar essa figurinha" — user said their friend already has this
+  /// sticker (so the trade wouldn't work for that line). Show all OTHER
+  /// dupes the friend has that I'm missing, skip the codes already in
+  /// any actionable offer, and let the user pick.
+  Future<void> _swapReceive(int offerIndex, String oldCode) async {
+    final friend = _friend;
+    final me = _me;
+    if (friend == null || me == null) return;
+    final alreadyUsed = <String>{};
+    for (var i = 0; i < _offers!.length; i++) {
+      if (_confirmedIdx.contains(i)) continue;
+      alreadyUsed.addAll(_offers![i].youReceive.keys);
+    }
+    final alternatives = friend.dupesByCode.keys
+        .where((c) =>
+            me.missingCodes.contains(c) &&
+            !alreadyUsed.contains(c))
+        .toList()
+      ..sort(_compareByNationThenNumber);
+    final picked = await _showSwapSheet(
+      title: 'Trocar $oldCode',
+      subtitle: 'Outra figurinha do amigo que você está caçando:',
+      options: alternatives,
+    );
+    if (picked == null) return;
+    _applySwapReceive(offerIndex, oldCode, picked);
+  }
+
+  /// Same idea on the give side — when the user wants to offer a
+  /// different card from their own dupes (e.g. friend doesn't need that
+  /// specific one anymore).
+  Future<void> _swapGive(int offerIndex, String oldCode) async {
+    final friend = _friend;
+    final me = _me;
+    if (friend == null || me == null) return;
+    final alreadyUsed = <String>{};
+    for (var i = 0; i < _offers!.length; i++) {
+      if (_confirmedIdx.contains(i)) continue;
+      alreadyUsed.addAll(_offers![i].youGive.keys);
+    }
+    final alternatives = me.dupesByCode.keys
+        .where((c) =>
+            friend.missingCodes.contains(c) &&
+            !alreadyUsed.contains(c))
+        .toList()
+      ..sort(_compareByNationThenNumber);
+    final picked = await _showSwapSheet(
+      title: 'Trocar $oldCode',
+      subtitle: 'Outra repetida sua que o amigo está caçando:',
+      options: alternatives,
+    );
+    if (picked == null) return;
+    _applySwapGive(offerIndex, oldCode, picked);
+  }
+
+  Future<String?> _showSwapSheet({
+    required String title,
+    required String subtitle,
+    required List<String> options,
+  }) async {
+    if (!mounted) return null;
+    final c = context.fc;
+    return showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: c.card,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetCtx) {
+        if (options.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 14),
+                Text(
+                  'Não tem outra figurinha possível pra trocar agora.',
+                  style: TextStyle(color: c.textMuted, height: 1.4),
+                ),
+                const SizedBox(height: 20),
+                FilledButton(
+                  onPressed: () => Navigator.pop(sheetCtx),
+                  child: const Text('Ok'),
+                ),
+              ],
+            ),
+          );
+        }
+        return SafeArea(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(sheetCtx).size.height * 0.7,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 6),
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w800),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                  child: Text(
+                    subtitle,
+                    style: TextStyle(color: c.textMuted, fontSize: 13),
+                  ),
+                ),
+                const Divider(height: 1),
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: options.length,
+                    separatorBuilder: (_, __) =>
+                        Divider(height: 1, color: c.border),
+                    itemBuilder: (_, i) {
+                      final code = options[i];
+                      return ListTile(
+                        title: Text(code,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w700)),
+                        trailing: const Icon(Icons.swap_horiz_rounded),
+                        onTap: () => Navigator.pop(sheetCtx, code),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _applySwapReceive(int offerIndex, String oldCode, String newCode) {
+    final offer = _offers![offerIndex];
+    if (!offer.youReceive.containsKey(oldCode)) return;
+    final newReceive = Map<String, int>.from(offer.youReceive)
+      ..remove(oldCode);
+    newReceive[newCode] = 1;
+    setState(() {
+      _offers![offerIndex] = TradeOffer(
+        youGive: offer.youGive,
+        youReceive: newReceive,
+        kind: offer.kind,
+        score: offer.score,
+      );
+    });
+  }
+
+  void _applySwapGive(int offerIndex, String oldCode, String newCode) {
+    final offer = _offers![offerIndex];
+    if (!offer.youGive.containsKey(oldCode)) return;
+    final newGive = Map<String, int>.from(offer.youGive)..remove(oldCode);
+    newGive[newCode] = 1;
+    setState(() {
+      _offers![offerIndex] = TradeOffer(
+        youGive: newGive,
+        youReceive: offer.youReceive,
+        kind: offer.kind,
+        score: offer.score,
+      );
+    });
   }
 
   /// Sticker order on the shared text: group by nation (alphabetical PT
@@ -549,6 +738,8 @@ class _CompareFriendPageState extends ConsumerState<CompareFriendPage> {
       if (!mounted) return;
       setState(() {
         _busy = false;
+        _me = me;
+        _friend = friend;
         _friendName = friend.profileName ?? 'amigo';
         _offers = offers;
       });
@@ -604,12 +795,16 @@ class _OfferCard extends StatelessWidget {
   final bool confirmed;
   final bool invalidated;
   final VoidCallback? onConfirm;
+  final void Function(String code)? onSwapReceive;
+  final void Function(String code)? onSwapGive;
 
   const _OfferCard({
     required this.offer,
     this.confirmed = false,
     this.invalidated = false,
     this.onConfirm,
+    this.onSwapReceive,
+    this.onSwapGive,
   });
 
   @override
@@ -660,9 +855,19 @@ class _OfferCard extends StatelessWidget {
                 ],
             ),
             const SizedBox(height: 10),
-            _Row(label: 'Você dá', codes: offer.youGive, color: Colors.red.shade300),
+            _Row(
+              label: 'Você dá',
+              codes: offer.youGive,
+              color: Colors.red.shade300,
+              onSwap: onSwapGive,
+            ),
             const SizedBox(height: 8),
-            _Row(label: 'Você recebe', codes: offer.youReceive, color: Colors.green.shade400),
+            _Row(
+              label: 'Você recebe',
+              codes: offer.youReceive,
+              color: Colors.green.shade400,
+              onSwap: onSwapReceive,
+            ),
             if (!confirmed && onConfirm != null) ...[
               const SizedBox(height: 10),
               // Full-width action button so the user can tap "Marcamos!"
@@ -710,10 +915,20 @@ class _Row extends StatelessWidget {
   final String label;
   final Map<String, int> codes;
   final Color color;
-  const _Row({required this.label, required this.codes, required this.color});
+  /// Tap the swap icon next to a sticker chip to pick a different one
+  /// (friend already had this card, or the user wants to offer another
+  /// dupe). Null = no swap action available (offer confirmed/invalidated).
+  final void Function(String code)? onSwap;
+  const _Row({
+    required this.label,
+    required this.codes,
+    required this.color,
+    this.onSwap,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final c = context.fc;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -734,21 +949,69 @@ class _Row extends StatelessWidget {
             runSpacing: 4,
             children: [
               for (final e in codes.entries)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: context.fc.cardAlt,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    e.value > 1 ? '${e.key} ×${e.value}' : e.key,
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                  ),
+                _CodeChip(
+                  code: e.key,
+                  quantity: e.value,
+                  onSwap: onSwap == null ? null : () => onSwap!(e.key),
                 ),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Chip showing one sticker code with an optional swap icon to its right
+/// (the user taps to pick a different sticker if the friend already has
+/// this one).
+class _CodeChip extends StatelessWidget {
+  final String code;
+  final int quantity;
+  final VoidCallback? onSwap;
+  const _CodeChip({
+    required this.code,
+    required this.quantity,
+    this.onSwap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.fc;
+    final label = quantity > 1 ? '$code ×$quantity' : code;
+    return Container(
+      decoration: BoxDecoration(
+        color: c.cardAlt,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(8, 3, onSwap == null ? 8 : 4, 3),
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+            ),
+          ),
+          if (onSwap != null)
+            InkWell(
+              onTap: onSwap,
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(8),
+                bottomRight: Radius.circular(8),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+                child: Icon(
+                  Icons.swap_horiz_rounded,
+                  size: 14,
+                  color: c.accent,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
